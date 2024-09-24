@@ -116,9 +116,10 @@
                     <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
                     {% if g[0].note %}
                     <td>
-                        <textarea name="note" class="form-control">
-                            {{ g[0].note }}
-                        </textarea>
+                        <input type="text"
+                               readonly
+                               value=" {{ g[0].note }}"
+                               class="form-control text-center">
                     </td>
                     {% else %}
                     <td></td>

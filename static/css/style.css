@@ -253,3 +253,11 @@ i {
     font-family: Arial, Helvetica, sans-serif;
     font-weight: bold;
 }
+
+.containVideo {
+    position: relative;
+    z-index: 10; /* Đảm bảo video nằm trên các phần tử khác */
+    width: 100%;
+    height: auto;
+}
+

@@ -27,8 +27,8 @@
 </div>
 
 <br>
-<hr>
 <br>
+<br><br>
 
 <!--Content -->
     {% if products %}
@@ -161,7 +161,7 @@
 
     </div>
 </div>
-
+-->
 
 
 
@@ -197,11 +197,5 @@
         </div>
 
 {% endif %}
-
-    <script>
-        fetch('https://fakestoreapi.com/products')
-            .then(res=>res.json())
-            .then(json=>console.log(json))
-    </script>
 
 {% endblock %}
