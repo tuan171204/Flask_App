@@ -1,0 +1,128 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+
+
+
+{% if user_privileged %}
+
+<h1 class="text-center text-dark mt-4"> Chỉnh sửa phân quyền </h1>
+<br>
+<hr>
+
+<div class="container">
+        <form method="POST" action="{{ url_for('update_user_privileged') }}">
+            <input type="hidden" name="user_id" value="{{ user_privileged.id }}">
+            <input type="hidden" name="supuser" value="{{ user_role_permission.super_user }}">
+            <table class="table table-bordered table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th scope="col">Mã người dùng</th>
+                  <th scope="col">Username</th>
+                    {% for key, value in user_role_permission.__dict__.items() %}
+                        {% if not key.startswith('_') and not key=='id' %}
+                            <th scope="col">{{ key.replace('_', ' ').capitalize() }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="text-center">
+                  <th scope="row">{{ user_privileged.id }}</th>
+                  <td>{{ user_privileged.username }}</td>
+                    {% for key, value in user_role_permission.__dict__.items() %}
+                        {% if not key.startswith('_') and not key=='id' %}
+                            <td>
+                                <input class="form-check-input"
+                                       type="checkbox" id="{{ key }}"
+                                       name="{{ key }}" {% if value %} checked {% endif %}>
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+              </tbody>
+            </table>
+
+            <div>
+                <button type="submit" class="btn btn-warning form-control mt-3">
+                    <i class="fa-solid fa-floppy-disk"></i><b> Lưu thay đổi</b>
+                </button>
+            </div>
+        </form>
+</div>
+
+{% else %}
+
+
+
+
+<h1 class="text-center text-dark mt-4"> Phân quyền tài khoản </h1>
+<hr>
+
+
+  <form class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" placeholder="Nhập mã người dùng" aria-label="Search" name="user_id">
+<!--      <select class="form-control mr-sm-2" name="user_role_id">-->
+<!--          <option value="" selected>Vai trò</option>-->
+<!--            {% for user_role in users_role %}-->
+<!--          <option value="{{ user_role.id }}">{{ user_role.name }}</option>-->
+<!--            {% endfor %}-->
+<!--      </select>-->
+
+      <select class="form-control mr-sm-2" name="asc">
+          <option value="" selected>Sắp xếp theo</option>
+          <option value="False">Tài khoản mới nhất</option>
+          <option value="True">Tài khoản cũ nhất</option>
+      </select>
+
+      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+    </form>
+    <hr>
+
+<div style="overflow-x:auto;" class="mb-5">
+  <table class="table table-hover ">
+    <thead class="thead-light">
+      <tr class="text-center">
+        <th scope="col">Mã người dùng</th>
+        <th scope="col">Tên người dùng</th>
+        <th scope="col">Username</th>
+        <th scope="col">Mật khẩu</th>
+        <th scope="col">Email</th>
+          <th scope="col">Ngày vào</th>
+          <th scope="col"> Hiệu lực </th>
+          <th scope="col">Chỉnh sửa quyền</th>
+      </tr>
+    </thead>
+    <tbody>
+     {% for u in users %}
+        {% if u.id and u.id != current_user.id %}
+             <tr class="text-center">
+                <th scope="row">{{ u.id }}</th>
+                <td>{{ u.name }}</td>
+                <td> {{ u.username }}</td>
+                <td><input class="form-control" type="password" value="{{ u.password }}"></td>
+                <td> {{ u.email }}</td>
+                <td> {{ u.joined_date.strftime('%d/%m/%Y  %H:%M:%S') }}</td>
+                 <td><button style="font-size:24px;" class="btn btn-white">
+                     {% if u.active %} <i class="fa-solid fa-circle-check"></i>
+                     {% else %} <i class="fa-solid fa-x"></i></i>
+                     {% endif %}
+                     </button>
+                 </td>
+                 <td>
+                     <a href="{{ url_for('user_privileged.update_privileged', user_id = u.id) }}"
+                        style="font-size:24px;" class="btn btn-secondary">
+                         <i class="fa-solid fa-pencil"></i>
+                     </a>
+                 </td>
+              </tr>
+        {% endif %}
+     {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+
+{% endblock %}

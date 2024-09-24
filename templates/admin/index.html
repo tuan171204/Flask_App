@@ -1,0 +1,106 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+
+{% if current_user.is_authenticated %}
+<h2 class="text-center mt-4">Hệ thống quản lý</h2>
+
+<br>
+    <div class="row">
+        <div class="col-md-6 col-xs-12">
+            <table class="table">
+                <tr class="text-center">
+                    <th>Mã danh mục</th>
+                    <th>Tên danh mục</th>
+                    <th>Số lượng sản phẩm</th>
+                </tr>
+                {% for s in stats %}
+                <tr class="text-center">
+                    <td>{{s[0]}}</td>
+                    <td>{{s[1]}}</td>
+                    <td>{{s[2]}}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="col-md-6 col-xs-12">
+            <canvas id="myCategoryChart"></canvas>
+        </div>
+
+    </div>
+
+{% else %}
+
+<h2 class="text-center text-dark mt-4">ĐĂNG NHẬP QUẢN TRỊ</h2>
+{% if err_msg %}
+<h2 class="text-center">{{err_msg}}</h2>
+
+
+{% else %}
+<form method="post" action="{{url_for('signin_admin')}}">
+    <div class="form-group">
+        <label for="username" >Username</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+    </div>
+    <div class="form-group">
+        <label for="pass" >Mật khẩu</label>
+        <input type="password" class="form-control" id="pass" name="password" required>
+    </div>
+    <input type="submit" value="Đăng nhập" class="btn btn-dark text-light">
+</form>
+{% endif %}
+<br>
+<br>
+
+
+
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let labels = []
+    let data = []
+    let colors = []
+    let borderColors = []
+    let r, g, b;
+
+
+    {% for s in stats %}
+        labels.push('{{ s[1] }}')
+        data.push({{ s[2] }})
+
+        r = Math.random()*255
+        g = Math.random()*255
+        b = Math.random()*255
+
+        colors.push(`rgba(${r}, ${g}, ${b}, 1)`)
+        borderColors.push(`rgba(${r}, ${g}, ${b}, 1)`)
+    {% endfor %}
+
+    window.onload = function() {
+        const ctx = document.getElementById('myCategoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'So luong san pham',
+                data: data,
+                backgroundColor: colors,
+                borderColor: borderColors,
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+    }
+</script>
+
+
+{% endblock %}

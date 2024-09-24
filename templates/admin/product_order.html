@@ -1,0 +1,100 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+<h1 class="text-center text-dark mt-4"> Đặt hàng </h1>
+<hr>
+
+
+<form id="orderForm" action="{{ url_for('order_product.create_order') }}" method="POST">
+    <div class="mb-5 dropdown">
+        <div class="form-group form-inline">
+                <h4><b>Nhập ngày đặt hàng: </b></h4>
+                <input type="date" name="order_date" class="form-control ml-3" required>
+        </div>
+        <div class="form-group">
+            <h4><b>Công ty - chi nhánh:</b></h4>
+            <select name="provider_id" class="custom-select form-control" required>
+                {% for p in providers %}
+                <option value="{{ p.id }}"> {{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <br>
+
+        <table class="table table-hover text-center table-bordered">
+          <thead>
+            <tr>
+              <th scope="col">STT</th>
+              <th scope="col">Mã sản phẩm</th>
+              <th scope="col">Số lượng</th>
+              <th scope="col">Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody id="form-container">
+                <tr>
+                  <th scope="row"><span class="badge badge-dark" id="product_counter" style="font-size:18px">1</span></th>
+                  <td>
+                      <select class="form-control" name="product_id_0" required>
+                          <option value="" selected> -- Mã sản phẩm -- </option>
+                            {% for product in products %}
+                                <option value="{{ product.id }}">{{ product.id }} -- {{ product.name }}</option>
+                            {% endfor %}
+                      </select>
+                  </td>
+                  <td>
+                      <input type="number" class="form-control" name="quantity_0" placeholder="Số lượng">
+                  </td>
+                  <td>
+                      <textarea name="note_0" class="form-control" placeholder="Nhập ghi chú"></textarea>
+                  </td>
+                </tr>
+
+          </tbody>
+        </table>
+    </div>
+
+    <button type="button" class="btn btn-dark form-control w-25" id="add-btn">
+        <i class="fa-solid fa-plus"></i>
+        Thêm
+    </button>
+    <button type="submit" class="btn btn-warning form-control w-25" id="confirm-btn">
+        <i class="fa-solid fa-clipboard-list"></i>
+        Xác nhận đặt hàng
+    </button>
+    <br>
+    <br>
+</form>
+
+
+<script>
+    var counter = 1
+
+    document.getElementById('add-btn').addEventListener('click', function(){
+            var formContainer = document.getElementById('form-container');
+            var formGroups = formContainer.querySelectorAll('tr');
+            var formGroup = formGroups[0];
+            var newFormGroup = formGroup.cloneNode(true);
+
+            counter += 1
+            counterInput = newFormGroup.querySelector('#product_counter').innerHTML = counter
+            productInput =  newFormGroup.querySelector('select[name^="product_id"]')
+            quantityInput = newFormGroup.querySelector('input[name^="quantity_"]')
+            noteInput = newFormGroup.querySelector('textarea[name^="note_"]')
+
+            productInput.name = 'product_id_' + formGroups.length;
+            quantityInput.name = 'quantity_' + formGroups.length;
+            noteInput.name = 'note_' + formGroups.length;
+
+            productInput.value = ''
+            quantityInput.value = ''
+            noteInput.value = ''
+
+            formContainer.appendChild(newFormGroup);
+    })
+
+</script>
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+
+
+
+{% endblock %}

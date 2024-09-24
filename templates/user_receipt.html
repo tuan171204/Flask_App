@@ -1,0 +1,205 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Lịch sử mua hàng{% endblock %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show " data-mdb-delay="3000" role="alert">
+                    <strong>{{ message }}</strong>
+                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                 </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+
+<h1 class="text-center text-dark mt-4"> Thông tin & lịch sử hóa đơn </h1>
+<br>
+<hr>
+
+
+<div class="container">
+
+          <form class="form-inline my-2 my-lg-0">
+              <input class="form-control mr-sm-2" type="search" placeholder="Nhập mã đơn hàng" aria-label="Search" name="receipt_id">
+              <select class="form-control mr-sm-2" name="status_id">
+                  Tình trạng đơn hàng
+                  <option value="" selected>Tình trạng đơn hàng</option>
+                    {% for r in receipt_status %}
+                  <option value="{{ r.id }}">{{ r.status_name }}</option>
+                    {% endfor %}
+              </select>
+
+              <select class="form-control mr-sm-2" name="asc">
+                  <option value="" selected>Sắp xếp theo</option>
+                  <option value="True">Mới nhất</option>
+                  <option value="False">Cũ nhất</option>
+              </select>
+
+              <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+          </form>
+        <hr>
+
+      <table class="table table-hover ">
+        <thead class="thead-light">
+          <tr class="text-center">
+            <th scope="col">Mã đơn hàng</th>
+            <th scope="col">Ngày mua</th>
+            <th scope="col">Phương thức thanh toán</th>
+            <th scope="col">Trạng thái đơn hàng</th>
+              <th scope="col">Xem chi tiết</th>
+              <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if user_receipt %}
+         {% for r in user_receipt %}
+                 <tr class="text-center">
+                    <th scope="row">{{ r.id }}</th>
+                    <td>{{ r.created_date }}</td>
+                    <td>{{ r.payment_name }}</td>
+                     <td><button class="btn {{ status_colors[r.status_id] }}">{{ r.status_name}}</button></td>
+                     <td><a href="#"
+                                    class="btn btn-dark"> Xem chi tiết </a>
+                     </td>
+                     <td>
+                         <div class="dropdown">
+                          <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-question"></i>
+                          </button>
+                          <div class="dropdown-menu ">
+                              {% if r.status_id == 1 or r.status_id == 5 %}
+                                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#confirmModal_{{r.id}}">
+                                    Xác nhận đơn hàng
+                                  </button>
+                                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#reportModal_{{r.id}}">
+                                    Cần hỗ trợ về đơn hàng này ?
+                                  </button>
+                              {% else %}
+                                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#reportModal_{{r.id}}">
+                                    Cần hỗ trợ về đơn hàng này ?
+                                  </button>
+                              {% endif %}
+
+                          </div>
+                        </div>
+                     </td>
+
+                  </tr>
+
+         {% endfor %}
+                </tbody>
+          </table>
+        {% else %}
+    <h2 class="text-center m-4"> Không tìm thấy đơn hàng </h2>
+          </table>
+    {% endif %}
+</div>
+
+{% for r in user_receipt %}
+
+{% if r.status_id == 1 or r.status_id == 5 %}
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal_{{r.id}}" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel_{{r.id}}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Xác nhận đã nhận mã đơn hàng: {{ r.id }}</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+        <form>
+              <div class="modal-body">
+                  <div class="form-group">
+                      <label>Đánh giá: </label>
+                      <select name="rating" class="text-warning text-center form-control" style="font-size:24px">
+                          <option value="" selected> </option>
+                          <option value="1" class="text-warning text-center form-control" style="font-size:24px">*</option>
+                          <option value="2" class="text-warning text-center form-control" style="font-size:24px">**</option>
+                          <option value="3" class="text-warning text-center form-control" style="font-size:24px">***</option>
+                          <option value="4" class="text-warning text-center form-control" style="font-size:24px">****</option>
+                          <option value="5" class="text-warning text-center form-control" style="font-size:24px">*****</option>
+                      </select>
+                  </div>
+                  <div class="form-group">
+                          <textarea rows="4" cols="50" placeholder="Nội dung đánh giá" name="description" class="form-control"></textarea>
+                  </div>
+
+              </div>
+
+              <!-- Modal footer -->
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+                  <a href="{{ url_for('confirm_receipt', receipt_id= r.id ) }}" type="button" class="btn btn-warning">Xác nhận</a>
+              </div>
+        </form>
+
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+{% endif %}
+
+{% endfor %}
+
+{% for r in user_receipt %}
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal_{{r.id}}" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel_{{r.id}}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Phản hồi về mã đơn hàng: {{ r.id }}</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+        <form action="{{ url_for('post_report', receipt_id=r.id) }}" method="POST">
+            <div class="form-group">
+                <div class="modal-body">
+                    <label>Bạn cần hỗ trợ về ?</label>
+                    <select name="report_type" class="text-center form-control" required>
+                        <option value="" class="text-center form-control" selected></option>
+                        {% for rt in report_types %}
+                        <option value="{{ rt.id }}" class="text-center form-control">{{ rt.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="modal-body">
+                <textarea rows="4" cols="50" placeholder="Nhập nội dung" name="description" class="form-control"></textarea>
+                </div>
+            </div>
+          <!-- Modal footer -->
+            <div class="modal-footer">
+               <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+               <button type="submit" class="btn btn-primary">Gửi phản hồi</button>
+            </div>
+
+        </form>
+    </div>
+  </div>
+</div>
+
+
+{% endfor %}
+
+
+{% endblock %}

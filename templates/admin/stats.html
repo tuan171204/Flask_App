@@ -1,0 +1,172 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+<h1 class="text-center text-dark mt-4"> Thống kê doanh thu</h1>
+
+<br>
+<div class="row">
+    <div class="col-md-6 col-xs-12">
+        <table class="table table-hover">
+            <tr  class="text-center">
+                <th>Mã Sản Phẩm</th>
+                <th>Tên Sản Phẩm</th>
+                <th>Doanh Thu</th>
+            </tr>
+            {% for s in stats %}
+            <tr  class="text-center">
+                <td>{{ s[0] }}</td>
+                <td>{{ s[1] }}</td>
+                <td>
+                    {% if s[2] %}
+                    {{ "{:,.1f}".format(s[2]) }} VND
+                    {% else %}
+                    0 VND
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="col-md-6 col-xs-12">
+        <form>
+             <div class="form-group">
+                 <label>Tên sản phẩm: </label>
+                 <input type="text" class="form-control" name="kw" placeholder="Nhập từ khóa...">
+            </div>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-6">
+                         <label>Từ ngày: </label>
+                         <input type="date" class="form-control" name="from_date">
+                    </div>
+                    <div class="col-6">
+                         <label>Đến ngày: </label>
+                        <input type="date" class="form-control" name="to_date">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-danger form-control" value="Thống kê">
+            </div>
+        </form>
+
+        <br>
+
+        <canvas id="productChartId"></canvas>
+    </div>
+</div>
+
+<br>
+<hr>
+<br>
+<h1 class="text-center text-dark"> Doanh thu theo tháng</h1>
+<br>
+<div class="row">
+    <div class="col-md-6 col-xs-12">
+        <table class="table table-hover">
+            <tr  class="text-center">
+                <th>Tháng</th>
+                <th>Doanh thu</th>
+            </tr>
+            {% for s in month_stats %}
+            <tr  class="text-center">
+                <td>{{ s[0] }}</td>
+                <td>
+                    {% if s[1] %}
+                    {{ "{:,.1f}".format(s[1]) }} VND
+                    {% else %}
+                    0 VND
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+
+    <div class="col-md-6 col-xs-12">
+        <form>
+            <div class="form-group">
+                    <input type="number" min="2000" class="form-control" placeholder="Nhập năm" name="year">
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-danger form-control" value="Thống kê">
+            </div>
+        </form>
+        <canvas id="productChartId2"></canvas>
+    </div>
+</div>
+<br>
+<br>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let labels = [], labels2 = []
+    let data = [], data2 = []
+    let colors = [], colors2 = []
+    let borderColors = [], borderColors2 = []
+    let r, g, b;
+
+
+    {% for s in stats %}
+    {% if s[2] %}
+        labels.push('{{ s[1] }}')
+        data.push({{ s[2] }})
+
+        r = parseInt(Math.random()*255)
+        g = parseInt(Math.random()*255)
+        b = parseInt(Math.random()*255)
+
+        colors.push(`rgba(${r}, ${g}, ${b}, 1)`)
+        borderColors.push(`rgba(${r}, ${g}, ${b}, 1)`)
+    {% endif %}
+    {% endfor %}
+
+
+    {% for s in month_stats %}
+        labels2.push( {{ s[0] }} )
+        data2.push({{  s[1] }})
+
+
+        r = parseInt(Math.random()*255)
+        g = parseInt(Math.random()*255)
+        b = parseInt(Math.random()*255)
+
+        colors2.push(`rgba(${r}, ${g}, ${b}, 1)`)
+        borderColors2.push(`rgba(${r}, ${g}, ${b}, 1)`)
+    {% endfor %}
+    window.onload = function() {
+        const ctx = document.getElementById('productChartId').getContext('2d');
+        const ctx2 = document.getElementById('productChartId2').getContext('2d');
+
+        loadChart(ctx, labels, 'doughnut', data, colors, borderColors, "Doanh thu sản phẩm (VND)")
+        loadChart(ctx2, labels2, 'line', data2, colors2, borderColors2, "Doan thu theo tháng (VND)")
+    }
+
+function loadChart(ctx, labels, type, data, colors, borderColors, text) {
+         new Chart(ctx, {
+            type: type,
+            data: {
+              labels: labels,
+              datasets: [{
+                label: text,
+                data: data,
+                backgroundColor: colors,
+                borderColor: borderColors,
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+}
+
+</script>
+
+
+{% endblock %}

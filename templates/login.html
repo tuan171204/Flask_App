@@ -1,0 +1,36 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Đăng nhập người dùng{% endblock %}
+
+
+{% block content %}
+<br>
+
+<h1 class="text-center text-dark">ĐĂNG NHẬP NGƯỜI DÙNG</h1>
+
+<div class="container">
+    {% if err_msg %}
+    <div class="alert alert-danger">
+        <h3>{{err_msg}}</h3>
+    </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group text-dark">
+            <label for="username" >Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="form-group text-dark">
+            <label for="pass" >Mật khẩu</label>
+            <input type="password" class="form-control" id="pass" name="password" required>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn">Đăng nhập</button>
+        </div>
+    </form>
+    <br>
+
+    <br>
+    <br>
+</div>
+{% endblock %}
+

@@ -1,0 +1,73 @@
+{% extends 'admin/base.html '%}
+
+{% block body %}
+<h1 class="text-center text-dark mt-4"> Quản lý nhập kho  </h1>
+
+<br>
+<hr>
+
+
+  <form class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" placeholder="Tìm mã phiếu nhập" aria-label="Search" name="received_note_code">
+      <select class="form-control mr-sm-2" name="confirmed">
+          Tình trạng
+          <option value="" selected>Tình trạng</option>
+
+          <option value="True">Đã xác nhận</option>
+          <option value="False">Chưa xác nhận</option>
+      </select>
+
+      <select class="form-control mr-sm-2" name="asc">
+          <option value="" selected>Sắp xếp theo</option>
+          <option value="True">Mới nhất</option>
+          <option value="False">Cũ nhất</option>
+      </select>
+
+      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+    </form>
+    <hr>
+
+  <table class="table table-hover ">
+    <thead class="thead-light">
+      <tr class="text-center">
+        <th scope="col">Mã phiếu nhập</th>
+        <th scope="col">Ngày đặt hàng</th>
+        <th scope="col">Tên nhà cung cấp</th>
+        <th scope="col">Tình trạng</th>
+        <th scope="col">Ngày xác nhận</th>
+          <th scope="col">Người xác nhận</th>
+          <th scope="col"> Tổng phí nhập</th>
+          <th scope="col"> Phiếu nhập kho</th>
+      </tr>
+
+    </thead>
+    <tbody>
+     {% for g in goods_received_note %}
+        {% if g[0].code %}
+             <tr class="text-center">
+                <th scope="row">{{ g[0].code }}</th>
+                <td>{{ g[0].order_date.strftime('%d/%m/%Y - %H:%M:%S') }}</td>
+                <td> {{ g.provider_name }}</td>
+                 {% if g[0].confirmed %}
+                    <td>Đã xác nhận </td>
+                 {% else %}
+                    <td>Chưa xác nhận </td>
+                 {% endif %}
+                 <td>{{ g[0].confirm_date }}</td>
+                 <td>{{ g.user_name_confirm }}</td>
+                 <td>{{ "{:,.0f}".format(g[0].total_price) }}đ</td>
+                 <td>
+                     <a href="{{ url_for('goods_receive.create_receive_form', goods_received_code =g[0].code ) }}"
+                        class="btn btn-dark text-white">
+                         <i class="fa-regular fa-rectangle-list"></i>
+                         Xem phiếu nhập kho
+                     </a>
+                 </td>
+              </tr>
+        {% endif %}
+     {% endfor %}
+    </tbody>
+  </table>
+
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+{% endblock %}

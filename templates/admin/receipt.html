@@ -1,0 +1,235 @@
+{% extends 'admin/base.html' %}
+{% block body %}
+
+{% if receipt_details %}
+<h1 class="text-center text-dark mt-4"> Thông tin chi tiết hóa đơn</h1>
+<br>
+<hr>
+
+        <h2>Mã hóa đơn: {{ receipt_id }}</h2>
+        <form id="receipt_detail_form" class="mb-5">
+            <div class="row">
+                <div class="col-md-12 col-xs-12">
+                    <div class="form-group">
+                        <label><b>Tên khách hàng:</b></label>
+                        <input readonly type="text" class="form-control" value =" {{ receipts[0].customer_name }}" name="customer_name">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Ngày mua:</b></label>
+                        <input readonly type="text" class="form-control" value =" {{ receipts[0].created_date.strftime('%d/%m/%Y - %H:%M:%S') }}" name="created_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Phương thức thanh toán:</b></label>
+                        <input readonly type="text" class="form-control" value =" {{ receipts[0].payment_name }}" name="payment_name">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Tình trạng đơn hàng:</b></label>
+                        <input type="text" class="form-control {{ status_colors[receipts[0].status_id] }}" value ="{{ receipts[0].status_name }}" name="status_name">
+                    </div>
+                </div>
+
+
+                <div class="col-md-12 col-xs-12">
+                     <h2>Sản phẩm đã thanh toán</h2>
+
+
+
+                    <table class="table table-hover">
+                      <thead>
+                        <tr class="text-center">
+                          <th scope="col">STT</th>
+                          <th scope="col">Mã sản phẩm</th>
+                          <th scope="col">Số lượng</th>
+                          <th scope="col">Đơn giá</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {% for r in receipt_details %}
+                        <tr class="text-center">
+                          <th scope="row">{{loop.index}}</th>
+                          <td>{{r.product_id}}</td>
+                          <td>{{r.quantity}}</td>
+                          <td>{{ "{:,.0f}".format(r.unit_price) }}đ</td>
+                        </tr>
+                       {% endfor %}
+                      </tbody>
+                    </table>
+
+
+
+                </div>
+                    <div class="form-group form-inline" id="total_price">
+                        <label> <b>Tổng giá trị hóa đơn </b></label>
+                        <button type="button" class="form-control"><b>{{ "{:,.0f}".format(total_price) }}đ</b></button>
+                    </div>
+            </div>
+
+            <a class="btn btn-secondary"
+               style="font-weight:bold;
+                      font-size: 24px;"
+               href="{{ url_for('receipt.index') }}">
+                Quay lại
+            </a>
+    </form>
+
+
+{% else %}
+
+<!--REPORT MODAL-->
+<div class="container">
+{% for r in receipts %}
+    {% if r.status_id == 3 %}
+
+    <div class="modal fade" id="reportModal_{{ r.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title" id="">Thông tin hỗ trợ</h3>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+            <form action="">
+              <div class="modal-body">
+                {% for rp in receipts_report %}
+                        {% if rp.receipt_report==r.id and rp.description %}
+                        <div class="form-group form-inline">
+                            <h5 class="mr-5"><b>#{{ loop.index }}</b></h5>
+                            <h5 class="ml-5">
+                                {% if rp.created_date %}
+                                    <b>Thời gian: {{ rp.created_date.strftime('%d/%m/%Y - %H:%M:%S') }}</b>
+                                {% else %}
+                                    <b>Không có ngày</b>
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="form-group form-inline">
+                            <label><b>Hỗ trợ vấn đề: </b></label>
+                            <input class="form-control ml-2" readonly value="{{ report_types[rp.report_type -1].name }}" >
+                        </div>
+                        <div class="form-group">
+                            <label><b>Nội dung: </b></label>
+                            <input class="form-control" value="{{ rp.description }}">
+                        </div>
+                  <br>
+                  <hr>
+                        {% endif %}
+                    {% endfor %}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                <a href="{{ url_for('receipt.receipt_detail_view', receipt_id = r.id) }}"
+                                        class="btn btn-secondary"><i class="fa-solid fa-list-ul"></i> Xem chi tiết </a>
+                  <a href="{{ url_for('receipt.receipt_report_confirm', receipt_id=r.id) }}"
+                     class="btn btn-warning font-bold">
+                      <i class="fa-solid fa-circle-check"></i>
+                      Đánh dấu là đã hoàn thành
+                  </a>
+              </div>
+            </form>
+        </div>
+      </div>
+    </div>
+    {% else %}
+
+{% endif %}
+
+{% endfor %}
+
+</div>
+
+
+
+
+<h1 class="text-center text-dark mt-4"> Thông tin & lịch sử hóa đơn </h1>
+<br>
+<hr>
+
+
+  <form class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" placeholder="Nhập mã đơn hàng" aria-label="Search" name="receipt_id">
+      <select class="form-control mr-sm-2" name="status_id">
+          Tình trạng đơn hàng
+          <option value="" selected>Tình trạng đơn hàng</option>
+            {% for r in receipt_status %}
+          <option value="{{ r.id }}">{{ r.status_name }}</option>
+            {% endfor %}
+      </select>
+
+      <select class="form-control mr-sm-2" name="asc">
+          <option value="" selected>Sắp xếp theo</option>
+          <option value="True">Mới nhất</option>
+          <option value="False">Cũ nhất</option>
+      </select>
+
+      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+    </form>
+    <hr>
+
+  <table class="table table-hover ">
+    <thead class="thead-light">
+      <tr class="text-center">
+        <th scope="col">Mã đơn hàng</th>
+        <th scope="col">Ngày mua</th>
+        <th scope="col">Tên khách hàng</th>
+        <th scope="col">Phương thức thanh toán</th>
+        <th scope="col">Trạng thái đơn hàng</th>
+          <th scope="col">Chính sửa</th>
+          <th scope="col"> Xem chi tiết</th>
+      </tr>
+    </thead>
+    <tbody>
+     {% for r in receipts %}
+        {% if r.id and r.status_id %}
+             <tr class="text-center">
+                <th scope="row">{{ r.id }}</th>
+                <td>{{ r.created_date.strftime('%d/%m/%Y - %H:%M:%S') }}</td>
+                <td> {{ r.customer_name }}</td>
+                <td>{{ r.payment_name }}</td>
+                 {% if r.status_id == 3 %}
+                    <td>
+                        <a data-trigger="hover"
+                               data-toggle="popover"
+                               data-content="Đơn hàng cần được hỗ trợ !"
+                               data-placement="top">
+                            <button type="button"
+                                    class="btn {{ status_colors[r.status_id] }} status-btn"
+                                    data-toggle="modal"
+                                    data-target="#reportModal_{{ r.id }}">
+                                {{ r.status_name}}
+                            </button>
+                        </a>
+
+                    </td>
+                 {% else %}
+                    <td><button class="btn {{ status_colors[r.status_id] }} status-btn">{{ r.status_name}}</button></td>
+                 {% endif %}
+                <td>
+                    <a href="{{ url_for('receipt.receipt_detail_update', receipt_id = r.id) }}"
+                                class="btn btn-secondary"> <i class="fa-solid fa-pencil"></i></a>
+                </td>
+                 <td><a href="{{ url_for('receipt.receipt_detail_view', receipt_id = r.id) }}"
+                                class="btn btn-secondary"><i class="fa-solid fa-magnifying-glass"></i></a>
+                 </td>
+              </tr>
+        {% endif %}
+     {% endfor %}
+    </tbody>
+  </table>
+    {% endif %}
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script>
+$(document).ready(function(){
+  $('[data-toggle="popover"]').popover();
+});
+
+</script>
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+
+{% endblock %}

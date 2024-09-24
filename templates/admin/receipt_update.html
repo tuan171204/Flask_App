@@ -1,0 +1,246 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Chỉnh sửa hóa đơn{% endblock %}
+
+
+
+{% block body %}
+    {% if err_msg %}
+
+        <div class="alert alert-danger" role="alert">
+          {{ err_msg }}
+        </div>
+
+    {% else %}
+        <h1 class="text-center text-dark mt-4"> Thông tin chi tiết hóa đơn</h1>
+<br>
+<hr>
+
+        <h2>Mã hóa đơn: {{ receipt_id }}</h2>
+        <form id="receipt_detail_form" class="mb-5">
+            <div class="row">
+                <div class="col-md-12 col-xs-12">
+                    <div class="form-group">
+                        <label><b>Tên khách hàng:</b></label>
+                        <input type="text" class="form-control" value =" {{ receipts[0].customer_name }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Ngày mua:</b></label>
+                        <input type="text" class="form-control" value =" {{ receipts[0].created_date }}" name="created_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Phương thức thanh toán:</b></label>
+                        <input type="text" class="form-control" value =" {{ receipts[0].payment_name }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label><b>Tình trạng đơn hàng: </b></label>
+                        <select class="form-control mr-sm-2" name="status_id" id="status_id_receipt">
+                            {% for r in receipt_status %}
+                                {% if r.id == receipts[0].status_id %}
+                                <option value="{{ r.id }}" selected>{{ r.status_name }}</option>
+                                {% else %}
+                                <option value="{{ r.id }}">{{ r.status_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                      </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+
+
+
+            <div class="col-md-12 col-xs-12 mb-5">
+                <h2 id="receipt_details_section">Sản phẩm đã thanh toán</h2>
+                    <form class="form-inline">
+                    <div class="form-group mx-sm-3 mb-2">
+                        <label class="sr-only">Mã sản phẩm: </label>
+                        <input type="text" class="form-control mr-3" name="product_id" placeholder="Nhập mã sản phẩm">
+                        <label class="sr-only">Tên sản phẩm: </label>
+                        <input type="text" class="form-control" name="product_name" placeholder="Nhập tên sản phẩm">
+
+                    </div>
+                        <button type="submit" class="btn btn-dark mb-2">Tìm kiếm</button>
+                    </form>
+
+                    <table class="table table-hover">
+                      <thead>
+                        <tr class="text-center">
+                          <th scope="col">STT</th>
+                          <th scope="col">Mã sản phẩm</th>
+                          <th scope="col"> Tên sản phẩm</th>
+                          <th scope="col">Số lượng</th>
+                          <th scope="col">Đơn giá</th>
+                          <th scope="col"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {% for r in receipt_details %}
+                        <tr class="text-center">
+                          <th scope="row">{{loop.index}}</th>
+                          <td>{{r.product_id}}</td>
+                          <td>{{r.product_name}}</td>
+                            <td>
+                                <input type="number"
+                                       min="1"
+                                       value="{{r.quantity}}"
+                                       class="form-control text-center"
+                                       name="quantity_{{r.product_id}}"
+                                       data-product-id="{{r.product_id}}">
+                            </td>
+                          <td>{{ "{:,.1f}".format(r.unit_price) }}đ</td>
+                          <td><button type="button" class="btn btn-danger" onclick="deleteDetail({{receipt_id}}, {{r.product_id}}, {{r.quantity}} )">Xóa</button></td>
+                        </tr>
+                       {% endfor %}
+                      </tbody>
+                    </table>
+
+                {% if product_id %}
+
+                {% else %}
+                    <div class="form-group form-inline" id="total_price">
+                        <label> <b>Tổng giá trị hóa đơn: </b></label>
+                        <button type="button" class="form-control" style="font-size:24px"><b>{{ "{:,.1f}".format(total_price) }}đ</b></button>
+                    </div>
+                {% endif %}
+                <hr>
+
+                    <div class="form-inline">
+                            <a class="btn btn-dark text-light mr-5"
+                               href="{{ url_for('receipt.index') }}"
+                               style="font-size:18px;">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                Quay lại
+                            </a>
+                         <div class="form-group">
+                            <button class="btn btn-danger text-light mr-5"
+                                    onclick="deleteReceipt( {{ receipt_id }} )"
+                                    style="font-size:18px">
+                                <i class="fa-solid fa-trash"></i>
+                                Xóa hóa đơn này
+                            </button>
+                        </div>
+                        {% if receipts[0].status_id == 6 %}
+                        <div class="form-group">
+                            <a  href="{{ url_for('receipt.create_delivery_note', receipt_id = receipt_id) }}"
+                                type="button"
+                                class="btn btn-warning text-dark mr-5 font-weight-light"
+                                style="font-size:18px;">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                Lập phiếu xuất kho
+                            </a>
+                        </div>
+                        {% else %}
+                        {% endif %}
+                        <div class="form-group">
+                            <button type="button"
+                                    class="btn btn-warning text-dark mr-5 font-weight-light"
+                                    onclick="saveChanges( {{ receipt_id }} )"
+                                    style="font-size:18px">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </div>
+
+
+
+                </div>
+
+    {% endif %}
+
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+<script>
+    function deleteDetail(receipt_id, product_id, quantity) {
+    if (confirm("Xác nhận xóa chi tiết hóa đơn?") == true) {
+        fetch('/api/delete-detail/' + receipt_id + '/' + product_id + '/' + quantity, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                alert("Xóa thành công ")
+                location.reload();
+            } else {
+                alert(data.message || "Có lỗi xảy ra khi xóa chi tiết hóa đơn");
+            }
+        }).catch(err => console.error(err));
+        }
+    }
+
+    function deleteReceipt(receipt_id) {
+    if (confirm("Xác nhận xóa hóa đơn?") == true) {
+        fetch('/api/delete-receipt/' + receipt_id, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                alert("Xóa hóa đơn thành công!");
+                window.location.href = "/admin/receipt";
+            } else {
+                alert(data.message || "Có lỗi xảy ra khi xóa hóa đơn");
+            }
+
+        }).catch(err => console.error(err));
+        }
+    }
+
+
+    window.onload = function () {
+        if (window.location.search.includes("product_id") || window.location.search.includes("product_name")) {
+            document.getElementById('receipt_details_section').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    }
+
+
+function saveChanges(receipt_id) {
+    if ( confirm("Bạn chắc chắn muốn lưu thay đổi chứ ?") == true ){
+        const receiptDetails = []
+        const status_id = document.getElementById('status_id_receipt').value
+
+        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+            const productId = input.getAttribute('data-product-id')
+            const quantity = input.value
+
+            if ( quantity > 0){
+                receiptDetails.push({
+                    product_id : productId,
+                    quantity : quantity
+                });
+            }
+        });
+
+
+        fetch(`/api/update-receipt-details/${receipt_id}`,{
+            method: 'PUT',
+            body: JSON.stringify({
+                receipt_details: receiptDetails,
+                status_id: status_id
+                }),
+            headers: {
+                    'Content-type': 'application/json'
+                }
+        }).then(res => res.json()).then(data => {
+            if (data.success){
+                alert("Đã lưu thay đổi")
+                window.location.reload()
+
+            } else {
+                alert(data.message || "Lỗi khi lưu thay đổi ")
+            }
+        }).catch(err => console.error(err))
+    }
+}
+
+
+</script>
+{% endblock %}

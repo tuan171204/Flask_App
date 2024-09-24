@@ -1,0 +1,278 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+
+<br>
+<br>
+<div style="border: 2px solid black; padding:20px"
+     id="order-product-form" >
+    <div class="row d-flex justify-content-between">
+        <div>
+             <h4> <b>ANNNPTT electronics </b></h4>
+             <p> 273 An Dương Vương, Phường 3, Quận 5, TP Hồ Chí Minh</p>
+        </div>
+        <div class="text-right">
+             <h4 class="text-center"> <b>Mẫu số 01-VT </b></h4>
+            <p class="text-center"> (Ban hành theo Thông tư số 200/2014/TT-BTC </p>
+            <p class="text-left"> Ngày 22/12/2014 của Bộ Tài chính )</p>
+        </div>
+    </div>
+
+
+    <h1 class="text-center text-dark mt-5"><b>Phiếu nhập kho </b> </h1>
+        <h5 class="text-center text-dark"> <i>{{ now.strftime('Ngày %d tháng %m năm %Y') }}</i></h5>
+    <h5 class="text-center text-dark"><b> Số: {{ g_note.Goods_Received_Note.code}} </b></h5>
+
+    <form action="{{ url_for('goods_receive.update_received_note', goods_received_code= g_note[0].code) }}" method="POST">
+        <div class="form-group form-inline d-flex justify-content-between">
+            <div class="form-inline">
+                <label>Họ tên người giao: </label>
+                {% if g_note[0].delivery_man %}
+                <input type="text"
+                       readonly
+                       class="border border-0 form-control"
+                       value="{{ g_note[0].delivery_man }}">
+                {% else %}
+                <input type="text"
+                       class="border border-0 form-control"
+                       placeholder="Nhập tên người giao"
+                       required>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <div class="d-flex justify-content-between w-75">
+                    <label>Theo: BB bàn giao hàng hóa số: 01/BBBG</label>
+                    <label> {{ g_note.Goods_Received_Note.order_date.strftime('ngày: %d/%m/%Y') }}</label>
+                    <label> của {{ g_note.provider_name }}</label>
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <div class="form-inline">
+                <label>Nhập tại kho: </label>
+                <input type="text" class="border border-0" value="Hàng Hóa">
+            </div>
+            <div class="form-inline">
+                <label class="ml-5">Địa điểm:  273 An Dương Vương, Phường 3, Quận 5, TP Hồ Chí Minh</label>
+            </div>
+        </div>
+
+        <table class="table table-bordered text-center">
+          <thead>
+                <tr style="background-color:lightyellow;">
+                  <th scope="col" rowspan="2">STT</th>
+                  <th scope="col" rowspan="2">Tên sản phẩm</th>
+                  <th scope="col" rowspan="2">Mã số</th>
+                  <th scope="col" rowspan="2">Đơn vị tính</th>
+                  <th scope="col" colspan="2">Số lượng </th>
+                  <th scope="col" rowspan="2">Đơn giá</th>
+                  <th scope="col" rowspan="2">Thành tiền</th>
+                    <th scope="col" rowspan="2"> Ghi chú </th>
+                </tr>
+                <tr>
+                        <td  style="background-color:lightyellow; font-weight:bold;">Yêu cầu</td>
+                        <td  style="background-color:lightyellow; font-weight:bold">Thực nhận</td>
+                </tr>
+          </thead>
+          <tbody>
+
+              {% for g in g_detail %}
+                <tr>
+                  <th scope="row">{{ loop.index }}</th>
+                  <td>{{ g.product_name }}</td>
+                  <td>
+                      <input type="text"
+                             readonly
+                             name="product_id_{{g[0].product_id}}"
+                             value="{{ g[0].product_id }}"
+                             class="form-control text-center">
+                      </td>
+                  <td>Cái</td>
+                  <td>
+                      <input type="text"
+                             readonly
+                             class="form-control text-center"
+                             name="base_quantity_{{ g[0].product_id }}"
+                             value="{{ g[0].quantity }}">
+                  </td>
+                    <td>
+                        {% if g[0].received_quantity %}
+                         <input type="number"
+                               class="form-control"
+                               name="quantity_{{ g[0].product_id }}"
+                               value="{{ g[0].received_quantity }}">
+                        {% else %}
+                        <input type="number"
+                               class="form-control"
+                               name="quantity_{{ g[0].product_id }}"
+                               placeholder="Nhập số lượng thực nhận" required>
+                        {% endif %}
+                    </td>
+                    <td>{{ "{:,.0f}".format(g.product_import_price) }}đ</td>
+                    {% set quantity = g[0].received_quantity | int %}
+                    {% set price = g.product_import_price | float %}
+                    <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
+                    {% if g[0].note %}
+                    <td>
+                        <textarea name="note" class="form-control">
+                            {{ g[0].note }}
+                        </textarea>
+                    </td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+                </tr>
+              {% endfor %}
+                <tr class="font-weight-bold" style="background-color: lightgreen">
+                    <th scope="row"></th>
+                    <td>Cộng</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>{{ g_note.Goods_Received_Note.total }}</td>
+                    <td></td>
+                </tr>
+          </tbody>
+        </table>
+
+        <br>
+        <p>Tổng số tiền (<i>Viết bằng chữ</i>):{{ total_in_words }} </p>
+        <p>Số chứng từ gốc kèm theo: 01 HĐ GTGT số 0000256</p>
+
+        <br>
+        <div class="row d-flex justify-content-around">
+            <div class="form-group ml-3 text-center mt-5">
+                <label> <b>Người lập phiếu </b></label>
+                <p><i>(Ký, họ tên )</i></p>
+                <p>{{ current_user.name }}</p>
+            </div>
+            <div class="form-group ml-3 text-center mt-5">
+                <label> <b>Người giao hàng </b></label>
+                <p><i>(Ký, họ tên )</i></p>
+                <p>
+                    {% if g_note[0].delivery_man %}
+                    <input type="text" readonly class="form-control text-center" value="{{ g_note[0].delivery_man }}">
+                    {% else %}
+                    <input type="text" class="form-control" name="delivery_man" required>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="form-group ml-3 text-center mt-5">
+                <label> <b>Thủ kho</b></label>
+                <p><i>(Ký, họ tên )</i></p>
+                <p>
+                    <input type="text" class="form-control">
+                </p>
+            </div>
+            <div class="form-group ml-3 text-center mt-2">
+                <p><i>{{ now.strftime('Ngày %d tháng %m năm %Y') }}</i></p>
+                <label> <b>Kế toán trưởng(Hoặc bộ phận có nhu cầu nhập)</b></label>
+                <p><i>(Ký, họ tên )</i></p>
+                <p>
+                    <input type="text" class="form-control">
+                </p>
+            </div>
+        </div>
+
+        <a      href="{{ url_for('goods_receive.index') }}"
+                class="btn btn-secondary text-light" >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <b>Quay lại</b>
+        </a>
+        {% if g_note[0].confirmed == False %}
+        <button type="submit"
+                class="btn btn-dark text-light" >
+                <i class="fa-solid fa-file-pen"></i>
+                <b>Cập nhật phiếu nhập</b>
+        </button>
+        <button  class="btn btn-warning"
+                 type="button"
+                 data-toggle="modal"
+                 data-target="#confirmModal"
+                 onclick="lastCheck()">
+                <i class="fa-solid fa-file-circle-check"></i>
+                <b>Xác nhận phiếu nhập kho</b>
+        </button>
+
+        {% else %}
+        {% endif %}
+    </form>
+</div>
+
+<br>
+<br>
+<!-- Modal -->
+<form action="" method="POST">
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Xác nhận phiếu nhập kho</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <div class="alert alert-danger" role="alert" id="alert">
+
+          </div>
+        Bạn có chắc chắn muốn xác nhận phiếu nhập kho với mã: <strong>{{ g_note[0].code }}</strong>  ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Hủy</button>
+        <button type="submit"
+                class="btn btn-warning"
+                formaction="{{ url_for('goods_receive.confirm_received_note', goods_received_code= g_note[0].code) }}">
+            Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+<script>
+
+    lastCheck = () =>{
+        if ( Check() == false){
+            document.querySelector('#alert').style.display = 'block'
+            document.querySelector('#alert').innerHTML = "<strong>Có sản phẩm có số lượng thực nhận chưa đủ với số lượng yêu cầu, hãy chắc rằng bạn đã kiểm tra số lượng trước khi xác nhận phiếu nhập nhé !</strong>"
+        }
+        else {
+            document.querySelector('#alert').style.display = 'none'
+        }
+    }
+
+    Check = () =>{
+        const baseQuantity = []
+        const receivedQuantity = []
+           document.querySelectorAll('input[name^="base_quantity_"]').forEach(input =>{
+                if (input.value > 0){
+                    baseQuantity.push(input.value)
+                }}
+           )
+           document.querySelectorAll('input[name^="quantity_"]').forEach(input =>{
+            if (input.value > 0){
+                receivedQuantity.push(input.value)
+            }}
+       )
+
+        if ( baseQuantity.length !== receivedQuantity.length )
+            return false
+
+        for ( let i = 0; i < baseQuantity.length; i++){
+            if (baseQuantity[i] != receivedQuantity[i]){
+                return false
+            }
+        }
+
+        return true
+    }
+</script>
+{% endblock %}
