@@ -1,4 +1,4 @@
-function addToCart(id, name, price, image) {
+function addToCart(id, name, price, image, promotion) {
     event.preventDefault()
     // promise
 
@@ -8,7 +8,8 @@ function addToCart(id, name, price, image) {
             'id': id,
             'name': name,
             'price': price,
-            'image': image
+            'image': image,
+            'promotion': promotion,
         }),
         headers: {
             'Content-Type': 'application/json'
@@ -34,7 +35,8 @@ function pay() {
     event.preventDefault();
     const fullNameInput = document.querySelector('input[name="fullname"]');
     const phoneNumInput = document.querySelector('input[name="phone_number"]')
-    let payment = document.getElementById('payment')
+    const payment = document.getElementById('payment')
+    const deli_address = document.getElementById('delivery_address')
     // Kiểm tra xem input đã được điền hay chưa
     if (!fullNameInput.value) {
         alert('Vui lòng nhập họ tên người nhận!');
@@ -51,7 +53,9 @@ function pay() {
         fetch('/api/pay', {
             method: 'post',
             body: JSON.stringify({
+                'customer_name': fullNameInput.value,
                 'payment_id': payment.value,
+                'delivery_address': deli_address.value
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -145,3 +149,5 @@ function pay() {
             })
         }
     }
+
+

@@ -35,8 +35,8 @@
     </form>
     <hr>
 
-  <table class="table table-hover ">
-    <thead class="thead-light">
+  <table class="table table-hover table-bordered">
+    <thead class="thead-dark">
       <tr class="text-center">
         <th scope="col">Mã phiếu xuất kho</th>
         <th scope="col">Ngày lập phiếu</th>
@@ -53,21 +53,30 @@
     <tbody>
             {% for d in delivery_notes %}
              <tr class="text-center">
-                 <th scope="row"></th>
-                 <td>{{ d[0].code}}</td>
-                 <td>{{ d[0].created_date}}</td>
-                 <td>{{ d.delivery_reason }}</td>
+                 <th scope="row">{{ d[0].code}}</th>
+                 <td>{{ d[0].created_date.strftime('%d/%m/%y %H:%M:%S') }}</td>
+                 <td style="width:120px">{{ d.delivery_reason }}</td>
                  <td>{{ d[0].user_created }}</td>
                  {% if d[0].confirmed %}
-                    <td>Đã xác nhận </td>
+                    <td>
+                        <input type="text"
+                               value="Đã xác nhận"
+                               class="form-control btn btn-success status-btn"
+                               style="width: 200px;">
+                    </td>
                  {% else %}
-                    <td>Chưa xác nhận </td>
+                    <td>
+                        <input type="text"
+                               value="Chưa xác nhận"
+                               class="form-control btn btn-warning status-btn"
+                               style="width: 200px;">
+                    </td>
                  {% endif %}
                  <td>{{ d[0].delivery_address}}</td>
                  <td>{{ d[0].delivery_man}}</td>
-                 <td>{{ "{:,.0f}".format(g[0].total_price) }}đ</td>
+                 <td>{{ "{:,.0f}".format(d[0].total_price) }}đ</td>
                  <td>
-                     <a href=""
+                     <a href="{{ url_for('goods_delivery.view_delivery_note', delivery_code=d[0].code, receipt_id=d[0].for_receipt_id) }}"
                         class="btn btn-dark text-white">
                          <i class="fa-regular fa-rectangle-list"></i>
                          Xem phiếu xuất kho

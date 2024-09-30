@@ -5,12 +5,6 @@
 {% block content %}
 
 <div class="bg-video d-flex flex px-0 carousel-item">
-    <!-- <a href="{{url_for('product_detail', product_id = 38) }}">
-        <video autoplay muted loop id="myVideo">
-          <source src="{{url_for('static', filename='video/video.mp4')}}" type="video/mp4">
-          Your browser does not support HTML5 video.
-        </video>
-    </a> -->
     <div class="containVideo">
         <video autoplay muted id="myVideo2">
             <source src="{{url_for('static', filename='video/samsung.mp4')}}" type="video/mp4">
@@ -54,13 +48,9 @@
                     </a>
                    <div class="card-body" style="bottom: 10px;">
                     <h4 class="card-title text-center">{{p.name}}</h4>
-                       {% if p.sale == True or p.sale_price > 1000 %}
+                       {% if p.promotion_id == 1 %}
                         <div class="overlay">  
                             <div class="overlay-content">
-                                <!-- <s class="card-text text-dark font-weight-light">{{"{:,.1f}".format(p.price)}}đ</s><span class="discount text font-weight-bold"> - {{ "{:.1f}%".format((p.price - p.sale_price) / p.price * 100) }}</span>
-                                <p class="card-text text-danger font-weight-bold">{{"{:,.1f}".format(p.sale_price)}}đ </p>
-                                <a href="#" class="btn btn-primary form-control text-left"
-                                onclick="addToCart({{p.id}}, '{{p.name}}', {{p.sale_price}}, '{{p.image}}' )"><i class="fas fa-plus"></i> Thêm vào giỏ hàng</a> -->
                                 <a href="{{url_for('product_detail', product_id = p.id) }}"
                                 class="btn mt-1 form-control text-left">Xem chi tiết</a>
                             </div>
@@ -68,10 +58,6 @@
                             {% else %}
                         <div class="overlay">
                             <div class="overlay-content">
-                                <!-- <s class="card-text"></s><span class="discount text invisible"></span>
-                                <p class="card-text text-danger font-weight-bold">{{"{:,.1f}".format(p.price)}}đ</p>
-                                <a href="#" class="btn btn-primary form-control text-left"
-                                onclick="addToCart({{p.id}}, '{{p.name}}', {{p.price}}, '{{p.image}}' )"><i class="fas fa-plus"></i> Thêm vào giỏ hàng</a> -->
                                 <a href="{{url_for('product_detail', product_id = p.id) }}"
                                 class="btn mt-1 form-control text-left">Xem chi tiết</a>
                             </div>
@@ -113,13 +99,8 @@
 
     </div>
 
-<br>
-<hr>
-<br>
-<br>
-
 <!-- MIDDLE SILDER -->
-<!-- <div class="container">
+<div class="container">
     <div id="demo" class="carousel slide" data-ride="carousel">
 
 
@@ -155,15 +136,15 @@
       <a class="carousel-control-prev" href="#demo" data-slide="prev">
         <span class="carousel-control-prev-icon"></span>
       </a>
-      <a class="carousel-control-next" href="#demo" data-slide="next">
+      <a class="carousel-control-next" href="#demo" data-slide="next" id="slider-click-btn">
         <span class="carousel-control-next-icon"></span>
       </a>
 
     </div>
 </div>
--->
 
-
+            <br>
+            <br>
 
 {% if recommend_id %}
 <div class="container bg-warning best-seller mb-5">
@@ -175,20 +156,28 @@
             {% for p in all_products %}
             {% if p.id in recommend_id %}
                 <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
-                    <div class="card hover-overlay h-100  " style="padding: 10px;border-radius: 15px;">
-                        <a href="{{url_for('product_detail', product_id = p.id) }}">
-                            <img class="card-img-top" src="{{url_for('static', filename=p.image)}}" alt="Product" style="max-height: 300px;">
-                        </a>
-                       <div class="card-body" style="bottom: 10px">
-                           <h4 class="card-title">{{p.name}}</h4>
+                <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
+                    <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
+                        <img class="card-img-top" src="{{url_for('static', filename=p.image)}}" alt="Product" style="height:fit-content;">
+                    </a>
+                   <div class="card-body" style="bottom: 10px;">
+                    <h4 class="card-title text-center">{{p.name}}</h4>
 
-                           {% if p.sale == True or p.sale_price > 1000 %}
-                        <s class="card-text text-dark font-weight-light">{{"{:,.1f}".format(p.price)}}đ</s>
-                           <span class="discount text font-weight-bold"> - {{ "{:.1f}%".format((p.price - p.sale_price) / p.price * 100) }}</span>
-                        <p class="card-text text-danger font-weight-bold">{{"{:,.1f}".format(p.sale_price)}}đ </p>
-                           {% else %}
-                        <p class="card-text text-danger font-weight-bold">{{"{:,.1f}".format(p.price)}}đ</p>
-                           {% endif %}
+                           {% if p.promotion_id == 1 %}
+                        <div class="overlay">
+                            <div class="overlay-content">
+                                <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                            </div>
+                        </div>
+                            {% else %}
+                        <div class="overlay">
+                            <div class="overlay-content">
+                                <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                            </div>
+                        </div>
+                       {% endif %}
                       </div>
                     </div>
                 </div>
@@ -197,5 +186,15 @@
         </div>
 
 {% endif %}
+
+<script>
+
+    function autoClick(){
+    const button = document.querySelector("#slider-click-btn")
+        button.click();
+    }
+
+    setInterval(autoClick, 2000)
+</script>
 
 {% endblock %}

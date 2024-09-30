@@ -67,8 +67,8 @@
                     <th scope="row">{{ r.id }}</th>
                     <td>{{ r.created_date }}</td>
                     <td>{{ r.payment_name }}</td>
-                     <td><button class="btn {{ status_colors[r.status_id] }}">{{ r.status_name}}</button></td>
-                     <td><a href="#"
+                     <td><button class="btn {{ status_colors[r.status_id] }} status-btn">{{ r.status_name}}</button></td>
+                     <td><a href=" {{ url_for('user_receipt_detail', receipt_id = r.id) }}"
                                     class="btn btn-dark"> Xem chi tiết </a>
                      </td>
                      <td>

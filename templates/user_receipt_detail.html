@@ -1,0 +1,88 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mt-5">Thông tin chi tiết hóa đon</h1>
+    <br>
+    <hr>
+
+<h2>Mã hóa đơn: {{ receipt.id }} </h2>
+
+    <div class="container">
+        <div class="form-group">
+            <label> Tên người nhận:  </label>
+            <input type="text" class="form-control" value="{{ receipt.receiver_name }}">
+        </div>
+
+        <div class="form-group">
+            <label> Ngày mua: </label>
+            <input type="text" class="form-control" value="{{ receipt.created_date.strftime('%d/%m/%Y  %H:%M:%S') }}">
+        </div>
+
+        <div class="form-group">
+            <label> Phương thức thanh toán: </label>
+            <input type="text" class="form-control" value="{{ receipt.payment_name }}">
+        </div>
+
+        <div class="form-group">
+            <label> Tình trạng đơn hàng: </label>
+            <input type="text"
+                   class="form-control w-50 text-center btn {{ status_colors[receipt.status_id] }}"
+                   value="{{ receipt.status_name }}">
+        </div>
+
+        <hr>
+        <br>
+        <h3 class="text-center">Các sản phẩm đã thanh toán: </h3>
+        <br>
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark text-center">
+            <tr>
+              <th scope="col">STT</th>
+              <th scope="col">Tên sản phẩm</th>
+              <th scope="col">Số lượng</th>
+              <th scope="col">Đơn giá</th>
+              <th scope="col">Khuyến mãi</th>
+              <th scope="col">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for r in receipt_detail %}
+            <tr>
+              <th scope="row">{{ loop.index }}</th>
+              <td> {{ r.product_name }}</td>
+              <td>{{ r.quantity }}</td>
+              <td>{{ "{:,.0f}".format(r.unit_price) }}</td>
+                {% if r.discount %}
+                <td class="text-danger font-weight-bold"> - {{ "{:,.0f}".format(r.discount) }}đ <br>
+                    <div class="badge badge-danger text-light">{{ r.discount_info }}</div>
+                </td>
+                {% else %}
+                <td>Không có</td>
+                {% endif %}
+                {% set price = r.unit_price | float %}
+                {% set quantity = r.quantity | float %}
+
+                <td>{% if r.discount %}
+                         {{ "{:,.0f}".format((price * quantity) - r.discount) }}đ
+                    {% else %}
+                        {{ "{:,.0f}".format(price * quantity) }}đ
+                    {% endif %}
+                </td>
+
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+
+
+
+
+    </div>
+</div>
+
+
+
+
+{% endblock %}

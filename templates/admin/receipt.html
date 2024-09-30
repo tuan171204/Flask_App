@@ -27,13 +27,16 @@
 
                     <div class="form-group">
                         <label><b>Tình trạng đơn hàng:</b></label>
-                        <input type="text" class="form-control {{ status_colors[receipts[0].status_id] }}" value ="{{ receipts[0].status_name }}" name="status_name">
+                        <input type="text"
+                               class="form-control {{ status_colors[receipts[0].status_id] }} w-25 text-center"
+                               value ="{{ receipts[0].status_name }}"
+                               name="status_name">
                     </div>
                 </div>
 
 
-                <div class="col-md-12 col-xs-12">
-                     <h2>Sản phẩm đã thanh toán</h2>
+                <div class="col-md-12 col-xs-12 mt-5 text-center">
+                     <h2 class="mb-3">Sản phẩm đã thanh toán</h2>
 
 
 
@@ -169,8 +172,8 @@
     </form>
     <hr>
 
-  <table class="table table-hover ">
-    <thead class="thead-light">
+  <table class="table table-bordered table-hover ">
+    <thead class="thead-dark">
       <tr class="text-center">
         <th scope="col">Mã đơn hàng</th>
         <th scope="col">Ngày mua</th>
@@ -204,8 +207,33 @@
                         </a>
 
                     </td>
+                 {% elif r.status_id == 6 %}
+                    <td>
+                        {% if r.exported==True %}
+                        <a href="{{ url_for('goods_delivery.view_delivery_note_by_id', receipt_id = r.id) }}"
+                           class="btn {{ status_colors[r.status_id] }} status-btn"
+                           data-trigger="hover"
+                           data-toggle="popover"
+                           data-content="Đơn hàng cần được xác nhận xuất kho !"
+                           data-placement="top">
+                            {{ r.status_name }}
+                        </a>
+                        {% elif r.exported==False %}
+                         <a href="{{ url_for('receipt.receipt_detail_update', receipt_id = r.id) }}"
+                           class="btn {{ status_colors[r.status_id] }} status-btn"
+                           data-trigger="hover"
+                           data-toggle="popover"
+                           data-content="Đơn hàng cần được xác nhận xuất kho !"
+                           data-placement="top">
+                            {{ r.status_name}}
+                        </a>
+                        {% endif %}
+                    </td>
+
                  {% else %}
-                    <td><button class="btn {{ status_colors[r.status_id] }} status-btn">{{ r.status_name}}</button></td>
+                    <td>
+                        <button class="btn {{ status_colors[r.status_id] }} status-btn">{{ r.status_name}}</button>
+                    </td>
                  {% endif %}
                 <td>
                     <a href="{{ url_for('receipt.receipt_detail_update', receipt_id = r.id) }}"

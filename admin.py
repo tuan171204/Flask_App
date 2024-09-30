@@ -64,8 +64,8 @@ class ProductView(ManageModelView):
     create_modal = True
     column_display_pk = True
     column_hide_backrefs = False
-    column_list = ['id', 'name', 'price', 'image', 'active', 'description', 'category_id', 'sale', 'sale_price', 'brand_id']
-    form_columns = ['id','name', 'price', 'image', 'active', 'description', 'category_id', 'sale', 'sale_price', 'brand_id']
+    column_list = ['id', 'name', 'price', 'image', 'active', 'description', 'category_id', 'brand_id']
+    form_columns = ['id','name', 'price', 'image', 'active', 'description', 'category_id', 'brand_id']
     can_view_details = True
     can_export = True
     column_searchable_list = ['name', 'category_id']
@@ -97,18 +97,17 @@ class CategoryView(ManageModelView):
 class DeliveryNoteView(ManageModelView):
    @expose('/')
    def index(self):
-       delivery_code = request.args.get('delivery_code')
+       delivery_code = request.args.get('delivery_note_code')
 
        confirmed = request.args.get('confirmed')
 
        asc = request.args.get('asc', 'True')
 
-       reason = request.args.get('reason')
+       reason = request.args.get('delivery_reason')
 
        delivery_man_id = request.args.get('delivery_man_id')
 
        delivery_reason = utils.load_delivery_reason()
-
 
        delivery_notes = utils.load_delivery_note(delivery_code=delivery_code,
                                                  confirmed=confirmed,
@@ -119,6 +118,119 @@ class DeliveryNoteView(ManageModelView):
        return self.render('admin/delivery_product.html',
                           delivery_notes=delivery_notes,
                           delivery_reason=delivery_reason)
+
+
+   @expose("view-delivery-note-by-id/<int:receipt_id>")
+   def view_delivery_note_by_id(self, receipt_id):
+       delivery_note = utils.get_delivery_note(receipt_id=receipt_id)
+       delivery_code = delivery_note.code
+       return self.view_delivery_note(delivery_code=delivery_code, receipt_id=receipt_id)
+
+   @expose("/view-delivery-note/<delivery_code>")
+   @expose("/view-delivery-note/<delivery_code>/<int:receipt_id>")
+   def view_delivery_note(self, delivery_code, receipt_id = None):
+       receipt = utils.get_receipt_by_id(receipt_id)
+
+       delivery_note = utils.get_delivery_note(delivery_code)
+
+       delivery_details, total_price, total_price2 = utils.load_delivery_note_details(delivery_code)
+
+       total_in_words = num2words(total_price, lang='vi').capitalize() + " đồng "
+
+       now = datetime.now()
+
+       return self.render('admin/delivery_form.html',
+                          receipt=receipt,
+                          delivery_details=delivery_details,
+                          total_price=total_price,
+                          total_price2=total_price2,
+                          total_in_words=total_in_words,
+                          now=now,
+                          delivery_code=delivery_code,
+                          delivery_note=delivery_note)
+
+
+
+   @expose("/update-delivery-note/<delivery_code>", methods=['POST'])
+   @expose("/update-delivery-note/<delivery_code>/<int:receipt_id>", methods=['POST'])
+   def update_delivery_note(self, receipt_id=None, delivery_code=None):
+       reason = request.form.get('delivery_reason')
+
+       if not reason:
+           reason = 1
+
+       delivery_man_id = 8
+
+       delivery_address = request.form.get('delivery_address')
+
+       receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+
+       products_data = []
+
+       for detail in receipt_details:
+           product_id = request.form.get(f'product_id_{detail.product_id}')
+           delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+           base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+
+           if product_id and delivered_quantity and base_quantity:
+               products_data.append({'product_id': product_id,
+                                     'delivered_quantity': delivered_quantity,
+                                     'base_quantity': base_quantity})
+
+       utils.update_delivery_note(delivery_code=delivery_code,
+                                  delivery_man_id=delivery_man_id,
+                                  delivery_reason=reason,
+                                  delivery_address=delivery_address,
+                                  total_price=total_price,
+                                  products_data=products_data,
+                                  receipt_id=receipt_id)
+
+       flash("Cập nhật phiếu xuất kho thành công ", "info")
+
+       return redirect('/admin/goods_delivery')
+
+
+   @expose('/confirm-delivery-note/<delivery_code>/<int:receipt_id>', methods=['POST'])
+   def confirm_delivery_note(self, delivery_code, receipt_id):
+       reason = request.form.get('delivery_reason')
+
+       if not reason:
+           reason = 1
+
+       delivery_man_id = 8
+
+       delivery_address = request.form.get('delivery_address')
+
+       receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+
+       products_data = []
+
+       for detail in receipt_details:
+           product_id = request.form.get(f'product_id_{detail.product_id}')
+           delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+           base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+
+           if product_id and delivered_quantity and base_quantity:
+               products_data.append({'product_id': product_id,
+                                     'delivered_quantity': delivered_quantity,
+                                     'base_quantity': base_quantity})
+
+       utils.confirm_delivery_note(delivery_code=delivery_code,
+                                  delivery_man_id=delivery_man_id,
+                                  delivery_reason=reason,
+                                  delivery_address=delivery_address,
+                                  total_price=total_price,
+                                  products_data=products_data,
+                                  receipt_id=receipt_id)
+
+       utils.confirm_receipt(receipt_id)
+
+       flash("Xác nhận phiếu xuất kho thành công ", "warning")
+
+       return redirect('/admin/goods_delivery')
+
+
+
 
 
    def is_accessible(self):
@@ -390,9 +502,9 @@ class ReceiptView(ManageModelView):
                                err_msg = 'Bạn phải được cấp quyền mới được sử dụng chức năng này')
 
 
-    @expose('/create-delivery-note/<int:receipt_id>')
-    def create_delivery_note(self, receipt_id):
-        receipt = utils.load_receipt(receipt_id)
+    @expose('/view-delivery-note/<int:receipt_id>')
+    def view_delivery_note(self, receipt_id):
+        receipt = utils.get_receipt_by_id(receipt_id)
 
         receipt_details, total_price = utils.load_receipt_detail(receipt_id)
 
@@ -410,6 +522,97 @@ class ReceiptView(ManageModelView):
                            now=now,
                            delivery_code=delivery_code,
                            delivery_note=None)
+
+
+    @expose('create-delivery-note/<int:receipt_id>/<delivery_code>', methods=['POST'])
+    def create_delivery_note(self, receipt_id=None, delivery_code=None):
+
+        created_date=datetime.now()
+
+        reason = request.form.get('delivery_reason')
+
+        if not reason:
+            reason = 1
+
+        delivery_man_id = 8
+
+        delivery_address = request.form.get('delivery_address')
+
+        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+
+        products_data = []
+
+        for detail in receipt_details:
+            product_id = request.form.get(f'product_id_{detail.product_id}')
+            delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+            base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+            note =  request.form.get(f'note_{detail.product_id}')
+
+            if product_id and delivered_quantity and base_quantity:
+                products_data.append({'product_id': product_id,
+                                      'delivered_quantity': delivered_quantity,
+                                      'base_quantity': base_quantity,
+                                      'note': note})
+
+
+        utils.create_delivery_note(delivery_code=delivery_code,
+                                   created_date=created_date,
+                                   delivery_man_id=delivery_man_id,
+                                   delivery_reason=reason,
+                                   delivery_address=delivery_address,
+                                   total_price=total_price,
+                                   products_data=products_data,
+                                   receipt_id=receipt_id)
+
+        flash("Tạo phiếu xuất kho thành công ", "success")
+
+        return redirect('/admin/receipt')
+
+
+    @expose('create-confirm-delivery-note/<int:receipt_id>/<delivery_code>', methods=['POST'])
+    def create_confirm_delivery_note(self, receipt_id=None, delivery_code=None):
+        created_date = datetime.now()
+
+        reason = request.form.get('delivery_reason')
+
+        if not reason:
+            reason = 1
+
+        delivery_man_id = 8
+
+        delivery_address = request.form.get('delivery_address')
+
+        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+
+        products_data = []
+
+        for detail in receipt_details:
+            product_id = request.form.get(f'product_id_{detail.product_id}')
+            delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+            base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+            note = request.form.get(f'note_{detail.product_id}')
+
+            if product_id and delivered_quantity and base_quantity:
+                products_data.append({'product_id': product_id,
+                                      'delivered_quantity': delivered_quantity,
+                                      'base_quantity': base_quantity,
+                                      'note': note})
+
+        utils.create_delivery_note(delivery_code=delivery_code,
+                                   created_date=created_date,
+                                   delivery_man_id=delivery_man_id,
+                                   delivery_reason=reason,
+                                   delivery_address=delivery_address,
+                                   total_price=total_price,
+                                   products_data=products_data,
+                                   receipt_id=receipt_id,
+                                   confirmed=True)
+
+        utils.confirm_receipt(receipt_id)
+
+        flash("Tạo và xác nhận phiếu xuất kho thành công ", "success")
+
+        return redirect('/admin/receipt')
 
 
     @expose('/confirm-report/<int:receipt_id>')

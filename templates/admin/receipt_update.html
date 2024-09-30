@@ -126,7 +126,7 @@
                         </div>
                         {% if receipts[0].status_id == 6 %}
                         <div class="form-group">
-                            <a  href="{{ url_for('receipt.create_delivery_note', receipt_id = receipt_id) }}"
+                            <a  href="{{ url_for('receipt.view_delivery_note', receipt_id = receipt_id) }}"
                                 type="button"
                                 class="btn btn-warning text-dark mr-5 font-weight-light"
                                 style="font-size:18px;">

@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, MetaData, Table, update
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, MetaData, Table, update, Enum
 from Flask_App import db, app
 from datetime import datetime
 from sqlalchemy.orm import relationship
-from enum import Enum
+from enum import Enum as PyEnum
 from flask_login import UserMixin
 from flask_migrate import migrate
 
@@ -28,17 +28,36 @@ class Product(db.Model):
     active = Column(Boolean, default=True)
     created_date = Column(DateTime, default=datetime.now())
     rating = Column(Float, default=0, nullable=True)
-    sale = Column(Boolean, default=False, nullable=True)
-    sale_price = Column(Float, default=0, nullable=True)
     category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
     brand_id = Column(Integer, ForeignKey('brand.id'), nullable=False)
-    import_price = Column(Float, default=price*80/100, nullable=False)
+    import_price = Column(Float, nullable=False)
+    discount_price = Column(Float, default=0, nullable=True)
     receipt_details = relationship('ReceiptDetail', backref='product', lazy=True)
     goods_received_note_detail = relationship('Goods_Received_Note_Detail', backref='product', lazy=True)
     comments = relationship('Comment', backref='product', lazy=True)
     stats = relationship('ProductStats', backref='product', lazy=True)
     distribution = relationship('Distribution', backref='product', lazy=True)
     goods_delivery_note_detail = relationship('Goods_Delivery_Note_Detail', backref='product', lazy=True)
+
+    warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
+    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True)
+    # product_storage = relationship('Storage', backref='product', lazy=True)
+
+    def apply_discount(self):
+       if self.promotion.discount_type.value == 1 and self.promotion.discount_value != None: # PERCENTAGE
+            self.discount_price = self.price * ( 1 - self.promotion.discount_value / 100 )
+
+       elif self.promotion.discount_type.value == 1: # PERCENTAGE BY PRODUCT
+           self.discount_price = self.discount_price
+
+       elif self.promotion.discount_type.value == 2: # BUY_ONE_GET_ONE
+           self.discount_price = self.price // 2
+
+       elif self.promotion.discount_type.value == 3: # FIXED AMOUNT
+            self.discount_price = self.price
+
+       return self.discount_price
+
 
     def __str__(self):
         return self.name
@@ -129,10 +148,16 @@ class Receipt(db.Model):
     created_date = Column(DateTime, default=datetime.now(), index=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False, index=True)
     payment_id = Column(Integer, ForeignKey('payment.id'), nullable=False, index=True)
-    status_id = Column(Integer, ForeignKey('receipt_status.id'), default=1)
+    status_id = Column(Integer, ForeignKey('receipt_status.id'), default=6)
     details = relationship('ReceiptDetail', backref='receipt', lazy=True)
     report = relationship('Receipt_Report', backref='receipt', lazy=True)
     exported = Column(Boolean, default=False)
+    delivery_address = Column(String(255), nullable=False )
+    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True, default=None)
+    receiver_name = Column(String(255), nullable=False)
+    delivery_note = relationship('Goods_Delivery_Note', backref='receipt', lazy=True)
+
+
 
 class ReceiptDetail(db.Model):
     __tablename__ = 'receipt_detail'
@@ -141,6 +166,8 @@ class ReceiptDetail(db.Model):
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False, primary_key=True, index=True)
     quantity = Column(Integer, default=0)
     unit_price = Column(Float, default=0)
+    discount = Column(Float, default=0, nullable=True)
+    discount_info = Column(String(255), nullable=True)
 
 
 class Comment(db.Model):
@@ -163,6 +190,7 @@ class Provider(db.Model):
     address = Column(String(255), nullable=False)
     goods_received_note = relationship('Goods_Received_Note', backref='provider', lazy=True)
     distribution = relationship('Distribution', backref='provider', lazy=True)
+    # storage_provider = relationship('Storage', backref='provider', lazy=True)
 
 
 class Distribution(db.Model):
@@ -188,8 +216,8 @@ class Goods_Received_Note(db.Model):
 class Goods_Received_Note_Detail(db.Model):
     __tablename__ = 'goods_received_note_detail'
 
-    goods_received_note_code = Column(String(255), ForeignKey(Goods_Received_Note.code), nullable=False, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey(Product.id), nullable=False, primary_key=True, index=True)
+    goods_received_note_code = Column(String(255), ForeignKey(Goods_Received_Note.code), primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, index=True)
     quantity = Column(Integer, default=0)
     received_quantity = Column(Integer, default=0, nullable=True)
     note = Column(String(255), nullable=True)
@@ -213,17 +241,20 @@ class Goods_Delivery_Note(db.Model):
     delivery_address = Column(String(255), nullable=False)
     total_price = Column(Float, nullable=False)
     confirmed = Column(Boolean, nullable=False)
+    confirm_date = Column(DateTime, nullable=True)
     details = relationship('Goods_Delivery_Note_Detail', backref='g_deli_details', lazy=True)
     delivery_man = Column(Integer, ForeignKey(User.id), nullable=False, index=True)
+    for_receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=True, index=True)
 
 
 class Goods_Delivery_Note_Detail(db.Model):
     __tablename__ = 'goods_delivery_note_detail'
 
     goods_delivery_note_code = Column(String(255), ForeignKey(Goods_Delivery_Note.code), primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey(Product.id), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, index=True)
     quantity = Column(Integer, nullable=False)
     delivered_quantity = Column(Integer, nullable=True, default=0)
+    note = Column(String(255), nullable=True)
 
 
 class Payment(db.Model):
@@ -260,8 +291,48 @@ class Receipt_Report(db.Model):
     description = Column(String(255), nullable=False)
     created_date = Column(DateTime, default=datetime.now())
 
+class TimeUnitEnum(PyEnum):
+    YEAR = "year"
+    MONTH = "month"
+    WEEK = "week"
 
 
+class Warranty(db.Model):
+    __tablename__ = 'warranty'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255), nullable=True, autoincrement=True)
+    warranty_period = Column(Integer, nullable=False)
+    time_unit = Column(Enum(TimeUnitEnum), default=TimeUnitEnum.MONTH, nullable=False)
+
+    product=relationship('Product', backref='warranty_product', lazy=True)
+
+
+class DiscountType(PyEnum):
+    PERCENTAGE = 1
+    BUY_ONE_GET_ONE = 2
+    FIXED_AMOUNT = 3
+
+
+class Promotion(db.Model):
+    __tablename__ = 'promotion'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    description = Column(String(255), nullable=True)
+    discount_type = Column(Enum(DiscountType), nullable=False)
+    discount_value = Column(Float, nullable=True)
+
+    receipt = relationship('Receipt', backref='promotion', lazy=True)
+    product = relationship('Product', backref='promotion', lazy=True)
+
+
+
+# class Storage(db.Model):
+#     product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, nullable=False)
+#     provider_id = Column(Integer, ForeignKey(Provider.id), primary_key=True, nullable=False)
+#     data_quantity = Column(Integer, nullable=True)
+#     real_time_quantity = Column(Integer, nullable=True)
+#     unit = Column(String(255), default="Chiếc", nullable=False)
 
 if __name__ == "__main__":
     with app.app_context():

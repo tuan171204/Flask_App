@@ -1,0 +1,144 @@
+{% extends 'layout/base.html' %}
+
+
+
+{% block content %}
+
+
+
+<div class="container border border-secondary p-5 mt-5" style="border-radius: 20px; box-shadow:5px 10px #888888">
+
+    <span>
+         <img src="{{ current_user.avatar}}" alt="user_avatar" style="width:120px;">
+    </span>
+    <h2 class="text-center ">Cài đặt tài khoản người dùng</h2>
+    <form id="changes_account_info_form">
+        <div class="form-group">
+            <label>Họ và tên:</label>
+            <input type="text"
+                   class="form-control"
+                   value="{{ current_user.name }}"
+                   name="fullname" >
+        </div>
+
+        <div class="form-group">
+            <label>Username đăng nhập: </label>
+            <input type="text"
+                   class="form-control"
+                   value="{{ current_user.username }}"
+                   name="username" >
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu:</label>
+            <input type="password"
+                   class="form-control"
+                   value="{{ current_user.password }}"
+                   name="password" >
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email"
+                   class="form-control"
+                   value="{{ current_user.email }}"
+                   name="email" >
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại: </label>
+            <input type="text"
+                   class="form-control"
+                   value=""
+                   name="phone_number">
+        </div>
+         <div class="form-group">
+            <label>Địa chỉ nhận hàng mặc định:  </label>
+            <input type="text"
+                   class="form-control"
+                   value=""
+                   name="user_address" >`
+        </div>
+        <div class="form-group form-inline">
+            <a href="{{ url_for('home') }}" class="btn p-2 mr-3 border-0">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Quay lại
+            </a>
+            <button type="button" class="p-2 border-0" data-toggle="modal" data-target="#confirmInfoModal">
+                <i class="fa-solid fa-file-circle-check"></i>
+                Lưu thông tin
+            </button>
+        </div>
+    </form>
+</div>
+
+
+
+<div class="modal fade" id="confirmInfoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Xác nhận thay đổi thông tin </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-warning">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        const usernameRegex = /^[a-zA-Z0-9]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^\d{10,}$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+        const fullname = document.querySelector('input[name="fullname"]').value;
+        const username = document.querySelector('input[name="username"]').value;
+        const email = document.querySelector('input[name="email"]').value;
+        const phoneNumber = document.querySelector('input[name="phone_number"]').value;
+        const password = document.querySelector('input[name="password"]').value;
+
+        if (!nameRegex.test(fullname)) {
+            alert("Tên không hợp lệ, chỉ chứa chữ cái và khoảng trắng.");
+            return;
+        }
+
+        if (!usernameRegex.test(username)) {
+            alert("Username không hợp lệ, không chứa ký tự đặc biệt.");
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            alert("Email không hợp lệ.");
+            return;
+        }
+
+        if (!phoneRegex.test(phoneNumber)) {
+            alert("Số điện thoại phải chứa ít nhất 10 số.");
+            return;
+        }
+
+        if (!passwordRegex.test(password)) {
+            alert("Mật khẩu phải có ít nhất 8 ký tự và bao gồm cả chữ cái và số.");
+            return;
+        }
+
+        const formData = {
+            fullname,
+            username,
+            email,
+            phone_number: phoneNumber,
+            password
+        };
+
+
+</script>
+
+
+{% endblock %}

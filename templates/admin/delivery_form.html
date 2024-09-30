@@ -24,32 +24,61 @@
         <h5 class="text-center text-dark mb-4"><b> Số: {{ delivery_code }} </b></h5>
 
 
-
-    <form action="" method="POST">
-        <div class="form-group form-inline d-flex justify-content-between">
-            <div class="form-inline">
-                <label>Họ và tên người nhận hàng </label>
-                <input type="text"
-                       readonly
-                       class="form-control ml-3"
-                       value="{{ receipt.customer_name }}">
+    {% if receipt.exported==True %}
+    <form action="{{ url_for('goods_delivery.update_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}" method="POST">
+    {% elif receipt.exported==False %}
+     <form action="{{ url_for('receipt.create_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}" method="POST">
+    {% endif %}
+        <div class="form-group form-inline row">
+            <div class="form-inline col-5">
+                <label>Họ và tên người nhận hàng: </label>
+                {% if receipt %}
+                    <input type="text"
+                           readonly
+                           class="form-control ml-1 w-25"
+                           value="{{ receipt.customer_name }}">
+                {% elif receipt %}
+                    <input type="text"
+                           readonly
+                           class="form-control ml-1 w-25"
+                           value="{{ receipt.customer_name }}">
+                {% endif %}
             </div>
 
-             <div class="form-inline">
+             <div class="form-inline col-7">
                 <label>Địa chỉ (bộ phận): </label>
                  <input type="text"
                         readonly
-                        class="form-control ml-3">
+                        class="form-control w-100"
+                        name="delivery_address"
+                        value="{{ receipt.delivery_address }}">
+
             </div>
         </div>
 
+        {% if delivery_reasons %}
         <div class="form-group form-inline">
             <label>Lý do xuất kho: </label>
-            <input readonly
-                   type="text"
-                   class="form-control ml-3"
-                   value="Xuất bán">
+            <select class="form-control ml-3 custom-select"
+                    name="delivery_reason" >
+                <option value="1" selected>Xuất bán</option>
+                <option value="2">Bảo trì sữa chữa</option>
+                <option value="3">Khuyến mãi tặng quà</option>
+                <option value="4">Bảo hành đổi trả sản phẩm</option>
+            </select>
         </div>
+        {% else %}
+        <div class="form-group form-inline">
+            <label>Lý do xuất kho: </label>
+            <select class="form-control ml-3 custom-select"
+                    name="delivery_reason" >
+                <option value="1" selected>Xuất bán</option>
+                <option value="2">Bảo trì sữa chữa</option>
+                <option value="3">Khuyến mãi tặng quà</option>
+                <option value="4">Bảo hành đổi trả sản phẩm</option>
+            </select>
+        </div>
+        {% endif %}
 
         <div class="form-group form-inline">
             <div class="form-inline">
@@ -79,7 +108,7 @@
                 </tr>
           </thead>
           <tbody>
-
+          {% if receipt_details %}
               {% for r in receipt_details %}
                 <tr>
                   <th scope="row">{{ loop.index }}</th>
@@ -100,13 +129,13 @@
                              value="{{ r.quantity }}">
                   </td>
                     <td>
-                        {% if receipt.exported %}
+                        {% if receipt.exported==True %}
                             {% if r.delivered_quantity %}
                              <input type="number"
                                    class="form-control"
                                    name="quantity_{{ r.product_id }}"
                                    value="{{ r.delivered_quantity }}">
-                            {% else %}
+                            {% elif receipt.exported==False %}
                             <input type="number"
                                    class="form-control"
                                    name="quantity_{{ r.product_id }}"
@@ -120,28 +149,28 @@
                         {% endif %}
 
                     </td>
-                    {% if receipt.exported %}
+                    {% if receipt.exported == True %}
                         <td>{{ "{:,.0f}".format(r.unit_price) }}đ</td>
                         {% set quantity = r.delivered_quantity | int %}
                         {% set price = r.unit_price | float %}
                         <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
                         <td>
-                            <textarea name="note" class="form-control">
-                            </textarea>
+                            <input name="note_{{ r.product_id }}" class="form-control">
                         </td>
-                    {% else %}
+                    {% elif receipt.exported == False %}
                         <td>{{ "{:,.0f}".format(r.unit_price) }}đ</td>
                         {% set quantity = r.quantity | int %}
                         {% set price = r.unit_price | float %}
                         <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
                         <td>
-                            <textarea name="note" class="form-control">
-                            </textarea>
+                            <input name="note_{{ r.product_id }}" class="form-control">
                         </td>
                     {% endif %}
                 </tr>
               {% endfor %}
-                <tr class="font-weight-bold" style="background-color: lightgreen">
+
+
+          <tr class="font-weight-bold" style="background-color: lightgreen">
                     <th scope="row"></th>
                     <td>Cộng</td>
                     <td>X</td>
@@ -149,9 +178,71 @@
                     <td>X</td>
                     <td>X</td>
                     <td>X</td>
-                    <td>{{ total_price }}</td>
+                    <td>{{  "{:,.0f}".format(total_price) }}đ</td>
                     <td></td>
                 </tr>
+          {% else %}
+          {% if delivery_details %}
+              {% for d in delivery_details %}
+                    <tr>
+                      <th scope="row">{{ loop.index }}</th>
+                      <td>{{ d.product_name }}</td>
+                      <td>
+                          <input type="text"
+                                 readonly
+                                 name="product_id_{{d.product_id}}"
+                                 value="{{ d.product_id }}"
+                                 class="form-control text-center">
+                          </td>
+                      <td>Cái</td>
+                      <td>
+                          <input type="text"
+                                 readonly
+                                 class="form-control text-center"
+                                 name="base_quantity_{{ d.product_id }}"
+                                 value="{{ d.quantity }}">
+                      </td>
+                        <td>
+
+
+                                 <input type="number"
+                                       class="form-control"
+                                       name="quantity_{{ d.product_id }}"
+                                       {% if d.delivered_quantity %}
+                                       value= "{{ d.delivered_quantity }}"
+                                       {% else %}
+                                       value=""
+                                        {% endif %}
+                                       placeholder="Nhập số lượng thực xuất"
+                                        onchange="fullCheck()">
+
+                        </td>
+                            <td>{{ "{:,.0f}".format(d.product_price) }}đ</td>
+                            {% set quantity = d.delivered_quantity | int %}
+                            {% set price = d.product_price | float %}
+                            <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
+                            <td>
+                                <input name="note_{{ d.product_id }}" class="form-control">
+                            </td>
+                    </tr>
+              {% endfor %}
+          <tr class="font-weight-bold" style="background-color: lightgreen">
+                    <th scope="row"></th>
+                    <td>Cộng</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>{{  "{:,.0f}".format(total_price) }}đ
+                        <p class="text-danger">({{ "{:,.0f}".format(total_price2 - total_price) }}đ)</p></td>
+                    <td></td>
+                </tr>
+          {% else %}
+          <h1 class="text-center text-danger"> NOT FOUND 404</h1>
+          {% endif %}
+
+          {% endif %}
           </tbody>
         </table>
 
@@ -186,38 +277,64 @@
                 </p>
             </div>
         </div>
-        {% if receipt.exported %}
+        {% if receipt.exported==True %}
             {% if delivery_note.confirmed == False %}
-            <button  class="btn btn-warning"
-                     type="button"
+            <button  class="btn btn-primary"
+                     type="submit">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <b>Cập nhật phiếu xuất kho</b>
+            </button>
+            <button  formaction="{{ url_for('goods_delivery.confirm_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
+                     formmethod="post"
+                     class="btn btn-warning"
+                     type="submit"
                      data-toggle="modal"
                      data-target="#confirmModal"
                      onclick="lastCheck()">
                     <i class="fa-solid fa-file-circle-check"></i>
                     <b>Xác nhận phiếu xuất kho</b>
             </button>
-            {% else %}
+            {% elif delivery_note.confirmed == True %}
             {% endif %}
-        {% else %}
-            <button type="submit"
+            <a      href="{{ url_for('goods_delivery.index') }}"
                     class="btn btn-dark text-light" >
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <b>Quay lại</b>
+            </a>
+        {% elif receipt.exported==False %}
+            <button type="submit"
+                    class="btn btn-dark text-light">
                     <i class="fa-solid fa-folder-plus"></i>
                     <b>Tạo phiếu xuất kho</b>
             </button>
-            <button  class="btn btn-warning"
-                     type="button"
+            <button  formaction="{{ url_for('receipt.create_confirm_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
+                     formmethod="post"
+                     class="btn btn-warning"
+                     type="submit"
                      data-toggle="modal"
                      data-target="#confirmModal"
                      onclick="lastCheck()">
                     <i class="fa-solid fa-file-circle-check"></i>
                     <b>Tạo & xác nhận phiếu xuất kho</b>
             </button>
+             <a      href="{{ url_for('receipt.index') }}"
+                    class="btn btn-dark text-light" >
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <b>Quay lại</b>
+            </a>
         {% endif %}
-        <a      href="{{ url_for('receipt.index') }}"
-                class="btn btn-dark text-light" >
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <b>Quay lại</b>
-        </a>
+
+
+         {% if delivery_note.confirmed==False %}
+         <div class="alert alert-warning alert-dismissible fade show mt-2" id="full-alert" role="alert">
+              Số lượng các sản phẩm đã đủ<strong>, xác nhận tạo phiếu xuất kho ?</strong>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+         </div>
+         {% else %}
+         {% endif %}
+
     </form>
 </div>
 
@@ -240,8 +357,8 @@
 
 
         Bạn có chắc chắn muốn xác nhận phiếu nhập kho với mã:
-          {% if receipt.exported %}<strong>{{ delivery_note.code }}</strong>  ?
-          {% else %} <strong>{{ delivery_code }}</strong>  ?
+          {% if receipt.exported==True %}<strong>{{ delivery_note.code }}</strong>  ?
+          {% elif receipt.exported==False %} <strong>{{ delivery_code }}</strong>  ?
           {% endif %}
       </div>
       <div class="modal-footer">
@@ -271,6 +388,15 @@
         }
     }
 
+    fullCheck = () => {
+        if ( Check() == true ){
+            document.querySelector('#full-alert').style.display='block'
+        }
+        else {
+            document.querySelector('#full-alert').style.display = 'none'
+        }
+    }
+
     Check = () =>{
         const baseQuantity = []
         const receivedQuantity = []
@@ -296,6 +422,10 @@
 
         return true
     }
+
+    fullCheck()
+
+
 </script>
 {% endblock %}
 

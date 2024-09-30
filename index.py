@@ -1,10 +1,10 @@
 from flask import Flask, flash
 from flask import render_template, request, redirect, session, jsonify, url_for
-from Flask_App import app, login
+from Flask_App import app, login, utils, db
 import math
 import cloudinary.uploader
-from flask_login import login_user, logout_user, login_required
-from Flask_App.models import Receipt_Report
+from flask_login import login_user, logout_user, login_required, current_user
+from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail
 from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 
 @app.route('/')
@@ -56,12 +56,14 @@ def product_detail(product_id):
 
     suggest_id = sorted(suggest_id)
 
+
     return render_template('product_detail.html',
                            comments=comments,
                            product = product,
                            pages = math.ceil(utils.count_comment(product_id)/app.config['COMMENT_SIZE']),
                            products=products,
-                           suggest_id=suggest_id
+                           suggest_id=suggest_id,
+                           discountType=DiscountType
                            )
 
 
@@ -218,7 +220,8 @@ def user_receipt(user_id):
         2: 'btn-success',
         3: 'btn-info',
         4: 'btn-danger',
-        5: 'btn-primary'
+        5: 'btn-secondary',
+        6: 'btn-primary'
     }
 
     if need_confirm:
@@ -263,11 +266,15 @@ def add_to_cart():
     name = data.get('name')
     price = data.get('price')
     image = data.get('image')
+    promotion = data.get('promotion')
+
 
 
     cart = session.get('cart')
     if not cart:
         cart = {}
+
+
 
     if id in cart:
         cart[id]['quantity'] = cart[id]['quantity'] + 1
@@ -277,7 +284,8 @@ def add_to_cart():
             'name': name,
             'price': price,
             'quantity': 1,
-            'image': image
+            'image': image,
+            'promotion': promotion
         }
 
     session['cart'] = cart
@@ -316,9 +324,10 @@ def delete_cart(product_id):
 def pay():
     data = request.json
     payment_id = data.get('payment_id')
-    print(payment_id)
+    delivery_address = data.get('delivery_address')
+    customer_name = data.get('customer_name')
     try:
-        utils.add_receipt(session.get('cart'), payment_id)
+        utils.add_receipt(session.get('cart'), payment_id, delivery_address, customer_name)
         del session['cart']
     except Exception as e:
         print(e)
@@ -466,6 +475,60 @@ def post_report(receipt_id):
     flash("Đã gửi phản hồi", "warning")
 
     return redirect(f'/user-receipt/{current_user.id}')
+
+
+
+@app.route("/user-receipt-detail/<int:receipt_id>")
+def user_receipt_detail(receipt_id):
+    receipt = utils.get_receipt_by_id_2(receipt_id)
+
+    receipt_detail, total_price = utils.load_receipt_detail(receipt_id)
+
+    status_colors = {
+        1: 'btn-warning',
+        2: 'btn-success',
+        3: 'btn-info',
+        4: 'btn-danger',
+        5: 'btn-secondary',
+        6: 'btn-primary'
+    }
+
+
+    return render_template('user_receipt_detail.html',
+                           receipt = receipt,
+                           receipt_detail = receipt_detail,
+                           total_price = total_price,
+                           status_colors = status_colors)
+
+
+@app.route("/account-setting")
+def account_setting():
+    return render_template("account_setting.html")
+
+
+
+@app.route("/update-account/<int:user_id>", methods=['POST'])
+def saves_change_account(user_id):
+    try:
+        data = request.json
+        fullname = data.get('fullname')
+        username = data.get('username')
+        email = data.get('email')
+        phone_number = data.get('phone_number')
+        address = data.get('user_address')
+
+        utils.changes_user_info(user_id = user_id,
+                                fullname=fullname,
+                                username=username,
+                                email=email,
+                                phone_number=phone_number,
+                                address=address
+                                )
+        return jsonify({'code': 200}),
+
+
+    except:
+        return jsonify({'code': 404})
 
 
 if __name__ == "__main__":

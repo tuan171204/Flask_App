@@ -78,7 +78,7 @@ def recommend_similar_products(product_ids, number=4):
 
     # Loại bỏ sản phẩm trùng lặp và giới hạn số lượng
     recommended_products = set(recommended_products)
-    # print(recommended_products)
+
     return recommended_products
 
 
@@ -93,11 +93,8 @@ def recommend_products_by_user_receipt(user_id):
         user_purchased_product, number=6
     )
 
-    # Loại bỏ các product_id đã có trong hóa đơn
-    # print(set(recommended_product_ids))
-    # print(set(user_purchased_product))
+
     recommended_product_ids = set(recommended_product_ids) - set(user_purchased_product)
-    print(recommended_product_ids)
 
     # Trả về danh sách product_id được đề xuất (tối đa 12 sản phẩm)
     recommended_product_ids = get_random_elements(recommended_product_ids)

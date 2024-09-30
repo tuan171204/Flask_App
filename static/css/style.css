@@ -109,6 +109,10 @@ table td {
 
 }
 
+.form-group label{
+    font-weight:bold;
+}
+
 #dropdown-user {
     color: black;
     background-color: white;
@@ -261,3 +265,15 @@ i {
     height: auto;
 }
 
+.status-btn{
+    width: 280px;
+}
+
+.promotion-info {
+  animation: bounce 0.5s infinite alternate;
+  width:200px;
+  font-size:16px;
+}
+@keyframes bounce {
+  to { transform: scale(1.2); }
+}
