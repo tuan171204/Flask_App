@@ -1,5 +1,7 @@
 import mysql.connector
 import re
+
+
 # Thay đổi thông tin kết nối database cho phù hợp
 
 def main():
@@ -29,7 +31,6 @@ def main():
     #     if db_connection:
     #         db_connection.close()
 
-
     db = mysql.connector.connect(
         host="localhost",
         user="tuan",
@@ -39,19 +40,19 @@ def main():
     )
 
     try:
-      with open('database.sql', 'r', encoding='utf-8') as f:
-          sql_data = f.read()
+        with open('database.sql', 'r', encoding='utf-8') as f:
+            sql_data = f.read()
 
-          cursor = db.cursor()
-          cursor.execute(sql_data)
-          db.commit()
+            cursor = db.cursor()
+            cursor.execute(sql_data)
+            db.commit()
 
-          print("Dữ liệu đã được import thành công!")
+            print("Dữ liệu đã được import thành công!")
     except mysql.connector.Error as err:
-      pass
+        pass
 
     finally:
-      db.close()
+        db.close()
 
 
 if __name__ == "__main__":

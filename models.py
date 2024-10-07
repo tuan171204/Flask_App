@@ -6,13 +6,14 @@ from enum import Enum as PyEnum
 from flask_login import UserMixin
 from flask_migrate import migrate
 
+
 class Category(db.Model):
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(20), nullable=False)
     products = relationship('Product', backref='category', lazy=False)
-    
+
     def __str__(self):
         return self.name
 
@@ -41,31 +42,31 @@ class Product(db.Model):
 
     warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
     promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True)
+
     # product_storage = relationship('Storage', backref='product', lazy=True)
 
     def apply_discount(self):
-       if self.promotion.discount_type.value == 1 and self.promotion.discount_value != None: # PERCENTAGE
-            self.discount_price = self.price * ( 1 - self.promotion.discount_value / 100 )
+        if self.promotion.discount_type.value == 1 and self.promotion.discount_value != None:  # PERCENTAGE
+            self.discount_price = self.price * (1 - self.promotion.discount_value / 100)
 
-       elif self.promotion.discount_type.value == 1: # PERCENTAGE BY PRODUCT
-           self.discount_price = self.discount_price
+        elif self.promotion.discount_type.value == 1:  # PERCENTAGE BY PRODUCT
+            self.discount_price = self.discount_price
 
-       elif self.promotion.discount_type.value == 2: # BUY_ONE_GET_ONE
-           self.discount_price = self.price // 2
+        elif self.promotion.discount_type.value == 2:  # BUY_ONE_GET_ONE
+            self.discount_price = self.price // 2
 
-       elif self.promotion.discount_type.value == 3: # FIXED AMOUNT
+        elif self.promotion.discount_type.value == 3:  # FIXED AMOUNT
             self.discount_price = self.price
 
-       return self.discount_price
-
+        return self.discount_price
 
     def __str__(self):
         return self.name
-    
-    
+
+
 class ProductStats(db.Model):
     __tablename__ = 'product_stats'
-    
+
     product_id = Column(Integer, ForeignKey('product.id'), primary_key=True, nullable=True)
     ram = Column(String(24), nullable=True)
     screen_size = Column(String(24), nullable=True)
@@ -75,13 +76,11 @@ class ProductStats(db.Model):
     length = Column(String(50), nullable=False)
 
 
-
-
 class Brand(db.Model):
     __tablename__ = 'brand'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False, index=True )
+    name = Column(String(255), nullable=False, index=True)
     products = relationship('Product', backref='brand', lazy=False)
 
 
@@ -116,17 +115,19 @@ class User(db.Model, UserMixin):
     password = Column(String(50), nullable=False)
     avatar = Column(String(100))
     email = Column(String(50), unique=True)
+    phone_number = Column(String(11), nullable=False)
+    address = Column(String(255), nullable=True)
     active = Column(Boolean, default=True)
     joined_date = Column(DateTime, default=datetime.now())
+    privileged = relationship('Privileged', backref='user', lazy=True)
+    goods_recevie = relationship('Goods_Received_Note', backref='user', lazy=True)
+    goods_delivery = relationship('Goods_Delivery_Note', backref='user', lazy=True,
+                                  foreign_keys='Goods_Delivery_Note.user_created')
+    goods_delivery_man = relationship('Goods_Delivery_Note', backref='user_delivery', lazy=True,
+                                      foreign_keys='Goods_Delivery_Note.delivery_man')
     receipts = relationship('Receipt', backref='user', lazy=True)
     comments = relationship('Comment', backref='user', lazy=True)
     report = relationship('Receipt_Report', backref='user', lazy=True)
-    # New column
-    privileged = relationship('Privileged', backref='user', lazy=True)
-    goods_recevie = relationship('Goods_Received_Note', backref='user', lazy=True)
-    goods_delivery = relationship('Goods_Delivery_Note', backref='user', lazy=True, foreign_keys='Goods_Delivery_Note.user_created')
-    goods_delivery_man = relationship('Goods_Delivery_Note', backref='user_delivery', lazy=True, foreign_keys='Goods_Delivery_Note.delivery_man')
-
 
     def __str__(self):
         return self.name
@@ -137,7 +138,6 @@ class Privileged(db.Model):
 
     user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
     user_role = Column(Integer, ForeignKey(User_Role.id), primary_key=True)
-
 
 
 # Hoa don
@@ -152,11 +152,10 @@ class Receipt(db.Model):
     details = relationship('ReceiptDetail', backref='receipt', lazy=True)
     report = relationship('Receipt_Report', backref='receipt', lazy=True)
     exported = Column(Boolean, default=False)
-    delivery_address = Column(String(255), nullable=False )
+    delivery_address = Column(String(255), nullable=False)
     promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True, default=None)
     receiver_name = Column(String(255), nullable=False)
     delivery_note = relationship('Goods_Delivery_Note', backref='receipt', lazy=True)
-
 
 
 class ReceiptDetail(db.Model):
@@ -171,15 +170,14 @@ class ReceiptDetail(db.Model):
 
 
 class Comment(db.Model):
-     id = Column(Integer, primary_key=True, autoincrement=True)
-     content = Column(String(255), nullable=False)
-     product_id = Column(Integer, ForeignKey(Product.id), nullable=False,index=True)
-     user_id = Column(Integer, ForeignKey(User.id), nullable=False, index=True)
-     created_date = Column(DateTime, default=datetime.now(), index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    content = Column(String(255), nullable=False)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey(User.id), nullable=False, index=True)
+    created_date = Column(DateTime, default=datetime.now(), index=True)
 
-     def __str__(self):
-         return self.content
-
+    def __str__(self):
+        return self.content
 
 
 class Provider(db.Model):
@@ -196,9 +194,9 @@ class Provider(db.Model):
 class Distribution(db.Model):
     __tablename__ = 'distribution'
 
-    product_id = Column(Integer, ForeignKey(Product.id),primary_key=True, nullable=False)
+    product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, nullable=False)
     provider_id = Column(Integer, ForeignKey(Provider.id), primary_key=True, nullable=False)
-    
+    # Maybe put import & selling price here
 
 class Goods_Received_Note(db.Model):
     __tablename__ = 'goods_received_note'
@@ -212,6 +210,7 @@ class Goods_Received_Note(db.Model):
     user_confirm = Column(Integer, ForeignKey(User.id), nullable=True)
     delivery_man = Column(String(255), default=None, nullable=True)
     total_price = Column(Float, nullable=False)
+
 
 class Goods_Received_Note_Detail(db.Model):
     __tablename__ = 'goods_received_note_detail'
@@ -262,6 +261,7 @@ class Payment(db.Model):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=True)
+    logo = Column(String(55), nullable=True)
     receipt_payment = relationship("Receipt", backref="payment", lazy=True)
 
 
@@ -291,6 +291,7 @@ class Receipt_Report(db.Model):
     description = Column(String(255), nullable=False)
     created_date = Column(DateTime, default=datetime.now())
 
+
 class TimeUnitEnum(PyEnum):
     YEAR = "year"
     MONTH = "month"
@@ -305,7 +306,7 @@ class Warranty(db.Model):
     warranty_period = Column(Integer, nullable=False)
     time_unit = Column(Enum(TimeUnitEnum), default=TimeUnitEnum.MONTH, nullable=False)
 
-    product=relationship('Product', backref='warranty_product', lazy=True)
+    product = relationship('Product', backref='warranty_product', lazy=True)
 
 
 class DiscountType(PyEnum):
@@ -326,7 +327,6 @@ class Promotion(db.Model):
     product = relationship('Product', backref='promotion', lazy=True)
 
 
-
 # class Storage(db.Model):
 #     product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, nullable=False)
 #     provider_id = Column(Integer, ForeignKey(Provider.id), primary_key=True, nullable=False)
@@ -337,6 +337,3 @@ class Promotion(db.Model):
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-
-
-

@@ -6,7 +6,7 @@
     <br>
     <hr>
 
-<h2>Mã hóa đơn: {{ receipt.id }} </h2>
+<h2>Mã hóa đơn: <span class="badge badge-dark" style="font-size: 28px;">{{ receipt_id }}</span> </h2>
 
     <div class="container">
         <div class="form-group">
@@ -19,9 +19,13 @@
             <input type="text" class="form-control" value="{{ receipt.created_date.strftime('%d/%m/%Y  %H:%M:%S') }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group payment-info">
             <label> Phương thức thanh toán: </label>
-            <input type="text" class="form-control" value="{{ receipt.payment_name }}">
+            <button type="button"
+                    class="form-control w-25 text-center">
+            <i class="{{ receipt.payment_logo }}"></i>
+            <b>{{ receipt.payment_name }}</b>
+            </button>
         </div>
 
         <div class="form-group">
@@ -33,9 +37,10 @@
 
         <hr>
         <br>
-        <h3 class="text-center">Các sản phẩm đã thanh toán: </h3>
+        <h1 class="text-center mt-3">Các sản phẩm đã thanh toán: </h1>
         <br>
-        <table class="table table-hover table-bordered">
+        <br>
+        <table class="table table-hover border">
           <thead class="thead-dark text-center">
             <tr>
               <th scope="col">STT</th>
@@ -43,15 +48,31 @@
               <th scope="col">Số lượng</th>
               <th scope="col">Đơn giá</th>
               <th scope="col">Khuyến mãi</th>
-              <th scope="col">Thành tiền</th>
+              <th scope="col">Tổng</th>
             </tr>
           </thead>
           <tbody>
           {% for r in receipt_detail %}
-            <tr>
-              <th scope="row">{{ loop.index }}</th>
-              <td> {{ r.product_name }}</td>
-              <td>{{ r.quantity }}</td>
+            <tr class="text-center">
+              <th scope="row">
+                    <span class="badge badge-dark text-light">
+                         {{ loop.index }}
+                    </span>
+              </th>
+              <td class="w-25">
+                    <div class="card border-0"
+                         style="width: 100%;">
+                      <img class="card-img-top"
+                           src="{{url_for('static', filename=r.product_image)}}"
+                           alt="product image">
+                      <div class="card-body">
+                            <b>{{ r.product_name}}</b>
+                      </div>
+                    </div>
+              </td>
+              <td>
+                  x {{ r.quantity }}
+              </td>
               <td>{{ "{:,.0f}".format(r.unit_price) }}</td>
                 {% if r.discount %}
                 <td class="text-danger font-weight-bold"> - {{ "{:,.0f}".format(r.discount) }}đ <br>
@@ -69,15 +90,21 @@
                         {{ "{:,.0f}".format(price * quantity) }}đ
                     {% endif %}
                 </td>
-
             </tr>
           {% endfor %}
           </tbody>
         </table>
+        <hr>
+    <div class="form-group"
+         style="font-size: 24px;">
+        <label>Tổng giá trị đơn hàng:<u  class="text-danger"> {{ "{:,.0f}".format(total_price) }}đ </u></label>
+    </div>
 
-
-
-
+    <a class="btn btn-dark"
+       href="{{ url_for('user_receipt', user_id = current_user.id) }}">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        Quay lại
+    </a>
 
     </div>
 </div>

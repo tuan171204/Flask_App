@@ -10,7 +10,7 @@
 <br>
 <hr>
 
-<div class="container">
+<div class="container" style="overflow-x: auto;">
         <form method="POST" action="{{ url_for('update_user_privileged') }}">
             <input type="hidden" name="user_id" value="{{ user_privileged.id }}">
             <input type="hidden" name="supuser" value="{{ user_role_permission.super_user }}">
@@ -32,8 +32,9 @@
                   <td>{{ user_privileged.username }}</td>
                     {% for key, value in user_role_permission.__dict__.items() %}
                         {% if not key.startswith('_') and not key=='id' %}
-                            <td>
-                                <input class="form-check-input"
+                            <td style="padding: 20px">
+                                <label></label>
+                                <input class="p-5"
                                        type="checkbox" id="{{ key }}"
                                        name="{{ key }}" {% if value %} checked {% endif %}>
                             </td>
@@ -61,7 +62,11 @@
 
 
   <form class="form-inline my-2 my-lg-0">
-      <input class="form-control mr-sm-2" type="search" placeholder="Nhập mã người dùng" aria-label="Search" name="user_id">
+      <input class="form-control mr-sm-2"
+             type="search"
+             placeholder="Nhập mã người dùng"
+             aria-label="Search"
+             name="user_id">
 <!--      <select class="form-control mr-sm-2" name="user_role_id">-->
 <!--          <option value="" selected>Vai trò</option>-->
 <!--            {% for user_role in users_role %}-->
@@ -74,8 +79,17 @@
           <option value="False">Tài khoản mới nhất</option>
           <option value="True">Tài khoản cũ nhất</option>
       </select>
+      <select class="form-control mr-sm-2" name="active">
+          <option value="" selected>Hiệu lực tài khoản</option>
+          <option value="False">Ngưng hoạt động</option>
+          <option value="True">Còn hoạt động</option>
+      </select>
 
-      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+      <button class="btn btn-outline-dark my-2 my-sm-0"
+              type="submit">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          Tìm kiếm
+      </button>
     </form>
     <hr>
 
@@ -95,7 +109,7 @@
     </thead>
     <tbody>
      {% for u in users %}
-        {% if u.id and u.id != current_user.id %}
+        {% if u.id %}
              <tr class="text-center">
                 <th scope="row">{{ u.id }}</th>
                 <td>{{ u.name }}</td>
@@ -105,7 +119,7 @@
                 <td> {{ u.joined_date.strftime('%d/%m/%Y  %H:%M:%S') }}</td>
                  <td><button style="font-size:24px;" class="btn btn-white">
                      {% if u.active %} <i class="fa-solid fa-circle-check"></i>
-                     {% else %} <i class="fa-solid fa-x"></i></i>
+                     {% else %} <i class="fa-solid fa-x"></i>
                      {% endif %}
                      </button>
                  </td>
@@ -121,7 +135,43 @@
     </tbody>
   </table>
 </div>
+
+
+
+            {% if pages > 1 %}
+                <div class="container d-flex justify-content-around" >
+                    <ul class="pagination " style="color:black">
+                        {% if prev_page %}
+                        <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                        {% endif %}
+                            {% for idx in range(1, pages+1) %}
+                                <li class="page-item">
+                                    <a class="page-link border-0"
+                                       href="{{ url_for('user_privileged.index',
+                                                        page=idx,
+                                                        active=request.args.get('active'),
+                                                        asc=request.args.get('asc')) }}">
+                                        {{idx}}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        {% if next_page %}
+                        <li class="page-item">
+                            <a class="page-link border-0"
+                               href="{{ next_page }}">
+                                Trước
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+
+            {% endif %}
+
 {% endif %}
+
+
 
 <script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 

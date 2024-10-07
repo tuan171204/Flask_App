@@ -1,0 +1,268 @@
+{% extends 'admin/base.html' %}
+
+
+
+{% block body %}
+        <h1 class="text-center text-dark mt-4 mb-5"> Quản lý sản phẩm </h1>
+        <hr>
+        <form action="" class="form-inline">
+            <div class="form-group form-inline">
+                <input  style="font-size: 16px;"
+                        class="form-control mr-sm-2"
+                                type="search"
+                                placeholder="Mã sản phẩm hoặc tên"
+                                aria-label="Search"
+                                name="kw">
+
+                <select class="form-control mr-sm-2" name="active">
+                  Trạng thái
+                  <option value="" selected>Trạng thái</option>
+
+                  <option value="True">Đang bán</option>
+                  <option value="False">Tạm ẩn</option>
+                </select>
+
+                <select class="form-control mr-sm-2" name="provider_id">
+                  Chọn nhà cung cấp
+                  <option value="" selected>Chọn nhà cung cấp</option>
+                  {% for provider in providers %}
+                    <option value="{{ provider.id }}">{{ provider.name }}</option>
+                  {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group form-inline mt-2">
+                <label style="font-size:22px;margin-right:4px;">
+                    Chọn giá nhập:
+                </label>
+                <input type="text"
+                       placeholder="Giá từ"
+                       class="form-control ml-2"
+                       name="from_import_price">
+                <input type="text"
+                       placeholder="Đến"
+                       class="ml-2 form-control"
+                       name="to_import_price">
+
+            </div>
+            <div class="form-group form-inline mt-2">
+                <label style="font-size:22px; margin-right: 16px;">Chọn giá bán:</label>
+                <input type="text"
+                       placeholder="Giá từ"
+                       class="form-control ml-2"
+                       name="from_price">
+                <input type="text"
+                       placeholder="Đến"
+                       class="form-control ml-2 "
+                       name="to_price">
+            </div>
+                <button class="btn btn-dark mt-2 form-control w-25 ml-2"
+                        type="submit">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Tìm kiếm
+                </button>
+                <button class="btn btn-warning mt-2 ml-2 form-control w-25"
+                        type="button"
+                        data-toggle="modal"
+                        data-target="#createModal">
+                        <i class="fa-solid fa-plus"></i>
+                        Thêm sản phẩm
+                 </button>
+
+        </form>
+
+
+<hr>
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark text-center">
+            <tr>
+              <th scope="col">STT</th>
+              <th scope="col">Mã sản phẩm</th>
+              <th scope="col">Tên sản phẩm</th>
+              <th scope="col">Giá nhập</th>
+              <th scope="col">Giá bán</th>
+                <th scope="col">Nhà cung cấp</th>
+              <th scope="col">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for product in products %}
+            <tr class="text-center">
+              <th scope="row">{{ page * size - size + loop.index }}</th>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
+                    <td>{{ "{:,.0f}".format(product.price) }}đ</td>
+                    <td>{{ product.provider_name }} </td>
+                    <td>
+                         {% if product.active %}
+                            <button type="button"
+                                    class="btn btn-success status-btn"><i class="fa-solid fa-check"></i>
+                                Đang bán
+                            </button>
+                         {% else %}
+                            <button type="button"
+                                    class="btn btn-secondary status-btn"><i class="fa-solid fa-minus"></i>
+                                Tạm ẩn
+                            </button>
+                         {% endif %}
+                    </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+
+            {% if pages > 1 %}
+                <div class="container d-flex justify-content-around" >
+                    <ul class="pagination " style="color:black">
+                        {% if prev_page %}
+                        <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                        {% endif %}
+                            {% for idx in range(1, pages+1) %}
+                                <li class="page-item">
+                                    <a class="page-link border-0"
+                                       href="{{ url_for('product.index',
+                                                         page=idx,
+                                                         kw=request.args.get('kw'),
+                                                         active=request.args.get('active'),
+                                                         provider_id=request.args.get('provider_id'),
+                                                         from_import_price=request.args.get('from_import_price'),
+                                                         to_import_price=request.args.get('to_import_price'),
+                                                         from_price=request.args.get('from_price'),
+                                                         to_price=request.args.get('to_price')) }}">
+                                        {{idx}}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        {% if next_page %}
+                        <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+             {% endif %}
+
+
+<form action="{{ url_for('product.create_product') }}" method="POST" id="productCreateForm">
+    <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title font-weight-bold" id="exampleModalLabel">Tạo sản phẩm mới </h3>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+              <div class="form-group">
+                  <label><b style="font-size: 20px;">Tên sản phẩm:</b></label>
+                  <input type="text"
+                         class="form-control"
+                         name="product_name">
+              </div>
+              <div class="form-group">
+                  <label><b style="font-size: 20px;">Chọn loại sản phẩm: </b></label>
+                  <select name="category_id"
+                          class="custom-select">
+                      <option value="">Loại sản phẩm</option>
+                      {% for category in categories %}
+                      <option value="{{ category.id }}">{{ category.name }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label><b style="font-size: 20px;">Chọn nhà cung cấp: </b></label>
+                  <select name="provider_id"
+                          class="custom-select">
+                      <option value="">Loại sản phẩm</option>
+                      {% for provider in providers %}
+                      <option value="{{ provider.id }}">{{ provider.name }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label><b style="font-size: 20px;">Chọn thương hiệu: </b></label>
+                 <select name="brand_id" class="custom-select">
+                      <option value="">Thương hiệu</option>
+                      {% for brand in brands %}
+                      <option value="{{ brand.id }}">{{ brand.name }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label><b style="font-size:20px;">Ảnh sản phẩm: </b></label>
+                  <div class="custom-file">
+                    <input type="file" class="custom-file-input" name="product_image">
+                    <label class="custom-file-label">Chọn ảnh</label>
+                  </div>
+              </div>
+
+              <div class="form-inline row">
+                  <div class="form-group mr-5 col-5">
+                      <label><b style="font-size: 20px;">Giá nhập: </b></label>
+                      <input type="text"
+                             class="form-control mr-1"
+                             name="import_price"
+                             onchange="calculateProfit()"> đ
+                  </div>
+                  <div class="form-group col-5">
+                      <label><b style="font-size: 20px;">Giá bán: </b></label>
+                      <input type="text"
+                             class="form-control mr-1"
+                             name="price"
+                             onchange="calculateProfit()"> đ
+                  </div>
+              </div>
+
+              <div class="row">
+                  <div class="form-group col-6 mt-2">
+                      <label><b style="font-size: 20px;">Lợi nhuận: </b></label>
+                      <div class="row">
+                          <input type="text"
+                                 class="form-control w-75 mr-1 ml-3"
+                                 name="profit"
+                                 onchange="calculatePrice()">%
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            <button type="submit"
+                    class="btn btn-dark"
+                    id="createButton">
+                <i class="fa-solid fa-folder-plus mr-2"></i>
+                Thêm sản phẩm mới
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+</form>
+
+
+<script>
+
+
+   calculateProfit = () => {
+        let price = parseFloat(document.querySelector("input[name='price']").value) || 0;
+        let import_price = parseFloat(document.querySelector("input[name='import_price']").value) || 0;
+
+            profit_percent = ((price - import_price) / import_price) * 100;
+            profit_percent = Math.ceil(profit_percent)
+            document.querySelector("input[name='profit']").value = profit_percent
+   }
+
+
+     calculatePrice = () => {
+        let import_price = parseFloat(document.querySelector("input[name='import_price']").value) || 0;
+        let profit_percent = parseFloat(document.querySelector("input[name='profit']").value) || 0;
+
+            price = import_price + (import_price * profit_percent / 100);
+            document.querySelector("input[name='price']").value = price
+    }
+
+</script>
+
+
+{% endblock %}

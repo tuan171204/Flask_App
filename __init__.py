@@ -12,6 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://tuan:123456tuan@localho
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['PAGE_SIZE'] = 8
 app.config['COMMENT_SIZE'] = 20
+app.config['VIEW_SIZE'] = 10
 
 db = SQLAlchemy(app=app)
 migrate = Migrate(app,db)

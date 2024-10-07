@@ -8,8 +8,17 @@
 
 
   <form class="form-inline my-2 my-lg-0">
-      <input class="form-control mr-sm-2" type="search" placeholder="Tìm mã phiếu nhập" aria-label="Search" name="delivery_note_code">
-      <select class="form-control mr-sm-2" name="confirmed">
+      <input class="form-control w-25 mr-2"
+             type="search"
+             placeholder="Tìm mã phiếu nhập"
+             aria-label="Search"
+             name="delivery_note_code">
+      <input class="form-control w-25 mr-2"
+             type="search"
+             placeholder="Tìm theo mã người giao"
+             aria-label="Search"
+             name="delivery_man_id">
+      <select class="form-control w-25" name="confirmed">
           Tình trạng
           <option value="" selected>Tình trạng</option>
 
@@ -17,21 +26,22 @@
           <option value="False">Chưa xác nhận</option>
       </select>
 
-      <select class="form-control mr-sm-2" name="asc">
+      <select class="form-control w-25 mr-2 mt-2" name="asc">
           <option value="" selected>Sắp xếp theo</option>
           <option value="True">Mới nhất</option>
           <option value="False">Cũ nhất</option>
       </select>
-      <select class="form-control mr-sm-2" name="delivery_reason">
+      <select class="form-control w-25 mr-2 mt-2" name="delivery_reason">
           <option value="" selected>Lý do xuất kho</option>
           {% for d in delivery_reason %}
           <option value="{{ d.id }}">{{ d.name }}</option>
           {% endfor %}
       </select>
 
-      <input class="form-control mr-sm-2" type="search" placeholder="Tìm theo mã người giao" aria-label="Search" name="delivery_man_id">
-
-      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+      <button class="btn btn-outline-dark mt-2 w-75 font-weight-bold"
+              type="submit">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          Tìm kiếm</button>
     </form>
     <hr>
 
@@ -87,6 +97,35 @@
 
     </tbody>
   </table>
+
+            {% if pages > 1 %}
+                <div class="container d-flex justify-content-around" >
+                    <ul class="pagination " style="color:black">
+                        {% if prev_page %}
+                        <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                        {% endif %}
+                            {% for idx in range(1, pages+1) %}
+                                <li class="page-item">
+                                    <a class="page-link border-0"
+                                       href="{{url_for('goods_delivery.index',
+                                                        page=idx,
+                                                        confirmed=request.args.get('confirmed'),
+                                                        asc=request.args.get('asc'),
+                                                        delivery_note=request.args.get('delivery_note_code'),
+                                                        reason = request.args.get('delivery_reason'),
+                                                        delivery_man_id = request.args.get('delivery_man_id')) }}">
+                                        {{idx}}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        {% if next_page %}
+                        <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+
+            {% endif %}
 
 <script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 {% endblock %}

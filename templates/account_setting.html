@@ -5,93 +5,168 @@
 {% block content %}
 
 
+<div class="container">
+    <div class="mt-5 row"
+         id="account-setting-container"
+         style="border-radius: 20px;
+                margin:0px;
+                padding: 0px;">
 
-<div class="container border border-secondary p-5 mt-5" style="border-radius: 20px; box-shadow:5px 10px #888888">
-
-    <span>
-         <img src="{{ current_user.avatar}}" alt="user_avatar" style="width:120px;">
-    </span>
-    <h2 class="text-center ">Cài đặt tài khoản người dùng</h2>
-    <form id="changes_account_info_form">
-        <div class="form-group">
-            <label>Họ và tên:</label>
-            <input type="text"
-                   class="form-control"
-                   value="{{ current_user.name }}"
-                   name="fullname" >
+<!--        MENU            -->
+        <div class="col-md-4 p-4">
+            <div class="form-group">
+              <button class="border-0 btn">
+                  <i class="fa-solid fa-key mr-3"></i>
+                  Thông tin cá nhân
+              </button>
+              <button class="border-0 btn"
+                      onclick="load_account_setting()">
+                  <i class="fa-solid fa-gear mr-3"></i>
+                  Tài khoản
+              </button>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>Username đăng nhập: </label>
-            <input type="text"
-                   class="form-control"
-                   value="{{ current_user.username }}"
-                   name="username" >
-        </div>
-        <div class="form-group">
-            <label>Mật khẩu:</label>
-            <input type="password"
-                   class="form-control"
-                   value="{{ current_user.password }}"
-                   name="password" >
-        </div>
-        <div class="form-group">
-            <label>Email:</label>
-            <input type="email"
-                   class="form-control"
-                   value="{{ current_user.email }}"
-                   name="email" >
-        </div>
-        <div class="form-group">
-            <label>Số điện thoại: </label>
-            <input type="text"
-                   class="form-control"
-                   value=""
-                   name="phone_number">
-        </div>
-         <div class="form-group">
-            <label>Địa chỉ nhận hàng mặc định:  </label>
-            <input type="text"
-                   class="form-control"
-                   value=""
-                   name="user_address" >`
-        </div>
-        <div class="form-group form-inline">
-            <a href="{{ url_for('home') }}" class="btn p-2 mr-3 border-0">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                Quay lại
-            </a>
-            <button type="button" class="p-2 border-0" data-toggle="modal" data-target="#confirmInfoModal">
-                <i class="fa-solid fa-file-circle-check"></i>
-                Lưu thông tin
-            </button>
-        </div>
-    </form>
-</div>
+<!--        ACCOUNT SETTING       -->
+        <div class="col-md-8 p-5" style="row-gap:1.2rem;">
+            <span class="row mb-5">
+                <span class="col-md-4">
+                     <img src="{{ current_user.avatar}}"
+                     alt="user_avatar"
+                     style="width:120px;">
+                </span>
+
+                <span class="col-md-8">
+                    <p class="mt-5 font-weight-bold"
+                       style="font-size: 32px;">
+                        Cài đặt tài khoản
+                    </p>
+                </span>
+
+            </span>
+            <form id="changes_private_info_form">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <label>Họ và tên:</label>
+                        <input type="text"
+                           class="form-control"
+                           value="{{ current_user.name }}"
+                           name="fullname" >
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <label>Username đăng nhập: </label>
+                        <input type="text"
+                           class="form-control"
+                           value="{{ current_user.username }}"
+                           name="username" >
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <label>Mật khẩu:</label>
+                        <input type="password"
+                           readonly
+                           class="form-control"
+                           value="{{ current_user.password }}"
+                           name="password" >
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <label>Email:</label>
+                        <input type="email"
+                           class="form-control"
+                           value="{{ current_user.email }}"
+                           name="email" >
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <label>Số điện thoại: </label>
+                        <input type="text"
+                           class="form-control"
+                           value=""
+                           name="phone_number"
+                           placeholder="Bổ sung số điện thoại ...">
+                    </div>
+                </div>
+                 <div class="form-group row">
+                     <div class="col-md-12">
+                         <label>Địa chỉ nhận hàng mặc định:  </label>
+                         <input type="text"
+                           class="form-control"
+                           value=""
+                           name="user_address"
+                           placeholder="Bổ sung địa chỉ ...">
+                     </div>
+                </div>
+                <div class="form-group form-inline">
+                    <a href="{{ url_for('home') }}" class="btn p-2 mr-3 border-0">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Quay lại
+                    </a>
+                    <button type="button" class="p-2 border-0" data-toggle="modal" data-target="#confirmInfoModal">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                        Lưu thông tin
+                    </button>
+                </div>
+            </form>
 
 
 
-<div class="modal fade" id="confirmInfoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Xác nhận thay đổi thông tin </h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-        <button type="button" class="btn btn-warning">Lưu thay đổi</button>
-      </div>
+            <form id="changes_account_info">
+                <div class="form-group row">
+                     <div class="col-md-12">
+                         <button type="button"
+                                 class="btn btn-danger text-light delete">
+                         <i class="fa-solid fa-ban"></i>
+                          Xóa tài khoản
+                         </button>
+                     </div>
+                </div>
+            </form>
+        </div>
+
+
+
+
+<!--CONFIRM MODAL-->
+
+        <div class="modal fade" id="confirmInfoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Xác nhận thay đổi thông tin </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+
+              </div>
+              <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-dismiss="modal">
+                        Đóng
+                </button>
+                <button type="button"
+                        class="btn btn-warning"
+                        onclick="saves_change()">
+                        Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
-  </div>
-</div>
 
 <script>
+    function save_change(){
         const nameRegex = /^[a-zA-Z\s]+$/;
         const usernameRegex = /^[a-zA-Z0-9]+$/;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -136,6 +211,22 @@
             phone_number: phoneNumber,
             password
         };
+
+
+    }
+
+    part = document.querySelectorAll("form")
+    part[2].style.display = 'none'
+
+    load_account_setting = () => {
+        if ( part[2].style.display = 'none'){
+            for ( let i=0; i<part.length; i++){
+                part[i].style.display = 'none'
+            }
+
+            part[2].style.display = 'block'
+        }
+    }
 
 
 </script>

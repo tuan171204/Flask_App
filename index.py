@@ -7,22 +7,22 @@ from flask_login import login_user, logout_user, login_required, current_user
 from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail
 from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 
+
 @app.route('/')
 def home():
-
     page = request.args.get('page', 1)
 
     cate_id = request.args.get('category_id')
 
     kw = request.args.get('kw')
 
-    products = utils.load_products(cate_id = cate_id, kw = kw, page=int(page))
+    products = utils.load_products(cate_id=cate_id, kw=kw, page=int(page))
 
     all_products = utils.load_all_products()
 
     cate_name = utils.get_cate_by_id(cate_id)
 
-    counter = utils.count_product(cate_id=cate_id, kw = kw)
+    counter = utils.count_product(cate_id=cate_id, kw=kw)
 
     prev_page = url_for('home', page=int(page) - 1) if int(page) > 1 else None
     next_page = url_for('home', page=int(page) + 1)
@@ -52,15 +52,14 @@ def product_detail(product_id):
     comments = utils.get_comments(product_id=product_id,
                                   page=int(request.args.get('page', 1)))
 
-    suggest_id = recommendSimilarProducts(product_id, NUMBER = 5)
+    suggest_id = recommendSimilarProducts(product_id, NUMBER=5)
 
     suggest_id = sorted(suggest_id)
 
-
     return render_template('product_detail.html',
                            comments=comments,
-                           product = product,
-                           pages = math.ceil(utils.count_comment(product_id)/app.config['COMMENT_SIZE']),
+                           product=product,
+                           pages=math.ceil(utils.count_comment(product_id) / app.config['COMMENT_SIZE']),
                            products=products,
                            suggest_id=suggest_id,
                            discountType=DiscountType
@@ -86,7 +85,7 @@ def user_register():
                     avatar_path = res['secure_url']
                 utils.add_user(name=name, username=username,
                                password=password, email=email,
-                               avatar = avatar_path)
+                               avatar=avatar_path)
                 return redirect("/user-login")
             else:
                 err_msg = "Mật khẩu không khớp"
@@ -94,8 +93,7 @@ def user_register():
         except Exception as e:
             err_msg = "Hệ thống đang có lỗi " + str(e)
 
-
-    return render_template('register.html', err_msg = err_msg)
+    return render_template('register.html', err_msg=err_msg)
 
 
 @app.route('/user-login', methods=['get', 'post'])
@@ -114,7 +112,7 @@ def user_signin():
         else:
             err_msg = 'Username hoặc password không chính xác'
 
-    return render_template('login.html', err_msg = err_msg)
+    return render_template('login.html', err_msg=err_msg)
 
 
 @app.route('/admin-login', methods=['post'])
@@ -124,7 +122,7 @@ def signin_admin():
         password = request.form.get('password')
 
         user = utils.check_login_admin(username=username,
-                                 password=password)
+                                       password=password)
         if user:
             login_user(user=user)
             return redirect('/admin')
@@ -167,7 +165,7 @@ def add_comment():
 @app.context_processor
 def common_response():
     return {
-        'categories': utils.load_categories(),
+        'categories': utils.load_categories_client(),
         'cart_stats': utils.count_cart(session.get('cart'))
     }
 
@@ -177,15 +175,14 @@ def user_load(user_id):
     return utils.get_user_by_id(user_id=user_id)
 
 
-@app.route('/products')    
+@app.route('/products')
 def product_list():
-    
     cate_id = request.args.get("category_id")
 
     kw = request.args.get("keyword")
-    
+
     products = utils.load_products(cate_id=cate_id, kw=kw)
-    
+
     return render_template('products.html',
                            products=products)
 
@@ -193,14 +190,13 @@ def product_list():
 @app.route('/cart')
 def cart():
     return render_template('cart.html',
-                           stats = utils.count_cart(session.get('cart')),
-                            payments = utils.load_payment()
+                           stats=utils.count_cart(session.get('cart')),
+                           payments=utils.load_payment()
                            )
 
 
 @app.route('/user-receipt/<int:user_id>')
 def user_receipt(user_id):
-
     receipt_id = request.args.get('receipt_id')
 
     asc = request.args.get('asc', 'True')
@@ -257,8 +253,6 @@ def confirm_receipt(receipt_id):
     return redirect(f'/user-receipt/{current_user.id}')
 
 
-
-
 @app.route('/api/add-cart', methods=['post'])
 def add_to_cart():
     data = request.get_json()
@@ -268,13 +262,9 @@ def add_to_cart():
     image = data.get('image')
     promotion = data.get('promotion')
 
-
-
     cart = session.get('cart')
     if not cart:
         cart = {}
-
-
 
     if id in cart:
         cart[id]['quantity'] = cart[id]['quantity'] + 1
@@ -308,7 +298,7 @@ def update_cart():
     return jsonify(utils.count_cart(cart))
 
 
-@app.route("/api/delete-cart/<product_id>", methods = ['delete'])
+@app.route("/api/delete-cart/<product_id>", methods=['delete'])
 def delete_cart(product_id):
     cart = session.get('cart')
 
@@ -340,7 +330,8 @@ def pay():
 def delete_receipt_detail(receipt_id, product_id, quantity):
     try:
         # Tìm chi tiết hóa đơn cần xóa
-        receipt_detail = ReceiptDetail.query.filter_by(receipt_id=receipt_id, product_id=product_id, quantity=quantity).first()
+        receipt_detail = ReceiptDetail.query.filter_by(receipt_id=receipt_id, product_id=product_id,
+                                                       quantity=quantity).first()
 
         if receipt_detail:
             # Xóa chi tiết hóa đơn khỏi cơ sở dữ liệu
@@ -360,11 +351,11 @@ def delete_receipt_detail(receipt_id, product_id, quantity):
 @app.route('/api/delete-receipt/<int:receipt_id>', methods=['DELETE'])
 def delete_receipt(receipt_id):
     try:
-        receipt = Receipt.query.filter(Receipt.id==receipt_id).first()
+        receipt = Receipt.query.filter(Receipt.id == receipt_id).first()
 
         if receipt:
 
-            receipt_details = ReceiptDetail.query.filter(ReceiptDetail.receipt_id==receipt_id).all()
+            receipt_details = ReceiptDetail.query.filter(ReceiptDetail.receipt_id == receipt_id).all()
 
             for detail in receipt_details:
                 db.session.delete(detail)
@@ -379,38 +370,37 @@ def delete_receipt(receipt_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": False, "message": str(e) }), 500
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
-
-@app.route('/api/update-receipt-details/<int:receipt_id>', methods=['PUT'] )
+@app.route('/api/update-receipt-details/<int:receipt_id>', methods=['PUT'])
 def update_receipt_details(receipt_id):
     try:
         data = request.json
         receipt_details = data.get('receipt_details', [])
         status_id = data.get('status_id')
-        
+
         receipt = Receipt.query.filter(Receipt.id.__eq__(receipt_id)).first()
-        receipt.status_id=status_id
-        
+        receipt.status_id = status_id
+
         for detail in receipt_details:
             product_id = detail['product_id']
             quantity = detail['quantity']
-            
-            receipt_detail = ReceiptDetail.query.filter(ReceiptDetail.receipt_id==receipt_id, ReceiptDetail.product_id==product_id).first()
+
+            receipt_detail = ReceiptDetail.query.filter(ReceiptDetail.receipt_id == receipt_id,
+                                                        ReceiptDetail.product_id == product_id).first()
             if receipt_detail:
                 receipt_detail.quantity = quantity
             else:
                 return jsonify({"success": False, "message": "Không tìm thấy chi tiết hóa đơn"}), 404
-            
+
         db.session.commit()
-        
+
         return jsonify({"success": True})
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
-
 
 
 # EXAMPLE FOR RSUBMIT & REQUEST FORM IN PYTHON
@@ -460,13 +450,13 @@ def post_report(receipt_id):
     description = request.form.get('description')
 
     new_report = Receipt_Report(
-        user_report = current_user.id,
-        receipt_report = receipt_id,
-        report_type = report_type,
-        description = description
+        user_report=current_user.id,
+        receipt_report=receipt_id,
+        report_type=report_type,
+        description=description
     )
 
-    receipt_reported = Receipt.query.filter(Receipt.id==receipt_id).first()
+    receipt_reported = Receipt.query.filter(Receipt.id == receipt_id).first()
     receipt_reported.status_id = 3
 
     db.session.add(new_report)
@@ -475,7 +465,6 @@ def post_report(receipt_id):
     flash("Đã gửi phản hồi", "warning")
 
     return redirect(f'/user-receipt/{current_user.id}')
-
 
 
 @app.route("/user-receipt-detail/<int:receipt_id>")
@@ -493,18 +482,17 @@ def user_receipt_detail(receipt_id):
         6: 'btn-primary'
     }
 
-
     return render_template('user_receipt_detail.html',
-                           receipt = receipt,
-                           receipt_detail = receipt_detail,
-                           total_price = total_price,
-                           status_colors = status_colors)
+                           receipt_id=receipt_id,
+                           receipt=receipt,
+                           receipt_detail=receipt_detail,
+                           total_price=total_price,
+                           status_colors=status_colors)
 
 
 @app.route("/account-setting")
 def account_setting():
     return render_template("account_setting.html")
-
 
 
 @app.route("/update-account/<int:user_id>", methods=['POST'])
@@ -517,7 +505,7 @@ def saves_change_account(user_id):
         phone_number = data.get('phone_number')
         address = data.get('user_address')
 
-        utils.changes_user_info(user_id = user_id,
+        utils.changes_user_info(user_id=user_id,
                                 fullname=fullname,
                                 username=username,
                                 email=email,
@@ -531,6 +519,23 @@ def saves_change_account(user_id):
         return jsonify({'code': 404})
 
 
+@app.route('/api/check_category_id/<int:category_id>', methods=['GET'])
+def check_category_id(category_id):
+    if utils.check_category_id(category_id):
+        return jsonify({"exists": True})
+    else:
+        return jsonify({"exists": False})
+
+
+@app.route('/api/check_change_category_id/<int:base_id>/<int:category_id>', methods=['GET'])
+def check_change_category_id(base_id ,category_id):
+    if utils.check_change_category_id(base_id, category_id):
+        return jsonify({"exists": True})
+    else:
+        return jsonify({"exists": False})
+
+
 if __name__ == "__main__":
     from Flask_App.admin import *
+
     app.run(debug=True)

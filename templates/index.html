@@ -9,7 +9,7 @@
         <video autoplay muted id="myVideo2">
             <source src="{{url_for('static', filename='video/samsung.mp4')}}" type="video/mp4">
             Your browser does not support HTML5 video.
-          </video>
+        </video>
     </div>
         <div class="carousel-caption text-left" style="color: black; ">
             <h1>Galaxy Z Fold 6 | Z Flip 6</h1>
@@ -44,7 +44,7 @@
             <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
                 <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
                     <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
-                        <img class="card-img-top" src="{{url_for('static', filename=p.image)}}" alt="Product" style="height:fit-content;">
+                        <img class="card-img-top" src="{{url_for('static', filename=p.image) }}" alt="Product" style="height:fit-content;">
                     </a>
                    <div class="card-body" style="bottom: 10px;">
                     <h4 class="card-title text-center">{{p.name}}</h4>
@@ -73,7 +73,7 @@
             <div class="container d-flex justify-content-around" >
                 <ul class="pagination " style="color:black">
                     {% if prev_page %}
-                    <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Previous</a></li>
+                    <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
                     {% endif %}
                     {% for idx in range(1, pages+1) %}
                         {% if 'category_id' in request.args %}
@@ -85,13 +85,13 @@
                         {% endif %}
                     {% endfor %}
                     {% if next_page %}
-                    <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Next</a></li>
+                    <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
                     {% endif %}
                 </ul>
             </div>
             {% endif %}    `
 
-        {% else %}
+            {% else %}
         <div class="text-center bg-dark text-light font-bold">
             <h1><i> Không có sản phẩm nào !!!</i></h1>
         </div>
@@ -143,8 +143,7 @@
     </div>
 </div>
 
-            <br>
-            <br>
+  <br><br>
 
 {% if recommend_id %}
 <div class="container bg-warning best-seller mb-5">
@@ -194,7 +193,7 @@
         button.click();
     }
 
-    setInterval(autoClick, 2000)
+    setInterval(autoClick, 2500)
 </script>
 
 {% endblock %}

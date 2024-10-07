@@ -1,13 +1,15 @@
+import math
+
 from num2words import num2words
 import random
-from Flask_App import app,db
+from Flask_App import app, db
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
     Goods_Delivery_Note
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose, AdminIndexView
-from flask import redirect, flash
+from flask import redirect, flash, url_for
 import utils
 from flask import request
 from datetime import datetime
@@ -25,13 +27,12 @@ class ManageModelView(ModelView):
         return current_user.is_authenticated
 
 
-
 class UserView(ManageModelView):
     create_modal = True
     column_display_pk = True
     column_hide_backrefs = False
     column_list = ['id', 'name', 'username', 'password', "joined_date", "active"]
-    form_columns = ['id','name', 'username', 'password', "joined_date", "active"]
+    form_columns = ['id', 'name', 'username', 'password', "joined_date", "active"]
     can_view_details = True
     can_export = True
     column_searchable_list = ['name', 'id']
@@ -43,201 +44,342 @@ class UserView(ManageModelView):
         return self.check_permission('view_user')
 
 
-class CustomerView(ManageModelView):
-    create_modal = True
-    column_display_pk = True
-    column_hide_backrefs = False
-    column_list = ['name', 'username', 'password', "joined_date", "active"]
-    form_columns = ['name', 'username', 'password', "joined_date", "active"]
-    can_view_details = True
-    can_export = True
-    column_searchable_list = ['name', 'id']
-    column_filters = ['name', 'id']
-    column_exclude_list = ['active']
-    column_sortable_list = ['id', 'name']
-
-    def is_accessible(self):
-        return self.check_permission('view_customer')
-
-
 class ProductView(ManageModelView):
-    create_modal = True
-    column_display_pk = True
-    column_hide_backrefs = False
-    column_list = ['id', 'name', 'price', 'image', 'active', 'description', 'category_id', 'brand_id']
-    form_columns = ['id','name', 'price', 'image', 'active', 'description', 'category_id', 'brand_id']
-    can_view_details = True
-    can_export = True
-    column_searchable_list = ['name', 'category_id']
-    column_filters = ['name', 'price', 'category_id']
-    column_exclude_list = ['image', 'active']
-    column_sortable_list = ['id', 'name', 'price']
+    @expose("/")
+    def index(self):
+
+        providers = utils.load_provider()
+
+        kw = request.args.get('kw')
+
+        active = request.args.get('active')
+
+        provider_id = request.args.get('provider_id')
+
+        from_import_price, to_import_price = request.args.get('from_import_price'), \
+            request.args.get('to_import_price')
+
+        from_price, to_price = request.args.get('from_price'), \
+            request.args.get('to_price')
+
+        page = request.args.get('page', 1)
+
+        category = utils.load_categories_client()
+
+        brands = utils.load_brands()
+
+        products, counter = utils.load_manage_product(kw=kw,
+                                                      active=active,
+                                                      provider_id=provider_id,
+                                                      from_import_price=from_import_price,
+                                                      to_import_price=to_import_price,
+                                                      from_price=from_price,
+                                                      to_price=to_price,
+                                                      page=int(page))
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        next_page = url_for('product.index',
+                            page=int(page) + 1,
+                            kw=request.args.get('kw'),
+                            active=request.args.get('active'),
+                            provider_id=request.args.get('provider_id'),
+                            from_import_price=request.args.get('from_import_price'),
+                            to_import_price=request.args.get('to_import_price'),
+                            from_price=request.args.get('from_price'),
+                            to_price=request.args.get('to_price')
+                            ) if int(page) < pages else None
+
+        prev_page = url_for('product.index',
+                            page=int(page) - 1,
+                            kw=request.args.get('kw'),
+                            active=request.args.get('active'),
+                            provider_id=request.args.get('provider_id'),
+                            from_import_price=request.args.get('from_import_price'),
+                            to_import_price=request.args.get('to_import_price'),
+                            from_price=request.args.get('from_price'),
+                            to_price=request.args.get('to_price')
+                            ) if int(page) > 1 else None
+
+        return self.render('admin/product.html',
+                           products=products,
+                           providers=providers,
+                           next_page=next_page,
+                           prev_page=prev_page,
+                           pages=pages,
+                           size=app.config['VIEW_SIZE'],
+                           page=int(page),
+                           categories=category,
+                           brands=brands
+                           )
+
+    @expose("create-product", methods=['POST'])
+    def create_product(self):
+        product_name = request.form.get('product_name')
+        category_id = request.form.get('category_id')
+        provider_id = request.form.get('provider_id')
+        brand_id = request.form.get('brand_id')
+
+        utils.add_product()
+
 
     def is_accessible(self):
         return self.check_permission('view_product')
 
 
 class CategoryView(ManageModelView):
-    create_modal = True
-    column_display_pk = True
-    column_hide_backrefs = False
-    column_list = ['id', 'name']
-    form_columns = ['id','name']
-    can_view_details = True
-    can_export = True
-    column_searchable_list = ['name']
-    column_filters = ['name']
-    column_sortable_list = ['id']
+    @expose("/")
+    def index(self):
+        kw = request.args.get('kw')
+
+        page = request.args.get('page', 1)
+
+        categories, counter = utils.load_categories(kw, page=int(page))
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        next_page = url_for('category.index',
+                            page=int(page) + 1) if int(page) < pages else None
+
+        prev_page = url_for('category.index',
+                            page=int(page) - 1) if int(page) > 1 else None
+
+        return self.render('admin/category.html',
+                           categories=categories,
+                           pages=pages,
+                           next_page=next_page,
+                           prev_page=prev_page
+                           )
+
+    @expose("category-detail/<int:category_id>")
+    def category_detail(self, category_id):
+        page = request.args.get('page', 1)
+
+        products = utils.load_products_admin(cate_id=category_id, page=int(page))
+
+        counter = utils.count_product(cate_id=category_id)
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        next_page = url_for('category.category_detail',
+                            page=int(page) + 1,
+                            category_id=category_id) if int(page) < pages else None
+
+        prev_page = url_for('category.category_detail',
+                            page=int(page) - 1,
+                            category_id=category_id) if int(page) > 1 else None
+
+        return self.render('admin/category.html',
+                           page=int(page),
+                           products=products,
+                           counter=counter,
+                           pages=pages,
+                           next_page=next_page,
+                           prev_page=prev_page,
+                           step=app.config['VIEW_SIZE'],
+                           category_id=category_id
+                           )
+
+    @expose('delete-category/<int:category_id>')
+    def delete_category(self, category_id):
+        category = Category.query.filter(Category.id == category_id).first()
+
+        db.session.delete(category)
+        db.session.commit()
+
+        flash('Đã xóa bỏ danh mục sản phẩm', 'warning')
+
+        return redirect('/admin/category/')
+
+    @expose('change-category/<int:category_id>', methods=['POST'])
+    def change_id(self, category_id):
+        category = Category.query.filter(Category.id == category_id).first()
+        category.id = request.form.get('category_id')
+        db.session.commit()
+
+        flash('Thay đổi mã danh mục thành công', 'warning')
+
+        return redirect('/admin/category/')
+
+    @expose('create-category', methods=['POST'])
+    def create_category(self):
+        category_id = request.form.get('category_id')
+        category_name = request.form.get('category_name')
+        utils.create_categpry(cate_id=category_id,
+                              cate_name=category_name)
+
+        flash("Tạo danh mục sản phẩm mới thành công ", "warning")
+
+        return redirect('/admin/category/')
 
     def is_accessible(self):
         return self.check_permission('view_product')
 
 
-
 class DeliveryNoteView(ManageModelView):
-   @expose('/')
-   def index(self):
-       delivery_code = request.args.get('delivery_note_code')
+    @expose('/')
+    def index(self):
+        delivery_code = request.args.get('delivery_note_code')
 
-       confirmed = request.args.get('confirmed')
+        confirmed = request.args.get('confirmed')
 
-       asc = request.args.get('asc', 'True')
+        asc = request.args.get('asc', 'True')
 
-       reason = request.args.get('delivery_reason')
+        reason = request.args.get('delivery_reason')
 
-       delivery_man_id = request.args.get('delivery_man_id')
+        page = request.args.get('page', 1)
 
-       delivery_reason = utils.load_delivery_reason()
+        delivery_man_id = request.args.get('delivery_man_id')
 
-       delivery_notes = utils.load_delivery_note(delivery_code=delivery_code,
-                                                 confirmed=confirmed,
-                                                 asc=asc,
-                                                 reason=reason,
-                                                 delivery_man_id=delivery_man_id)
+        delivery_reason = utils.load_delivery_reason()
 
-       return self.render('admin/delivery_product.html',
-                          delivery_notes=delivery_notes,
-                          delivery_reason=delivery_reason)
+        counter = utils.count_delivery_note(confirmed=confirmed,
+                                            delivery_code=delivery_code,
+                                            reason=reason,
+                                            delivery_man_id=delivery_man_id)
 
+        delivery_notes = utils.load_delivery_note(delivery_code=delivery_code,
+                                                  confirmed=confirmed,
+                                                  asc=asc,
+                                                  reason=reason,
+                                                  delivery_man_id=delivery_man_id,
+                                                  page=int(page))
 
-   @expose("view-delivery-note-by-id/<int:receipt_id>")
-   def view_delivery_note_by_id(self, receipt_id):
-       delivery_note = utils.get_delivery_note(receipt_id=receipt_id)
-       delivery_code = delivery_note.code
-       return self.view_delivery_note(delivery_code=delivery_code, receipt_id=receipt_id)
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
 
-   @expose("/view-delivery-note/<delivery_code>")
-   @expose("/view-delivery-note/<delivery_code>/<int:receipt_id>")
-   def view_delivery_note(self, delivery_code, receipt_id = None):
-       receipt = utils.get_receipt_by_id(receipt_id)
+        prev_page = url_for('goods_delivery.index',
+                            page=int(page) - 1,
+                            confirmed=request.args.get('confirmed'),
+                            asc=request.args.get('asc'),
+                            delivery_note=request.args.get('delivery_note_code'),
+                            reason=request.args.get('delivery_reason'),
+                            delivery_man_id=request.args.get('delivery_man_id')
+                            ) if int(page) > 1 else None
 
-       delivery_note = utils.get_delivery_note(delivery_code)
+        next_page = url_for('goods_delivery.index',
+                            page=int(page) + 1,
+                            confirmed=request.args.get('confirmed'),
+                            asc=request.args.get('asc'),
+                            delivery_note=request.args.get('delivery_note_code'),
+                            reason=request.args.get('delivery_reason'),
+                            delivery_man_id=request.args.get('delivery_man_id')
+                            ) if int(page) < pages else None
 
-       delivery_details, total_price, total_price2 = utils.load_delivery_note_details(delivery_code)
+        return self.render('admin/delivery_product.html',
+                           delivery_notes=delivery_notes,
+                           delivery_reason=delivery_reason,
+                           prev_page=prev_page,
+                           next_page=next_page,
+                           pages=pages)
 
-       total_in_words = num2words(total_price, lang='vi').capitalize() + " đồng "
+    @expose("view-delivery-note-by-id/<int:receipt_id>")
+    def view_delivery_note_by_id(self, receipt_id):
+        delivery_note = utils.get_delivery_note(receipt_id=receipt_id)
+        delivery_code = delivery_note.code
+        return self.view_delivery_note(delivery_code=delivery_code, receipt_id=receipt_id)
 
-       now = datetime.now()
+    @expose("/view-delivery-note/<delivery_code>")
+    @expose("/view-delivery-note/<delivery_code>/<int:receipt_id>")
+    def view_delivery_note(self, delivery_code, receipt_id=None):
+        receipt = utils.get_receipt_by_id(receipt_id)
 
-       return self.render('admin/delivery_form.html',
-                          receipt=receipt,
-                          delivery_details=delivery_details,
-                          total_price=total_price,
-                          total_price2=total_price2,
-                          total_in_words=total_in_words,
-                          now=now,
-                          delivery_code=delivery_code,
-                          delivery_note=delivery_note)
+        delivery_note = utils.get_delivery_note(delivery_code)
 
+        delivery_details, total_price, total_price2 = utils.load_delivery_note_details(delivery_code)
 
+        total_in_words = num2words(total_price, lang='vi').capitalize() + " đồng "
 
-   @expose("/update-delivery-note/<delivery_code>", methods=['POST'])
-   @expose("/update-delivery-note/<delivery_code>/<int:receipt_id>", methods=['POST'])
-   def update_delivery_note(self, receipt_id=None, delivery_code=None):
-       reason = request.form.get('delivery_reason')
+        now = datetime.now()
 
-       if not reason:
-           reason = 1
+        return self.render('admin/delivery_form.html',
+                           receipt=receipt,
+                           delivery_details=delivery_details,
+                           total_price=total_price,
+                           total_price2=total_price2,
+                           total_in_words=total_in_words,
+                           now=now,
+                           delivery_code=delivery_code,
+                           delivery_note=delivery_note)
 
-       delivery_man_id = 8
+    @expose("/update-delivery-note/<delivery_code>", methods=['POST'])
+    @expose("/update-delivery-note/<delivery_code>/<int:receipt_id>", methods=['POST'])
+    def update_delivery_note(self, receipt_id=None, delivery_code=None):
+        reason = request.form.get('delivery_reason')
 
-       delivery_address = request.form.get('delivery_address')
+        if not reason:
+            reason = 1
 
-       receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        delivery_man_id = 8
 
-       products_data = []
+        delivery_address = request.form.get('delivery_address')
 
-       for detail in receipt_details:
-           product_id = request.form.get(f'product_id_{detail.product_id}')
-           delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
-           base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
 
-           if product_id and delivered_quantity and base_quantity:
-               products_data.append({'product_id': product_id,
-                                     'delivered_quantity': delivered_quantity,
-                                     'base_quantity': base_quantity})
+        products_data = []
 
-       utils.update_delivery_note(delivery_code=delivery_code,
-                                  delivery_man_id=delivery_man_id,
-                                  delivery_reason=reason,
-                                  delivery_address=delivery_address,
-                                  total_price=total_price,
-                                  products_data=products_data,
-                                  receipt_id=receipt_id)
+        for detail in receipt_details:
+            product_id = request.form.get(f'product_id_{detail.product_id}')
+            delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+            base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
 
-       flash("Cập nhật phiếu xuất kho thành công ", "info")
+            if product_id and delivered_quantity and base_quantity:
+                products_data.append({'product_id': product_id,
+                                      'delivered_quantity': delivered_quantity,
+                                      'base_quantity': base_quantity})
 
-       return redirect('/admin/goods_delivery')
+        utils.update_delivery_note(delivery_code=delivery_code,
+                                   delivery_man_id=delivery_man_id,
+                                   delivery_reason=reason,
+                                   delivery_address=delivery_address,
+                                   total_price=total_price,
+                                   products_data=products_data,
+                                   receipt_id=receipt_id)
 
+        flash("Cập nhật phiếu xuất kho thành công ", "info")
 
-   @expose('/confirm-delivery-note/<delivery_code>/<int:receipt_id>', methods=['POST'])
-   def confirm_delivery_note(self, delivery_code, receipt_id):
-       reason = request.form.get('delivery_reason')
+        return redirect('/admin/goods_delivery')
 
-       if not reason:
-           reason = 1
+    @expose('/confirm-delivery-note/<delivery_code>/<int:receipt_id>', methods=['POST'])
+    def confirm_delivery_note(self, delivery_code, receipt_id):
+        reason = request.form.get('delivery_reason')
 
-       delivery_man_id = 8
+        if not reason:
+            reason = 1
 
-       delivery_address = request.form.get('delivery_address')
+        delivery_man_id = 8
 
-       receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        delivery_address = request.form.get('delivery_address')
 
-       products_data = []
+        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
 
-       for detail in receipt_details:
-           product_id = request.form.get(f'product_id_{detail.product_id}')
-           delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
-           base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
+        products_data = []
 
-           if product_id and delivered_quantity and base_quantity:
-               products_data.append({'product_id': product_id,
-                                     'delivered_quantity': delivered_quantity,
-                                     'base_quantity': base_quantity})
+        for detail in receipt_details:
+            product_id = request.form.get(f'product_id_{detail.product_id}')
+            delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
+            base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
 
-       utils.confirm_delivery_note(delivery_code=delivery_code,
-                                  delivery_man_id=delivery_man_id,
-                                  delivery_reason=reason,
-                                  delivery_address=delivery_address,
-                                  total_price=total_price,
-                                  products_data=products_data,
-                                  receipt_id=receipt_id)
+            if product_id and delivered_quantity and base_quantity:
+                products_data.append({'product_id': product_id,
+                                      'delivered_quantity': delivered_quantity,
+                                      'base_quantity': base_quantity})
 
-       utils.confirm_receipt(receipt_id)
+        utils.confirm_delivery_note(delivery_code=delivery_code,
+                                    delivery_man_id=delivery_man_id,
+                                    delivery_reason=reason,
+                                    delivery_address=delivery_address,
+                                    total_price=total_price,
+                                    products_data=products_data,
+                                    receipt_id=receipt_id)
 
-       flash("Xác nhận phiếu xuất kho thành công ", "warning")
+        utils.confirm_receipt(receipt_id)
 
-       return redirect('/admin/goods_delivery')
+        flash("Xác nhận phiếu xuất kho thành công ", "warning")
 
+        return redirect('/admin/goods_delivery')
 
-
-
-
-   def is_accessible(self):
+    def is_accessible(self):
         return self.check_permission('delivery_product')
-
-
-
 
 
 class LogoutView(BaseView):
@@ -251,6 +393,9 @@ class LogoutView(BaseView):
 
 
 class MyAdminIndex(AdminIndexView):
+    def __init__(self):
+        super(MyAdminIndex, self).__init__(name='Home', menu_icon_type='fa', menu_icon_value='fa-solid fa-home')
+
     @expose('/')
     def index(self):
         return self.render('admin/index.html', stats=utils.category_stats())
@@ -264,15 +409,13 @@ class StatsView(ManageModelView):
         to_date = request.args.get('to_date')
         year = request.args.get('year', datetime.now())
 
-
         return self.render('admin/stats.html',
-                           month_stats = utils.product_months_stats(year=year),
-                           stats = utils.product_stats(kw=kw,
-                            from_date=from_date, to_date=to_date))
+                           month_stats=utils.product_months_stats(year=year),
+                           stats=utils.product_stats(kw=kw,
+                                                     from_date=from_date, to_date=to_date))
 
     def is_accessible(self):
         return self.check_permission('view_stats')
-
 
 
 class OrderProductView(ManageModelView):
@@ -294,9 +437,6 @@ class OrderProductView(ManageModelView):
                            distributions=distributions,
                            products=products)
 
-
-
-
     @expose('/create-order/', methods=['POST'])
     def create_order(self):
 
@@ -309,7 +449,7 @@ class OrderProductView(ManageModelView):
 
         total = 0
 
-        while(True):
+        while (True):
             product_id = request.form.get(f'product_id_{counter}')
             quantity = request.form.get(f'quantity_{counter}')
             note = request.form.get(f'note_{counter}')
@@ -324,7 +464,6 @@ class OrderProductView(ManageModelView):
             else:
                 break
 
-
         created_date = request.form.get('order_date')
 
         if not created_date:
@@ -334,7 +473,7 @@ class OrderProductView(ManageModelView):
                                   order_date=created_date,
                                   provider_id=provider_id,
                                   total_price=total,
-                                  products_data = products_data,
+                                  products_data=products_data,
                                   )
 
         flash("Đặt hàng thành công", "warning")
@@ -343,7 +482,6 @@ class OrderProductView(ManageModelView):
 
     def is_accessible(self):
         return self.check_permission('order_product')
-
 
 
 class ReceiveNoteView(ManageModelView):
@@ -356,15 +494,34 @@ class ReceiveNoteView(ManageModelView):
 
         asc = request.args.get('asc', 'True')
 
-        goods_received_note = utils.load_goods_received_note(received_note_code, confirmed, asc)
+        page = request.args.get('page', 1)
+
+        goods_received_note = utils.load_goods_received_note(received_note_code, confirmed, asc, page=int(page))
+
+        counter = utils.count_receive_note(confirmed=confirmed, received_note_code=received_note_code)
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        prev_page = url_for('goods_receive.index',
+                            page=int(page) - 1,
+                            confirmed=request.args.get('confirmed'),
+                            asc=request.args.get('asc')
+                            ) if int(page) > 1 else None
+        next_page = url_for('goods_receive.index',
+                            page=int(page) + 1,
+                            confirmed=request.args.get('confirmed'),
+                            asc=request.args.get('asc')
+                            ) if int(page) < pages else None
 
         return self.render('admin/receive_product.html',
-                           goods_received_note=goods_received_note)
-
+                           goods_received_note=goods_received_note,
+                           next_page=next_page,
+                           prev_page=prev_page,
+                           pages=pages
+                           )
 
     def is_accessible(self):
         return self.check_permission('receive_product')
-
 
     @expose('/create-receive-form/<goods_received_code>')
     def create_receive_form(self, goods_received_code):
@@ -380,8 +537,8 @@ class ReceiveNoteView(ManageModelView):
         return self.render('admin/receive_form.html',
                            g_note=goods_received_note,
                            g_detail=goods_received_note_detail,
-                           total_in_words = total_in_words,
-                           now = now)
+                           total_in_words=total_in_words,
+                           now=now)
 
     @expose('/update-receive-form/<goods_received_code>', methods=['POST'])
     def update_received_note(self, goods_received_code):
@@ -395,16 +552,14 @@ class ReceiveNoteView(ManageModelView):
             if product_id and quantity:
                 utils.update_received_note_detail(goods_received_code, product_id, quantity)
 
-
         delivery_man = request.form.get('delivery_man')
 
         if delivery_man:
             utils.update_g_note_delivery_man(delivery_man, goods_received_code)
 
-        flash('Cập nhật phiếu nhập thành công', 'warning')
+        flash(f'Cập nhật phiếu nhập {goods_received_code} thành công', 'warning')
 
-        return redirect(f'/admin/goods_receive/create-receive-form/{goods_received_code}')
-
+        return redirect(f'/admin/goods_receive')
 
     @expose('/confirm-receive-form/<goods_received_code>', methods=['POST'])
     def confirm_received_note(self, goods_received_code):
@@ -413,7 +568,6 @@ class ReceiveNoteView(ManageModelView):
         flash(f"Đã xác nhận phiếu nhập kho {goods_received_code}", "warning")
 
         return redirect('/admin/goods_receive/')
-
 
 
 class ReceiptView(ManageModelView):
@@ -425,9 +579,9 @@ class ReceiptView(ManageModelView):
         5: 'btn-secondary',
         6: 'btn-primary'
     }
+
     @expose('/')
     def index(self):
-
 
         receipt_id = request.args.get('receipt_id')
 
@@ -435,16 +589,37 @@ class ReceiptView(ManageModelView):
 
         status_id = request.args.get('status_id')
 
+        page = request.args.get('page', 1)
+
         receipt_status = utils.load_receipt_status()
 
-        receipts = utils.load_receipt(receipt_id, status_id, asc)
+        receipts = utils.load_receipt(receipt_id, status_id, asc, page=int(page))
+
+        counter = utils.count_receipt(status_id)
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        prev_page = url_for('receipt.index',
+                            page=int(page) - 1,
+                            status_id=request.args.get('status_id'),
+                            asc=request.args.get('asc')
+                            ) if int(page) > 1 else None
+
+        next_page = url_for('receipt.index',
+                            page=int(page) + 1,
+                            status_id=request.args.get('status_id'),
+                            asc=request.args.get('asc')
+                            ) if int(page) < pages else None
 
         receipts_report = utils.load_receipt_report()
 
         report_types = utils.load_report_types()
 
         return self.render('admin/receipt.html',
-                            receipts = receipts,
+                           receipts=receipts,
+                           next_page=next_page,
+                           prev_page=prev_page,
+                           pages=pages,
                            receipt_status=receipt_status,
                            status_colors=self.status_colors,
                            receipts_report=receipts_report,
@@ -458,8 +633,6 @@ class ReceiptView(ManageModelView):
         receipt_status = utils.load_receipt_status()
 
         receipts = utils.load_receipt(receipt_id)
-
-
 
         return self.render('admin/receipt.html',
                            receipt_id=receipt_id,
@@ -486,8 +659,6 @@ class ReceiptView(ManageModelView):
 
             receipt_status = utils.load_receipt_status()
 
-
-
             return self.render('admin/receipt_update.html',
                                receipt_id=receipt_id,
                                receipt_details=receipt_details,
@@ -499,8 +670,7 @@ class ReceiptView(ManageModelView):
 
         else:
             return self.render('admin/receipt_update.html',
-                               err_msg = 'Bạn phải được cấp quyền mới được sử dụng chức năng này')
-
+                               err_msg='Bạn phải được cấp quyền mới được sử dụng chức năng này')
 
     @expose('/view-delivery-note/<int:receipt_id>')
     def view_delivery_note(self, receipt_id):
@@ -515,19 +685,18 @@ class ReceiptView(ManageModelView):
         delivery_code = utils.generate_delivery()
 
         return self.render('admin/delivery_form.html',
-                           receipt= receipt,
-                           receipt_details= receipt_details,
+                           receipt=receipt,
+                           receipt_details=receipt_details,
                            total_price=total_price,
                            total_in_words=total_in_words,
                            now=now,
                            delivery_code=delivery_code,
                            delivery_note=None)
 
-
     @expose('create-delivery-note/<int:receipt_id>/<delivery_code>', methods=['POST'])
     def create_delivery_note(self, receipt_id=None, delivery_code=None):
 
-        created_date=datetime.now()
+        created_date = datetime.now()
 
         reason = request.form.get('delivery_reason')
 
@@ -546,14 +715,13 @@ class ReceiptView(ManageModelView):
             product_id = request.form.get(f'product_id_{detail.product_id}')
             delivered_quantity = request.form.get(f'quantity_{detail.product_id}')
             base_quantity = request.form.get(f'base_quantity_{detail.product_id}')
-            note =  request.form.get(f'note_{detail.product_id}')
+            note = request.form.get(f'note_{detail.product_id}')
 
             if product_id and delivered_quantity and base_quantity:
                 products_data.append({'product_id': product_id,
                                       'delivered_quantity': delivered_quantity,
                                       'base_quantity': base_quantity,
                                       'note': note})
-
 
         utils.create_delivery_note(delivery_code=delivery_code,
                                    created_date=created_date,
@@ -567,7 +735,6 @@ class ReceiptView(ManageModelView):
         flash("Tạo phiếu xuất kho thành công ", "success")
 
         return redirect('/admin/receipt')
-
 
     @expose('create-confirm-delivery-note/<int:receipt_id>/<delivery_code>', methods=['POST'])
     def create_confirm_delivery_note(self, receipt_id=None, delivery_code=None):
@@ -614,7 +781,6 @@ class ReceiptView(ManageModelView):
 
         return redirect('/admin/receipt')
 
-
     @expose('/confirm-report/<int:receipt_id>')
     def receipt_report_confirm(self, receipt_id):
         utils.complete_receipt(receipt_id)
@@ -623,11 +789,8 @@ class ReceiptView(ManageModelView):
 
         return redirect('/admin/receipt')
 
-
     def is_accessible(self):
         return self.check_permission('view_receipt')
-
-
 
 
 class UserRoleView(ManageModelView):
@@ -637,16 +800,34 @@ class UserRoleView(ManageModelView):
 
         asc = request.args.get('asc', 'False')
 
-        users = utils.load_user(user_id, asc)
+        page = request.args.get('page', 1)
+
+        active = request.args.get('active')
+
+        users = utils.load_user(user_id, asc, active, int(page))
+
+        counter = utils.count_user(user_id, active)
 
         users_role = utils.load_user_role()
 
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
 
+        next_page = url_for('user_privileged.index',
+                            page=int(page) + 1,
+                            active=request.args.get('active'),
+                            asc=request.args.get('asc')) if int(page) < pages else None
+
+        prev_page = url_for('user_privileged.index',
+                            page=int(page) - 1,
+                            active=request.args.get('active'),
+                            asc=request.args.get('asc')) if int(page) > 1 else None
 
         return self.render('admin/privileged.html',
-                           users = users,
-                           users_role=users_role)
-
+                           users=users,
+                           users_role=users_role,
+                           next_page=next_page,
+                           prev_page=prev_page,
+                           pages=pages)
 
     @expose('/update-privileged/<int:user_id>')
     def update_privileged(self, user_id):
@@ -663,7 +844,6 @@ class UserRoleView(ManageModelView):
                            user_role_permission=user_role_permission,
                            user_role_privileged=user_role_privileged)
 
-
     def is_accessible(self):
         if not current_user.is_authenticated:
             return False
@@ -672,22 +852,74 @@ class UserRoleView(ManageModelView):
         return getattr(user_permission, 'user_privileged', False)
 
 
+admin = Admin(app=app,
+              name="ANNNPTT Website",
+              template_mode="bootstrap4",
+              index_view=MyAdminIndex(),
+              category_icon_classes={
+                  'fa': 'fa-solid fa-house'
+              })
 
+admin.add_view(UserView(User, db.session,
+                        name='Người dùng',
+                        endpoint='user_admin',
+                        menu_icon_type='fa',
+                        menu_icon_value='fa-solid fa-user'))
 
+admin.add_view(ProductView(Product, db.session,
+                           name='Sản phẩm',
+                           endpoint='product',
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-laptop'))
 
-admin = Admin(app=app, name = "ANNNPTT Website", template_mode="bootstrap4", index_view=MyAdminIndex())
-admin.add_view(UserView(User, db.session, name='Người dùng', endpoint='user_admin'))
-admin.add_view(ProductView(Product, db.session))
-admin.add_view(CategoryView(Category, db.session))
-admin.add_view(CustomerView(User, db.session, name='Khách hàng', endpoint='customer_admin'))
-admin.add_view(ReceiptView(Receipt, db.session, name='Hóa đơn', endpoint='receipt'))
-# admin.add_view(ReceiptDetailView(ReceiptDetail, db.session, name='Receipt Detail', endpoint='receipt_detail'))
-admin.add_view(DeliveryNoteView(Goods_Delivery_Note, db.session, name='Xuất kho', endpoint='goods_delivery'))
-admin.add_view(ReceiveNoteView(Goods_Received_Note, db.session, name='Nhập kho', endpoint='goods_receive'))
-admin.add_view(OrderProductView(Goods_Received_Note, db.session, name='Đặt hàng hóa', endpoint='order_product'))
-admin.add_view(StatsView(Receipt, db.session, name='Thống kê', endpoint='product_stats'))
-admin.add_view(UserRoleView(User_Role, db.session, name='Phân quyền', endpoint='user_privileged'))
-admin.add_view(LogoutView(name='Đăng xuất'))
+admin.add_view(CategoryView(Category, db.session,
+                            name='Danh mục sản phẩm',
+                            endpoint='category',
+                            menu_icon_type='fa',
+                            menu_icon_value='fa-solid fa-list'))
 
+admin.add_view(ReceiptView(Receipt, db.session,
+                           name='Hóa đơn',
+                           endpoint='receipt',
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-receipt'
+                           ))
 
+admin.add_view(DeliveryNoteView(Goods_Delivery_Note, db.session,
+                                name='Xuất kho',
+                                endpoint='goods_delivery',
+                                menu_icon_type='fa',
+                                menu_icon_value='fa-solid fa-clipboard-list'
+                                ))
 
+admin.add_view(ReceiveNoteView(Goods_Received_Note, db.session,
+                               name='Nhập kho',
+                               endpoint='goods_receive',
+                               menu_icon_type='fa',
+                               menu_icon_value='fa-solid fa-clipboard-check'
+                               ))
+
+admin.add_view(OrderProductView(Goods_Received_Note, db.session,
+                                name='Đặt hàng hóa',
+                                endpoint='order_product',
+                                menu_icon_type='fa',
+                                menu_icon_value='fa-solid fa-truck'))
+
+admin.add_view(StatsView(Receipt, db.session,
+                         name='Thống kê',
+                         endpoint='product_stats',
+                         menu_icon_type='fa',
+                         menu_icon_value='fa-solid fa-chart-simple'
+                         ))
+
+admin.add_view(UserRoleView(User_Role, db.session,
+                            name='Phân quyền',
+                            endpoint='user_privileged',
+                            menu_icon_type='fa',
+                            menu_icon_value='fa-solid fa-people-roof'
+                            ))
+
+admin.add_view(LogoutView(name='Đăng xuất',
+                          menu_icon_type='fa',
+                          menu_icon_value='fa-solid fa-power-off'
+                          ))

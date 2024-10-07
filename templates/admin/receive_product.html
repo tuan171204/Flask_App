@@ -23,7 +23,11 @@
           <option value="False">Cũ nhất</option>
       </select>
 
-      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Tìm kiếm</button>
+      <button class="btn btn-outline-dark my-2 my-sm-0"
+              type="submit">
+           <i class="fa-solid fa-magnifying-glass"></i>
+          Tìm kiếm
+      </button>
     </form>
     <hr>
 
@@ -68,6 +72,29 @@
      {% endfor %}
     </tbody>
   </table>
+            {% if pages > 1 %}
+            <div class="container d-flex justify-content-around" >
+                <ul class="pagination " style="color:black">
+                    {% if prev_page %}
+                    <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                    {% endif %}
+                        {% for idx in range(1, pages+1) %}
+                            <li class="page-item">
+                                <a class="page-link border-0"
+                                   href="{{url_for('goods_receive.index',
+                                                    page=idx,
+                                                    confirmed=request.args.get('confirmed'),
+                                                    asc=request.args.get('asc')) }}">
+                                    {{idx}}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% if next_page %}
+                    <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}    `
 
 <script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 {% endblock %}

@@ -6,11 +6,7 @@
 
 
 <form id="orderForm" action="{{ url_for('order_product.create_order') }}" method="POST">
-    <div class="mb-5 dropdown">
-        <div class="form-group form-inline">
-                <h4><b>Nhập ngày đặt hàng: </b></h4>
-                <input type="date" name="order_date" class="form-control ml-3" required>
-        </div>
+    <div class="mb-5">
         <div class="form-group">
             <h4><b>Công ty - chi nhánh:</b></h4>
             <select name="provider_id" class="custom-select form-control" required>
