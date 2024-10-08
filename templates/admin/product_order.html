@@ -9,7 +9,10 @@
     <div class="mb-5">
         <div class="form-group">
             <h4><b>Công ty - chi nhánh:</b></h4>
-            <select name="provider_id" class="custom-select form-control" required>
+            <select name="provider_id"
+                    class="custom-select form-control w-50"
+                    onchange="loadProduct()"
+                    required>
                 {% for p in providers %}
                 <option value="{{ p.id }}"> {{ p.name }}</option>
                 {% endfor %}
@@ -87,6 +90,48 @@
 
             formContainer.appendChild(newFormGroup);
     })
+
+
+    loadProduct = () => {
+    const provider_id = document.querySelector("select[name='provider_id']").value;
+
+    const formContainer = document.getElementById('form-container');
+    formContainer.innerHTML = '';
+
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = `
+        <th scope="row"><span class="badge badge-dark" id="product_counter" style="font-size:18px">1</span></th>
+        <td>
+            <select class="form-control" name="product_id_0" required>
+                <option value="" selected> -- Mã sản phẩm -- </option>
+            </select>
+        </td>
+        <td>
+            <input type="number" class="form-control" name="quantity_0" placeholder="Số lượng">
+        </td>
+        <td>
+            <textarea name="note_0" class="form-control" placeholder="Nhập ghi chú"></textarea>
+        </td>
+    `;
+    formContainer.appendChild(newRow);
+
+    fetch(`/api/load_product/${provider_id}`)
+        .then(response => response.json())  // Chuyển đổi phản hồi thành JSON
+        .then(data => {
+            const productSelect = document.querySelector("select[name^='product_id']");
+            productSelect.innerHTML = '';
+
+            data.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = product.name;
+                productSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error loading products:', error));
+
+
+};
 
 </script>
 <script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>

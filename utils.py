@@ -2,22 +2,29 @@ import math
 import string
 import random
 from datetime import datetime
+from PIL import Image
 from flask import flash
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import aliased
-from Flask_App import app, db
+from Flask_App import app, db, ALLOWED_EXTENSIONS
 from Flask_App.models import Category, Product, User, Receipt, ReceiptDetail, User_Role, Comment, Payment, \
     Provider, Distribution, Receipt_Status, Privileged, Report_Type, Receipt_Report, Delivery_Reason, \
     Goods_Received_Note, Goods_Received_Note_Detail, Goods_Delivery_Note, Goods_Delivery_Note_Detail, Promotion, \
-    Warranty, Brand
+    Warranty, Brand, PromotionDetail, District, Ward
 import hashlib
 from flask_login import current_user
-from sqlalchemy import func, and_, or_, desc
+from sqlalchemy import func, and_, or_, desc, Integer
 from sqlalchemy.sql import extract
 import os
 
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 def load_categories_client():
     return Category.query.all()
+
 
 def load_categories(kw=None, page=1):
     start = (page - 1) * app.config['VIEW_SIZE']
@@ -81,10 +88,10 @@ def load_manage_product(kw=None, page=1, **kwargs):
                                 Product.image,
                                 Product.import_price,
                                 Category.name.label('category_name'),
-                                Provider.name.label('provider_name'))\
-                                .join(Category, Category.id==Product.category_id)\
-                                .join(Distribution, Distribution.product_id==Product.id)\
-                                .join(Provider, Provider.id==Distribution.provider_id)
+                                Provider.name.label('provider_name')) \
+        .join(Category, Category.id == Product.category_id) \
+        .join(Distribution, Distribution.product_id == Product.id) \
+        .join(Provider, Provider.id == Distribution.provider_id)
 
     if kw:
         if kw.isdigit():
@@ -95,14 +102,28 @@ def load_manage_product(kw=None, page=1, **kwargs):
     if kwargs.get('active'):
         active = kwargs.get('active')
         if active == 'True':
-            products = products.filter(Product.active==True)
+            products = products.filter(Product.active == True)
         elif active == 'False':
-            products = products.filter(Product.active==False)
+            products = products.filter(Product.active == False)
 
     if kwargs.get('provider_id'):
         provider_id = kwargs.get('provider_id')
 
-        products = products.filter(Provider.id==provider_id)
+        products = products.filter(Provider.id == provider_id)
+
+    if kwargs.get('import_price_asc'):
+        if kwargs.get('import_price_asc') == 'True':
+            products = products.order_by(Product.import_price)
+
+        elif kwargs.get('import_price_asc') == 'False':
+            products = products.order_by(desc(Product.import_price))
+
+    if kwargs.get('price_asc'):
+        if kwargs.get('price_asc') == 'True':
+            products = products.order_by(Product.price)
+
+        elif kwargs.get('price_asc') == 'False':
+            products = products.order_by(desc(Product.price))
 
     if kwargs.get('from_price'):
         from_price = kwargs.get('from_price')
@@ -137,10 +158,13 @@ def load_all_products():
     products = products.order_by(Product.category_id)
     return products
 
+
 def load_all_realtime_products():
     products = Product.query.all()
 
     return products
+
+
 def count_product(cate_id=None, kw=None):
     if cate_id:
         return Product.query.filter(and_(Product.active.__eq__(True), Product.category_id.__eq__(cate_id))).count()
@@ -211,6 +235,22 @@ def get_product_by_id(product_id):
     return product
 
 
+def get_product_detail_info(product_id):
+    product = db.session.query(Product.id,
+                               Product.name,
+                               Product.image,
+                               Product.price,
+                               Product.description,
+                               PromotionDetail.discount_value.label('discount_value'),
+                               PromotionDetail.discount_type.label('discount_type'),
+                               Promotion.description.label('promotion_description')) \
+        .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
+        .join(Promotion, Promotion.id == PromotionDetail.promotion_id) \
+        .filter(Product.id == product_id).first()
+
+    return product
+
+
 def get_cate_by_id(cate_id):
     return Category.query.get(cate_id)
 
@@ -267,16 +307,32 @@ def changes_user_info(user_id, **kwargs):
 
 
 def count_cart(cart):
-    total_quantity, total_amount = 0, 0
+    total_quantity, total_amount, base_total_amount = 0, 0, 0
 
     if cart:
         for c in cart.values():
-            total_quantity += c['quantity']
-            total_amount += c['quantity'] * c['price']
+            id = int(c['id'])
+            product = get_product_detail_info(id)
+
+            if product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 == 0:
+                total_quantity += c['quantity']
+                total_amount += (c['quantity'] * c['price']) / 2
+                base_total_amount += c['quantity'] * c['price']
+
+            elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 != 0:
+                total_quantity += c['quantity']
+                total_amount += (math.floor(c['quantity'] / 2) + 1) * c['price']
+                base_total_amount += c['quantity'] * c['price']
+
+            else:
+                total_quantity += c['quantity']
+                total_amount += c['quantity'] * c['price']
+                base_total_amount += c['quantity'] * c['price']
 
     return {
         'total_quantity': total_quantity,
-        'total_amount': total_amount
+        'total_amount': total_amount,
+        'base_total_amount': base_total_amount
     }
 
 
@@ -285,8 +341,10 @@ def load_payment():
 
     return payments
 
+
 def load_brands():
     return Brand.query.all()
+
 
 def add_receipt(cart, payment_id, delivery_address, customer_name):
     if cart:
@@ -298,9 +356,9 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
 
         for c in cart.values():
             id = int(c['id'])
-            product = get_product_by_id(id)
+            product = get_product_detail_info(id)
 
-            if product.promotion.discount_type.value == 2:
+            if product.discount_type.value == 2 and c['quantity'] > 1:
                 d = ReceiptDetail(receipt=receipt,
                                   product_id=int(c['id']),
                                   quantity=c['quantity'],
@@ -480,10 +538,10 @@ def load_receipt_detail(receipt_id, product_id=None, product_name=None):
 
     receipt_details = receipt_details.filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
 
-    total_price = sum(detail.quantity * detail.unit_price for detail in receipt_details)
+    base_total_price = sum(detail.quantity * detail.unit_price for detail in receipt_details)
 
+    total_price = base_total_price
     for detail in receipt_details:
-        total_price += detail.quantity * detail.unit_price
         if detail.discount:
             total_price -= detail.discount
 
@@ -493,7 +551,7 @@ def load_receipt_detail(receipt_id, product_id=None, product_name=None):
     if product_name:
         receipt_details = receipt_details.filter(Product.name.contains(product_name))
 
-    return receipt_details.all(), total_price
+    return receipt_details.all(), total_price, base_total_price
 
 
 def load_receipt_status():
@@ -691,6 +749,14 @@ def get_goods_received_note(received_note_code):
 
 
 def get_goods_received_note_detail(received_note_code):
+    total_value = db.session.query(
+        func.sum(Goods_Received_Note_Detail.quantity * Product.import_price)
+    ).join(
+        Product, Goods_Received_Note_Detail.product_id == Product.id
+    ).filter(
+        Goods_Received_Note_Detail.goods_received_note_code == received_note_code
+    ).scalar()
+
     return db.session.query(Goods_Received_Note_Detail,
                             Product.name.label('product_name'),
                             Product.import_price.label('product_import_price')) \
@@ -700,7 +766,7 @@ def get_goods_received_note_detail(received_note_code):
 
 def update_received_note_detail(goods_received_code, product_id, quantity):
     g_detail = Goods_Received_Note_Detail.query \
-        .filter(and_(Goods_Received_Note_Detail.goods_received_note_code == goods_received_code, \
+        .filter(and_(Goods_Received_Note_Detail.goods_received_note_code == goods_received_code,
                      Goods_Received_Note_Detail.product_id == product_id)).first()
 
     g_detail.received_quantity = quantity
@@ -822,7 +888,7 @@ def update_delivery_note(delivery_code, products_data, **kwargs):
 
     for product in products_data:
         goods_delivery_note_detail = Goods_Delivery_Note_Detail.query \
-            .filter(and_(Goods_Delivery_Note_Detail.goods_delivery_note_code == delivery_code, \
+            .filter(and_(Goods_Delivery_Note_Detail.goods_delivery_note_code == delivery_code,
                          Goods_Delivery_Note_Detail.product_id == product['product_id'])) \
             .first()
 
@@ -874,7 +940,7 @@ def confirm_delivery_note(delivery_code, products_data, **kwargs):
 
     for product in products_data:
         goods_delivery_note_detail = Goods_Delivery_Note_Detail.query \
-            .filter(and_(Goods_Delivery_Note_Detail.goods_delivery_note_code == delivery_code, \
+            .filter(and_(Goods_Delivery_Note_Detail.goods_delivery_note_code == delivery_code,
                          Goods_Delivery_Note_Detail.product_id == product['product_id'])) \
             .first()
 
@@ -914,12 +980,83 @@ def create_category(cate_id, cate_name):
     db.session.commit()
 
 
-def add_product(product_name, **kwargs):
-    if kwargs.get('product_image'):
-        image_path = kwargs.get('product_image')
-    else:
-        image_path = ""
+def is_id_exists(generated_id):
+    try:
+        # Kiểm tra xem ID có tồn tại trong bảng Product không
+        existing_product = db.session.query(Product).filter_by(id=generated_id).one()
+        return True  # ID tồn tại
+    except NoResultFound:
+        return False  # ID không tồn tại
+    except Exception as e:
+        print(f"Error checking ID: {e}")
+        return False
 
-    product = Product(name=product_name,
-                      category_id=kwargs.get('category_id'),
-                      brand_id=kwargs.get('brand_id'))
+
+def generate_id():
+    while True:
+        random_part = random.randint(100, 999)
+        generated_id = int(f"630{random_part}")
+
+        # Kiểm tra xem ID đã tồn tại chưa
+        if not is_id_exists(generated_id):
+            return generated_id
+
+
+def resize_image(image, size=(600, 600)):
+    img = Image.open(image)
+    img = img.resize(size)
+    return img
+
+
+def add_product(product_name, **kwargs):
+    image_path = kwargs.get('image', "")
+    product_id = generate_id()
+    product = Product(
+        id=product_id,
+        name=product_name,
+        description=kwargs.get('description'),
+        category_id=kwargs.get('category_id'),
+        brand_id=kwargs.get('brand_id'),
+        import_price=kwargs.get('import_price'),
+        price=kwargs.get('price'),
+        image=image_path,
+        warranty=kwargs.get('warranty', 0),
+        promotion_id=kwargs.get('promotion_id', 3)
+    )
+
+    distribution = Distribution(
+        product_id=product_id,
+        provider_id=kwargs.get('provider_id')
+    )
+
+    try:
+        db.session.add(product)
+        db.session.add(distribution)
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving product: {e}")
+        return False
+
+
+def get_product_by_provider(provider_id):
+    products = db.session.query(Product.id,
+                                Product.name) \
+        .join(Distribution, Product.id == Distribution.product_id) \
+        .filter(Distribution.provider_id == provider_id)
+
+    return products.all()
+
+
+def get_address():
+    districts = District.query.order_by(
+        # Sắp xếp dựa trên số quận (nếu có)
+        func.cast(func.substring(District.name, 6), Integer).asc(),
+        # Sau đó sắp xếp theo bảng chữ cái với phần sau từ "Quận"
+        func.substring(District.name, 6).asc()
+    ).all()
+
+    ward = Ward.query.all()
+
+    return districts, ward

@@ -97,7 +97,7 @@
         <hr>
     <div class="form-group"
          style="font-size: 24px;">
-        <label>Tổng giá trị đơn hàng:<u  class="text-danger"> {{ "{:,.0f}".format(total_price) }}đ </u></label>
+        <label>Tổng thanh toán:  <s>{{ "{:,.0f}".format(base_total_price) }}đ</s><u  class="text-danger ml-2"> {{ "{:,.0f}".format(total_price) }}đ </u></label>
     </div>
 
     <a class="btn btn-dark"

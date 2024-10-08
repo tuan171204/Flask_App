@@ -88,7 +88,9 @@ function pay() {
                 counter[i].innerText = data.total_quantity
 
             let amount = document.getElementById('total-amount')
-            amount.innerText = new Intl.NumberFormat().format(data.total_amount) + "đ"
+            let base_amount = document.getElementById('base-amount')
+            amount.innerHTML = new Intl.NumberFormat().format(data.total_amount) + "đ"
+            base_amount.innerHTML = `<s>${new Intl.NumberFormat().format(data.base_total_amount)}đ </s>`
         }).catch(err => console.error(err))
     }
 
@@ -151,3 +153,26 @@ function pay() {
     }
 
 
+    function getWard() {
+    const districtId = document.querySelector('select[name="district"]').value;
+
+    if (districtId) {
+
+        fetch(`/api/get_ward/${districtId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                const wardSelect = document.querySelector('select[name="ward"]');
+
+                wardSelect.innerHTML = '<option value="">Phường</option>';
+
+                data.forEach(ward => {
+                    const option = document.createElement('option');
+                    option.value = ward.id;
+                    option.textContent = ward.name;
+                    wardSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+}

@@ -1,8 +1,13 @@
 import math
+import os
+from itertools import product
 
 from num2words import num2words
 import random
-from Flask_App import app, db
+
+from werkzeug.utils import secure_filename
+
+from Flask_App import app, db, UPLOAD_FOLDER
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
     Goods_Delivery_Note
@@ -56,6 +61,10 @@ class ProductView(ManageModelView):
 
         provider_id = request.args.get('provider_id')
 
+        import_price_asc = request.args.get('import_price_asc')
+
+        price_asc = request.args.get('price_asc')
+
         from_import_price, to_import_price = request.args.get('from_import_price'), \
             request.args.get('to_import_price')
 
@@ -71,6 +80,8 @@ class ProductView(ManageModelView):
         products, counter = utils.load_manage_product(kw=kw,
                                                       active=active,
                                                       provider_id=provider_id,
+                                                      price_asc=price_asc,
+                                                      import_price_asc=import_price_asc,
                                                       from_import_price=from_import_price,
                                                       to_import_price=to_import_price,
                                                       from_price=from_price,
@@ -84,6 +95,8 @@ class ProductView(ManageModelView):
                             kw=request.args.get('kw'),
                             active=request.args.get('active'),
                             provider_id=request.args.get('provider_id'),
+                            price_asc=request.args.get('price_asc'),
+                            import_price_asc=request.args.get('import_price_asc'),
                             from_import_price=request.args.get('from_import_price'),
                             to_import_price=request.args.get('to_import_price'),
                             from_price=request.args.get('from_price'),
@@ -95,6 +108,8 @@ class ProductView(ManageModelView):
                             kw=request.args.get('kw'),
                             active=request.args.get('active'),
                             provider_id=request.args.get('provider_id'),
+                            price_asc=request.args.get('price_asc'),
+                            import_price_asc=request.args.get('import_price_asc'),
                             from_import_price=request.args.get('from_import_price'),
                             to_import_price=request.args.get('to_import_price'),
                             from_price=request.args.get('from_price'),
@@ -115,13 +130,42 @@ class ProductView(ManageModelView):
 
     @expose("create-product", methods=['POST'])
     def create_product(self):
+        file = request.files['product_image']
+        image_path = ''
+
+        if file.filename == '':
+            file.filename = 'iphone7.jpg'
+
+        if file and utils.allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+            # Resize ảnh trước khi lưu
+            resized_image = utils.resize_image(file)
+            resized_image.save(filepath)
+
+            image_path = f'images/{filename}'
+
         product_name = request.form.get('product_name')
         category_id = request.form.get('category_id')
         provider_id = request.form.get('provider_id')
         brand_id = request.form.get('brand_id')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        import_price = request.form.get('import_price')
 
-        utils.add_product()
+        result = utils.add_product(product_name=product_name,
+                                   category_id=category_id,
+                                   provider_id=provider_id,
+                                   brand_id=brand_id,
+                                   description=description,
+                                   import_price=float(import_price),
+                                   price=float(price),
+                                   image=image_path)
 
+        if result:
+            flash("Tạo thêm sản phẩm thành công", "warning")
+        return redirect('/admin/product/')
 
     def is_accessible(self):
         return self.check_permission('view_product')
@@ -205,7 +249,7 @@ class CategoryView(ManageModelView):
     def create_category(self):
         category_id = request.form.get('category_id')
         category_name = request.form.get('category_name')
-        utils.create_categpry(cate_id=category_id,
+        utils.create_category(cate_id=category_id,
                               cate_name=category_name)
 
         flash("Tạo danh mục sản phẩm mới thành công ", "warning")
@@ -528,7 +572,7 @@ class ReceiveNoteView(ManageModelView):
 
         goods_received_note = utils.get_goods_received_note(goods_received_code)
 
-        goods_received_note_detail = utils.get_goods_received_note_detail(goods_received_code)
+        goods_received_note_detail = utils.get_goods_recafceived_note_detail(goods_received_code)
 
         total_in_words = num2words(goods_received_note[0].total_price, lang='vi').capitalize() + " đồng "
 
@@ -536,6 +580,7 @@ class ReceiveNoteView(ManageModelView):
 
         return self.render('admin/receive_form.html',
                            g_note=goods_received_note,
+                           total_price=goods_received_note.Goods_Received_Note.total_price,
                            g_detail=goods_received_note_detail,
                            total_in_words=total_in_words,
                            now=now)
@@ -628,7 +673,7 @@ class ReceiptView(ManageModelView):
     @expose('/view-detail/<int:receipt_id>')
     def receipt_detail_view(self, receipt_id):
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_total_price = utils.load_receipt_detail(receipt_id)
 
         receipt_status = utils.load_receipt_status()
 
@@ -653,7 +698,9 @@ class ReceiptView(ManageModelView):
 
             product_name = request.args.get('product_name')
 
-            receipt_details, total_price = utils.load_receipt_detail(receipt_id, product_id, product_name)
+            receipt_details, total_price, base_total_price = utils.load_receipt_detail(receipt_id,
+                                                                                       product_id=product_id,
+                                                                                       product_name=product_name)
 
             receipts = utils.load_receipt(receipt_id)
 

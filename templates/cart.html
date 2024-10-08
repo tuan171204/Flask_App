@@ -64,8 +64,24 @@
                 <input class="form-control " placeholder="Nhập số điện thoại ... " name="phone_number" required>
             </div>
             <div class="form-group">
-                <h5><b>Địa chỉ giao hàng:</b> </h5>
-                <input class="form-control " placeholder="Nhập địa chỉ " id="delivery_address" required>
+                    <h5><b>Địa chỉ giao hàng:</b> </h5>
+                    <select name="district"
+                            class="custom-select"
+                            onchange="getWard()">
+                        <option value="" selected>Quận</option>
+                        {% for d in district %}
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="ward"
+                            class="custom-select mt-2">
+                        <option value="" selected>Phường</option>
+                        {% for w in ward %}
+                        <option value="{{ w.id }}">{{ w.name }}</option>
+                        {% endfor %}
+                    </select>
+                <input class="form-control mt-2" placeholder="Địa chỉ chi tiết ( số nhà, đường ... )" id="delivery_address" required>
             </div>
 
             <div class="from-group">
@@ -82,7 +98,18 @@
         <div class="alert pay-info" style="border-radius: 5px;">
             <h4 class="font-weight-bold"><i class="fa fa-list"></i> Chi tiết thanh toán</h4>
             <h5>Tổng sản phẩm: <span class="cart-counter font-weight-bold">{{stats.total_quantity}}</span></h5>
-            <h5>Tổng tiền: <span class="font-weight-bold" id="total-amount">{{"{:,.0f}".format(stats.total_amount) }}đ</span></h5>
+            <h5>Tổng tiền:
+                {% if stats.base_total_amount != stats.total_amount %}
+                <span class="font-weight-bold mr-2"
+                      id="base-amount">
+                    <s>{{"{:,.0f}".format(stats.base_total_amount) }}đ</s>
+                </span>
+                {% endif %}
+                <span class="font-weight-bold text-danger"
+                      id="total-amount">
+                    {{"{:,.0f}".format(stats.total_amount) }}đ
+                </span>
+            </h5>
 
         </div>
 

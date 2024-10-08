@@ -32,18 +32,14 @@ class Product(db.Model):
     category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
     brand_id = Column(Integer, ForeignKey('brand.id'), nullable=False)
     import_price = Column(Float, nullable=False)
-    discount_price = Column(Float, default=0, nullable=True)
+    warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
+
+    promotion_id = relationship('PromotionDetail', backref='product', lazy=True)
     receipt_details = relationship('ReceiptDetail', backref='product', lazy=True)
     goods_received_note_detail = relationship('Goods_Received_Note_Detail', backref='product', lazy=True)
     comments = relationship('Comment', backref='product', lazy=True)
-    stats = relationship('ProductStats', backref='product', lazy=True)
     distribution = relationship('Distribution', backref='product', lazy=True)
     goods_delivery_note_detail = relationship('Goods_Delivery_Note_Detail', backref='product', lazy=True)
-
-    warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
-    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True)
-
-    # product_storage = relationship('Storage', backref='product', lazy=True)
 
     def apply_discount(self):
         if self.promotion.discount_type.value == 1 and self.promotion.discount_value != None:  # PERCENTAGE
@@ -62,18 +58,6 @@ class Product(db.Model):
 
     def __str__(self):
         return self.name
-
-
-class ProductStats(db.Model):
-    __tablename__ = 'product_stats'
-
-    product_id = Column(Integer, ForeignKey('product.id'), primary_key=True, nullable=True)
-    ram = Column(String(24), nullable=True)
-    screen_size = Column(String(24), nullable=True)
-    chip = Column(String(50), nullable=True)
-    material = Column(String(50), nullable=True)
-    weight = Column(String(50), nullable=False)
-    length = Column(String(50), nullable=False)
 
 
 class Brand(db.Model):
@@ -153,15 +137,15 @@ class Receipt(db.Model):
     report = relationship('Receipt_Report', backref='receipt', lazy=True)
     exported = Column(Boolean, default=False)
     delivery_address = Column(String(255), nullable=False)
-    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True, default=None)
     receiver_name = Column(String(255), nullable=False)
+    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True)
     delivery_note = relationship('Goods_Delivery_Note', backref='receipt', lazy=True)
 
 
 class ReceiptDetail(db.Model):
     __tablename__ = 'receipt_detail'
 
-    receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False, primary_key=True)
+    receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False, primary_key=True, index=True)
     quantity = Column(Integer, default=0)
     unit_price = Column(Float, default=0)
@@ -197,6 +181,7 @@ class Distribution(db.Model):
     product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, nullable=False)
     provider_id = Column(Integer, ForeignKey(Provider.id), primary_key=True, nullable=False)
     # Maybe put import & selling price here
+
 
 class Goods_Received_Note(db.Model):
     __tablename__ = 'goods_received_note'
@@ -311,7 +296,7 @@ class Warranty(db.Model):
 
 class DiscountType(PyEnum):
     PERCENTAGE = 1
-    BUY_ONE_GET_ONE = 2
+    GET_FREE = 2
     FIXED_AMOUNT = 3
 
 
@@ -320,19 +305,34 @@ class Promotion(db.Model):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String(255), nullable=True)
+
+    receipts = relationship('Receipt', backref='promotion', lazy=True)
+    detail = relationship('PromotionDetail', backref='promotion', lazy=True)
+
+
+class PromotionDetail(db.Model):
+    __tablename__ = 'promotion_detail'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    promotion_id = Column(Integer, ForeignKey(Promotion.id), nullable=False)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
     discount_type = Column(Enum(DiscountType), nullable=False)
     discount_value = Column(Float, nullable=True)
 
-    receipt = relationship('Receipt', backref='promotion', lazy=True)
-    product = relationship('Product', backref='promotion', lazy=True)
 
+class District(db.Model):
+    __tablename__ = 'district'
 
-# class Storage(db.Model):
-#     product_id = Column(Integer, ForeignKey(Product.id), primary_key=True, nullable=False)
-#     provider_id = Column(Integer, ForeignKey(Provider.id), primary_key=True, nullable=False)
-#     data_quantity = Column(Integer, nullable=True)
-#     real_time_quantity = Column(Integer, nullable=True)
-#     unit = Column(String(255), default="Chiếc", nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255))
+    ward = relationship('Ward', backref='district', lazy=True)
+
+class Ward(db.Model):
+    __tablename__ = 'ward'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    district_id = Column(Integer, ForeignKey(District.id), nullable=False)
+    name = Column(String(255))
 
 if __name__ == "__main__":
     with app.app_context():

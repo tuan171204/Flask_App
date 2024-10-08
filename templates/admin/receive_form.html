@@ -102,15 +102,23 @@
                          <input type="number"
                                class="form-control"
                                name="quantity_{{ g[0].product_id }}"
-                               value="{{ g[0].received_quantity }}">
+                               value="{{ g[0].received_quantity }}"
+                               onchange="calculatePrice()" >
                         {% else %}
                         <input type="number"
                                class="form-control"
                                name="quantity_{{ g[0].product_id }}"
-                               placeholder="Nhập số lượng thực nhận" required>
+                               placeholder="Nhập số lượng thực nhận"
+                               required
+                               onchange="calculatePrice()" >
                         {% endif %}
                     </td>
-                    <td>{{ "{:,.0f}".format(g.product_import_price) }}đ</td>
+                    <td>
+                        <input type="text"
+                               readonly
+                               value="{{ '{:,.0f}'.format(g.product_import_price) }}đ"
+                               class="form-control text-center">
+                    </td>
                     {% set quantity = g[0].received_quantity | int %}
                     {% set price = g.product_import_price | float %}
                     <td>{{ "{:,.0f}".format(quantity * price) }}đ</td>
@@ -126,7 +134,9 @@
                     {% endif %}
                 </tr>
               {% endfor %}
-                <tr class="font-weight-bold" style="background-color: lightgreen">
+                <tr class="font-weight-bold"
+                    style="background-color: lightgreen"
+                    id="total-row">
                     <th scope="row"></th>
                     <td>Cộng</td>
                     <td>X</td>
@@ -134,8 +144,16 @@
                     <td>X</td>
                     <td>X</td>
                     <td>X</td>
-                    <td>{{ g_note.Goods_Received_Note.total }}</td>
-                    <td></td>
+                    <td >
+                        <p id="total-price-col">
+
+                        </p>
+                        <p id="diff-price-col"
+                           class="text-danger">
+
+                        </p>
+                    </td>
+                    <td ></td>
                 </tr>
           </tbody>
         </table>
@@ -275,5 +293,48 @@
 
         return true
     }
+
+
+    calculatePrice = () => {
+        let totalSum = 0;
+        const rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('input[name^="quantity_"]');
+
+            if (quantityInput) {
+                const receivedQuantity = parseFloat(quantityInput.value) || 0;
+
+                const priceText = row.querySelector('input[readonly][value$="đ"]').value;
+                const price = parseFloat(priceText.replace(/[^0-9]/g, '')) || 0;
+
+                const total = receivedQuantity * price;
+
+                const totalCell = row.querySelector('td:nth-last-child(2)');
+                totalCell.textContent = total.toLocaleString('vi-VN') + 'đ';
+
+                totalSum += total;
+            }
+        });
+
+        const totalTd = document.querySelector('#total-price-col');
+
+        if (totalTd) {
+            totalTd.innerHTML = totalSum.toLocaleString('vi-VN') + 'đ'
+        }
+
+        const g_total_price = parseFloat( {{ total_price }} ) || 0;
+        const difference = totalSum - g_total_price;
+
+        const differenceCell = document.querySelector('#diff-price-col');
+        if (differenceCell) {
+            differenceCell.textContent = `${difference.toLocaleString('vi-VN')}đ `;
+        }
+
+};
+        calculatePrice()
+
+
+
 </script>
 {% endblock %}

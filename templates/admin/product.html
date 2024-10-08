@@ -17,7 +17,6 @@
                 <select class="form-control mr-sm-2" name="active">
                   Trạng thái
                   <option value="" selected>Trạng thái</option>
-
                   <option value="True">Đang bán</option>
                   <option value="False">Tạm ẩn</option>
                 </select>
@@ -29,6 +28,26 @@
                     <option value="{{ provider.id }}">{{ provider.name }}</option>
                   {% endfor %}
                 </select>
+            </div>
+
+             <div class="form-group form-inline mt-2 w-100">
+                <label style="font-size:22px;margin-right:17px;">
+                    Sắp xếp theo:
+                </label>
+                 <select class="custom-select ml-2"
+                         name="import_price_asc"
+                         style="width: 277px;">
+                     <option value="" selected>Giá nhập: </option>
+                     <option value="True">Tăng dần</option>
+                     <option value="False">Giảm dần</option>
+                 </select>
+                 <select class="custom-select ml-2"
+                         name="price_asc"
+                         style="width: 277px;">
+                     <option value="" selected>Giá bán</option>
+                     <option value="True">Tăng dần</option>
+                     <option value="False">Giảm dần</option>
+                 </select>
             </div>
 
             <div class="form-group form-inline mt-2">
@@ -43,8 +62,8 @@
                        placeholder="Đến"
                        class="ml-2 form-control"
                        name="to_import_price">
-
             </div>
+
             <div class="form-group form-inline mt-2">
                 <label style="font-size:22px; margin-right: 16px;">Chọn giá bán:</label>
                 <input type="text"
@@ -127,6 +146,8 @@
                                                          kw=request.args.get('kw'),
                                                          active=request.args.get('active'),
                                                          provider_id=request.args.get('provider_id'),
+                                                         price_asc=request.args.get('price_asc'),
+                                                         import_price_asc=request.args.get('import_price_asc'),
                                                          from_import_price=request.args.get('from_import_price'),
                                                          to_import_price=request.args.get('to_import_price'),
                                                          from_price=request.args.get('from_price'),
@@ -143,7 +164,10 @@
              {% endif %}
 
 
-<form action="{{ url_for('product.create_product') }}" method="POST" id="productCreateForm">
+<form action="{{ url_for('product.create_product') }}"
+      method="POST"
+      id="productCreateForm"
+      enctype="multipart/form-data">
     <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
@@ -182,7 +206,7 @@
               </div>
               <div class="form-group">
                   <label><b style="font-size: 20px;">Chọn thương hiệu: </b></label>
-                 <select name="brand_id" class="custom-select">
+                  <select name="brand_id" class="custom-select">
                       <option value="">Thương hiệu</option>
                       {% for brand in brands %}
                       <option value="{{ brand.id }}">{{ brand.name }}</option>
@@ -190,10 +214,23 @@
                   </select>
               </div>
               <div class="form-group">
+                  <label><b style="font-size: 20px;">Mô tả sản phẩm </b></label>
+                  <textarea name="description"
+                            cols="30"
+                            rows="10"
+                            class="form-control"
+                            onkeyup="checkLength()">
+                  </textarea>
+                  <span class="text-danger mt-1"
+                        id="alertDescription">
+                      <i class="fa-solid fa-circle-xmark mr-2"></i>
+                      Mô tả quá dài ( < 255 ký tự )
+                  </span>
+              </div>
+              <div class="form-group">
                   <label><b style="font-size:20px;">Ảnh sản phẩm: </b></label>
                   <div class="custom-file">
-                    <input type="file" class="custom-file-input" name="product_image">
-                    <label class="custom-file-label">Chọn ảnh</label>
+                    <input type="file" class="form-control" name="product_image">
                   </div>
               </div>
 
@@ -219,7 +256,8 @@
                       <label><b style="font-size: 20px;">Lợi nhuận: </b></label>
                       <div class="row">
                           <input type="text"
-                                 class="form-control w-75 mr-1 ml-3"
+                                 class="form-control ml-3"
+                                 style="width:276px;"
                                  name="profit"
                                  onchange="calculatePrice()">%
                       </div>
@@ -260,6 +298,21 @@
 
             price = import_price + (import_price * profit_percent / 100);
             document.querySelector("input[name='price']").value = price
+    }
+
+    const descriptionField = document.querySelector("textarea[name='description']")
+    const alertDescription = document.getElementById("alertDescription")
+    alertDescription.style.display = "none"
+
+    checkLength = () => {
+        descriptionLength = descriptionField.value.length
+        console.log(descriptionLength)
+        if (descriptionLength > 255 ){
+            document.getElementById('createButton').disabled = true
+            alertDescription.style.display = "block"
+        } else {
+            document.getElementById('createButton').disabled = false
+        }
     }
 
 </script>

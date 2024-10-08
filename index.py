@@ -4,7 +4,7 @@ from Flask_App import app, login, utils, db
 import math
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
-from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail
+from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail, Ward
 from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 
 
@@ -45,7 +45,7 @@ def home():
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    product = utils.get_product_by_id(product_id)
+    product = utils.get_product_detail_info(product_id)
 
     products = utils.load_all_products()
 
@@ -189,10 +189,20 @@ def product_list():
 
 @app.route('/cart')
 def cart():
+    district, ward = utils.get_address()
     return render_template('cart.html',
                            stats=utils.count_cart(session.get('cart')),
-                           payments=utils.load_payment()
+                           payments=utils.load_payment(),
+                           district=district,
+                           ward=ward
                            )
+
+
+@app.route('/api/get_ward/<int:district_id>')
+def get_ward(district_id):
+    wards = Ward.query.filter(Ward.district_id == district_id).all()
+    ward_list = [{'id': w.id, 'name': w.name} for w in wards]
+    return jsonify(ward_list)
 
 
 @app.route('/user-receipt/<int:user_id>')
@@ -471,7 +481,7 @@ def post_report(receipt_id):
 def user_receipt_detail(receipt_id):
     receipt = utils.get_receipt_by_id_2(receipt_id)
 
-    receipt_detail, total_price = utils.load_receipt_detail(receipt_id)
+    receipt_detail, total_price, base_total_price = utils.load_receipt_detail(receipt_id)
 
     status_colors = {
         1: 'btn-warning',
@@ -487,7 +497,8 @@ def user_receipt_detail(receipt_id):
                            receipt=receipt,
                            receipt_detail=receipt_detail,
                            total_price=total_price,
-                           status_colors=status_colors)
+                           status_colors=status_colors,
+                           base_total_price=base_total_price)
 
 
 @app.route("/account-setting")
@@ -528,11 +539,20 @@ def check_category_id(category_id):
 
 
 @app.route('/api/check_change_category_id/<int:base_id>/<int:category_id>', methods=['GET'])
-def check_change_category_id(base_id ,category_id):
+def check_change_category_id(base_id, category_id):
     if utils.check_change_category_id(base_id, category_id):
         return jsonify({"exists": True})
     else:
         return jsonify({"exists": False})
+
+
+@app.route('/api/load_product/<int:provider_id>')
+def load_product(provider_id):
+    products = utils.get_product_by_provider(provider_id)
+
+    product_list = [{'id': p.id, 'name': p.name} for p in products]
+
+    return jsonify(product_list)
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@
         <th scope="col">Ngày xác nhận</th>
           <th scope="col">Người xác nhận</th>
           <th scope="col"> Tổng phí nhập</th>
-          <th scope="col"> Phiếu nhập kho</th>
+          <th scope="col"> Nhập kho</th>
       </tr>
 
     </thead>
@@ -55,7 +55,9 @@
                  {% if g[0].confirmed %}
                     <td><input type="text" class="form-control status-btn btn btn-success" value="Đã xác nhận"></td>
                  {% else %}
-                    <td><input type="text" class="form-control status-btn btn btn-warning" value="Chưa xác nhận"></td>
+                    <td><a type="text"
+                           class="form-control status-btn btn btn-warning"
+                           href="{{ url_for('goods_receive.create_receive_form', goods_received_code =g[0].code ) }}">Chưa xác nhân</a></td>
                  {% endif %}
                  <td>{{ g[0].confirm_date }}</td>
                  <td>{{ g.user_name_confirm }}</td>
@@ -64,7 +66,7 @@
                      <a href="{{ url_for('goods_receive.create_receive_form', goods_received_code =g[0].code ) }}"
                         class="btn btn-dark text-white">
                          <i class="fa-regular fa-rectangle-list"></i>
-                         Xem phiếu nhập kho
+                         Xem phiếu
                      </a>
                  </td>
               </tr>
