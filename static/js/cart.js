@@ -72,6 +72,7 @@ function pay() {
     }
 }
 
+
     function updateCart(id, obj) {
         fetch('/api/update-cart', {
             method: 'put',
@@ -176,3 +177,6 @@ function pay() {
             .catch(error => console.error('Error:', error));
     }
 }
+
+
+

@@ -22,9 +22,13 @@
         <tr id="product{{c.id}}">
             <td><img src="{{url_for('static', filename=c.image)}}" alt="{{ c.name }}" style="max-height: 150px;"></td>
             <td>{{c.name}}</td>
-            <td class="text text-danger font-weight-bold">{{"{:,.0f}".format(c.price)}}đ
+            <td class="text text-danger font-weight-light">{{"{:,.0f}".format(c.price)}}đ
                 <br>
-                <div class="badge badge-danger text-light">{{ c.promotion }}</div>
+                {% if c.promotion %}
+                <div class="badge badge-danger text-light">
+                    {{ c.promotion }}
+                </div>
+                    {% endif %}
             </td>
             <td>
                 <div class="form-group">

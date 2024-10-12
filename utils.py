@@ -26,6 +26,10 @@ def load_categories_client():
     return Category.query.all()
 
 
+def get_child_category(category_id):
+    return Category.query.filter(Category.parent_id == category_id).all()
+
+
 def load_categories(kw=None, page=1):
     start = (page - 1) * app.config['VIEW_SIZE']
 
@@ -217,7 +221,7 @@ def count_delivery_note(confirmed=None, delivery_code=None, reason=None, deliver
     return delivery_note_count.count()
 
 
-def count_user(user_id=None, active=None):
+def count_user(user_id=None, active=None, info=None):
     if user_id:
         return 1
 
@@ -226,6 +230,9 @@ def count_user(user_id=None, active=None):
             return User.query.filter(User.active == True).count()
         else:
             return User.query.filter(User.active == False).count()
+
+    if info:
+        return 1
 
     return User.query.count()
 
@@ -246,6 +253,25 @@ def get_product_detail_info(product_id):
                                Promotion.description.label('promotion_description')) \
         .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
         .join(Promotion, Promotion.id == PromotionDetail.promotion_id) \
+        .filter(Product.id == product_id).first()
+
+    return product
+
+
+def get_product_detail_info_admin(product_id):
+    product = db.session.query(Product.id,
+                               Product.name,
+                               Product.image,
+                               Product.price,
+                               Product.import_price,
+                               Product.description,
+                               Category.name.label('category_name'),
+                               PromotionDetail.discount_value.label('discount_value'),
+                               PromotionDetail.discount_type.label('discount_type'),
+                               Promotion.description.label('promotion_description')) \
+        .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
+        .join(Promotion, Promotion.id == PromotionDetail.promotion_id) \
+        .join(Category, Category.id == Product.category_id) \
         .filter(Product.id == product_id).first()
 
     return product
@@ -293,6 +319,22 @@ def check_login_admin(username, password):
 
 def get_user_by_id(user_id):
     return User.query.get(user_id)
+
+
+def get_user_detail_admin(user_id):
+    user = db.session.query(User.id,
+                            User.name,
+                            User.username,
+                            User.password,
+                            User.email,
+                            User.active,
+                            User.joined_date,
+                            User.phone_number,
+                            User.address,
+                            User.avatar) \
+        .filter(User.id == user_id).first()
+
+    return user
 
 
 def changes_user_info(user_id, **kwargs):
@@ -563,6 +605,7 @@ def get_user_receipt(user_id, receipt_id=None, status_id=None, asc=True):
         Receipt.id,
         Receipt.created_date,
         Receipt.status_id,
+        Receipt.delivery_address,
         Payment.name.label('payment_name'),
         Payment.logo.label('payment_logo'),
         Receipt_Status.status_name.label('status_name')
@@ -637,7 +680,7 @@ def get_user_role_permission(user_id):
     return user_role_permission
 
 
-def load_user(user_id=None, asc='False', active=None, page=1):
+def load_user(user_id=None, asc='False', active=None, page=1, info=None):
     users = db.session.query(User)
 
     if user_id:
@@ -654,6 +697,9 @@ def load_user(user_id=None, asc='False', active=None, page=1):
             users = users.filter(User.active == True)
         elif active == 'False':
             users = users.filter(User.active == False)
+
+    if info:
+        users = users.filter(or_(User.id == int(info), User.phone_number.contains(info)))
 
     start = (page - 1) * app.config['VIEW_SIZE']
     end = start + app.config['VIEW_SIZE']
@@ -1060,3 +1106,39 @@ def get_address():
     ward = Ward.query.all()
 
     return districts, ward
+
+
+def get_promotion(kw=None, expired=None, current_time=datetime.now()):
+    promotion = Promotion.query
+    if kw:
+        if kw.isdigit():
+            promotion = promotion.filter(Promotion.id == int(kw))
+        else:
+            promotion = promotion.filter(Promotion.id.contains(kw))
+
+    if expired:
+        if expired == 'True':
+            promotion = promotion.filter(Promotion.end_date.__le__(current_time))
+
+        elif expired == 'False':
+            promotion = promotion.filter(Promotion.end_date.__ge__(current_time))
+
+    return promotion.all()
+
+
+def get_promotion_detail(promotion_id):
+    return PromotionDetail.query.filter(Promotion.id == promotion_id).first()
+
+
+def get_product_with_promotion(promotion_id):
+    product = db.session.query(Product.id,
+                               Product.name,
+                               Product.price,
+                               Product.import_price,
+                               Product.description,
+                               PromotionDetail.discount_value.label('discount_value'),
+                               PromotionDetail.discount_type.label('discount_type')) \
+        .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
+        .filter(PromotionDetail.promotion_id == promotion_id)
+
+    return product.all()

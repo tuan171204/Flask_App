@@ -33,17 +33,63 @@ class ManageModelView(ModelView):
 
 
 class UserView(ManageModelView):
-    create_modal = True
-    column_display_pk = True
-    column_hide_backrefs = False
-    column_list = ['id', 'name', 'username', 'password', "joined_date", "active"]
-    form_columns = ['id', 'name', 'username', 'password', "joined_date", "active"]
-    can_view_details = True
-    can_export = True
-    column_searchable_list = ['name', 'id']
-    column_filters = ['name', 'id']
-    column_exclude_list = ['active']
-    column_sortable_list = ['id', 'name']
+    status_colors = {
+        1: 'btn-warning',
+        2: 'btn-success',
+        3: 'btn-info',
+        4: 'btn-danger',
+        5: 'btn-secondary',
+        6: 'btn-primary'
+    }
+
+    @expose('/')
+    def index(self):
+        info = request.args.get('info')
+
+        active = request.args.get('active')
+
+        asc = request.args.get('asc')
+
+        page = request.args.get('page', 1)
+
+        users = utils.load_user(active=active,
+                                page=int(page),
+                                asc=asc,
+                                info=info)
+
+        counter = utils.count_user(active=active, info=info)
+
+        pages = math.ceil(counter / app.config['VIEW_SIZE'])
+
+        next_page = url_for('user_admin.index',
+                            page=int(page) + 1,
+                            active=request.args.get('active'),
+                            asc=request.args.get('asc')) if int(page) < pages else None
+
+        prev_page = url_for('user_admin.index',
+                            page=int(page) - 1,
+                            active=request.args.get('active'),
+                            asc=request.args.get('asc')) if int(page) > 1 else None
+
+        return self.render('admin/user.html',
+                           page=int(page),
+                           users=users,
+                           pages=pages,
+                           prev_page=prev_page,
+                           next_page=next_page,
+                           size=app.config['VIEW_SIZE'])
+
+    @expose('user-detail/<int:user_id>')
+    def user_detail(self, user_id):
+        user = utils.get_user_detail_admin(user_id)
+
+        user_receipts = utils.get_user_receipt(user_id)
+
+        return self.render('admin/user.html',
+                           user=user,
+                           user_receipts=user_receipts,
+                           user_detail=True,
+                           status_colors=self.status_colors)
 
     def is_accessible(self):
         return self.check_permission('view_user')
@@ -167,6 +213,65 @@ class ProductView(ManageModelView):
             flash("Tạo thêm sản phẩm thành công", "warning")
         return redirect('/admin/product/')
 
+    @expose('deactive-product/<int:product_id>')
+    def deactive_product(self, product_id):
+        product = Product.query.filter(Product.id == product_id).first()
+        product.active = False
+
+        db.session.commit()
+        flash("Đã tạm ẩn sản phẩm", "info")
+        return redirect('/admin/product')
+
+    @expose('active-product/<int:product_id>')
+    def active_product(self, product_id):
+        product = Product.query.filter(Product.id == product_id).first()
+        product.active = True
+
+        db.session.commit()
+        flash("Đã đổi trạng thái sản phẩm", "info")
+        return redirect('/admin/product')
+
+    @expose('product-update/<int:product_id>')
+    def product_update(self, product_id):
+        product = utils.get_product_detail_info_admin(product_id)
+
+        return self.render("admin/product.html",
+                           product=product)
+
+    @expose('product-promotion')
+    def product_promotion(self):
+
+        kw = request.args.get('kw')
+
+        expired = request.args.get('expired')
+
+        promotion = utils.get_promotion(kw=kw, expired=expired)
+
+        current_time = datetime.now()
+
+        if not promotion:
+            flash("Không tìm thấy chương trình khuyến mãi nào !", "danger")
+            return self.render("admin/product.html",
+                               promotion=promotion,
+                               current_time=current_time)
+
+        return self.render("admin/product.html",
+                           promotion=promotion,
+                           current_time=current_time)
+
+    @expose('promotion-detail/<int:promotion_id>')
+    def promotion_detail(self, promotion_id):
+        promotion = utils.get_promotion(kw=str(promotion_id))
+
+        product_promotion = utils.get_product_with_promotion(promotion_id)
+
+        promotion_detail = utils.get_promotion_detail(promotion_id)
+
+        return self.render('admin/product.html',
+                           promotion_detail=True,
+                           promotion=promotion,
+                           product_promotion=product_promotion)
+
     def is_accessible(self):
         return self.check_permission('view_product')
 
@@ -227,6 +332,12 @@ class CategoryView(ManageModelView):
     @expose('delete-category/<int:category_id>')
     def delete_category(self, category_id):
         category = Category.query.filter(Category.id == category_id).first()
+
+        products = Product(Product.category_id == category_id).all()
+        for product in products:
+            product.category_id = 0
+
+        db.session.commit()
 
         db.session.delete(category)
         db.session.commit()
@@ -572,7 +683,7 @@ class ReceiveNoteView(ManageModelView):
 
         goods_received_note = utils.get_goods_received_note(goods_received_code)
 
-        goods_received_note_detail = utils.get_goods_recafceived_note_detail(goods_received_code)
+        goods_received_note_detail = utils.get_goods_received_note_detail(goods_received_code)
 
         total_in_words = num2words(goods_received_note[0].total_price, lang='vi').capitalize() + " đồng "
 
@@ -671,7 +782,8 @@ class ReceiptView(ManageModelView):
                            report_types=report_types)
 
     @expose('/view-detail/<int:receipt_id>')
-    def receipt_detail_view(self, receipt_id):
+    @expose('/view-detail/<int:receipt_id>/<next_url>/<int:user_id>')
+    def receipt_detail_view(self, receipt_id, next_url=None, user_id=None):
 
         receipt_details, total_price, base_total_price = utils.load_receipt_detail(receipt_id)
 
@@ -679,13 +791,20 @@ class ReceiptView(ManageModelView):
 
         receipts = utils.load_receipt(receipt_id)
 
+        if next_url and user_id:
+            url = url_for('user_admin.user_detail',
+                          user_id=user_id)
+        else:
+            url = None
+
         return self.render('admin/receipt.html',
                            receipt_id=receipt_id,
                            receipt_details=receipt_details,
                            receipt_status=receipt_status,
                            receipts=receipts,
                            total_price=total_price,
-                           status_colors=self.status_colors)
+                           status_colors=self.status_colors,
+                           next_url=url)
 
     @expose('/receipt-update/<int:receipt_id>')
     def receipt_detail_update(self, receipt_id):

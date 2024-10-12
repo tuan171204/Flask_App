@@ -3,286 +3,429 @@
 
 
 {% block body %}
-        <h1 class="text-center text-dark mt-4 mb-5"> Quản lý sản phẩm </h1>
+
+{% if product %}
+        <h1 class="text-center text-dark mt-4 mb-5"> Chi tiết sản phẩm </h1>
         <hr>
-        <form action="" class="form-inline">
-            <div class="form-group form-inline">
-                <input  style="font-size: 16px;"
-                        class="form-control mr-sm-2"
-                                type="search"
-                                placeholder="Mã sản phẩm hoặc tên"
-                                aria-label="Search"
-                                name="kw">
-
-                <select class="form-control mr-sm-2" name="active">
-                  Trạng thái
-                  <option value="" selected>Trạng thái</option>
-                  <option value="True">Đang bán</option>
-                  <option value="False">Tạm ẩn</option>
-                </select>
-
-                <select class="form-control mr-sm-2" name="provider_id">
-                  Chọn nhà cung cấp
-                  <option value="" selected>Chọn nhà cung cấp</option>
-                  {% for provider in providers %}
-                    <option value="{{ provider.id }}">{{ provider.name }}</option>
-                  {% endfor %}
-                </select>
-            </div>
-
-             <div class="form-group form-inline mt-2 w-100">
-                <label style="font-size:22px;margin-right:17px;">
-                    Sắp xếp theo:
-                </label>
-                 <select class="custom-select ml-2"
-                         name="import_price_asc"
-                         style="width: 277px;">
-                     <option value="" selected>Giá nhập: </option>
-                     <option value="True">Tăng dần</option>
-                     <option value="False">Giảm dần</option>
-                 </select>
-                 <select class="custom-select ml-2"
-                         name="price_asc"
-                         style="width: 277px;">
-                     <option value="" selected>Giá bán</option>
-                     <option value="True">Tăng dần</option>
-                     <option value="False">Giảm dần</option>
-                 </select>
-            </div>
-
-            <div class="form-group form-inline mt-2">
-                <label style="font-size:22px;margin-right:4px;">
-                    Chọn giá nhập:
-                </label>
-                <input type="text"
-                       placeholder="Giá từ"
-                       class="form-control ml-2"
-                       name="from_import_price">
-                <input type="text"
-                       placeholder="Đến"
-                       class="ml-2 form-control"
-                       name="to_import_price">
-            </div>
-
-            <div class="form-group form-inline mt-2">
-                <label style="font-size:22px; margin-right: 16px;">Chọn giá bán:</label>
-                <input type="text"
-                       placeholder="Giá từ"
-                       class="form-control ml-2"
-                       name="from_price">
-                <input type="text"
-                       placeholder="Đến"
-                       class="form-control ml-2 "
-                       name="to_price">
-            </div>
-                <button class="btn btn-dark mt-2 form-control w-25 ml-2"
-                        type="submit">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        Tìm kiếm
-                </button>
-                <button class="btn btn-warning mt-2 ml-2 form-control w-25"
-                        type="button"
-                        data-toggle="modal"
-                        data-target="#createModal">
-                        <i class="fa-solid fa-plus"></i>
-                        Thêm sản phẩm
-                 </button>
-
-        </form>
-
-
-<hr>
-        <table class="table table-hover table-bordered">
-          <thead class="thead-dark text-center">
-            <tr>
-              <th scope="col">STT</th>
-              <th scope="col">Mã sản phẩm</th>
-              <th scope="col">Tên sản phẩm</th>
-              <th scope="col">Giá nhập</th>
-              <th scope="col">Giá bán</th>
-                <th scope="col">Nhà cung cấp</th>
-              <th scope="col">Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for product in products %}
-            <tr class="text-center">
-              <th scope="row">{{ page * size - size + loop.index }}</th>
-                    <td>{{ product.id }}</td>
-                    <td>{{ product.name }}</td>
-                    <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
-                    <td>{{ "{:,.0f}".format(product.price) }}đ</td>
-                    <td>{{ product.provider_name }} </td>
-                    <td>
-                         {% if product.active %}
-                            <button type="button"
-                                    class="btn btn-success status-btn"><i class="fa-solid fa-check"></i>
-                                Đang bán
-                            </button>
-                         {% else %}
-                            <button type="button"
-                                    class="btn btn-secondary status-btn"><i class="fa-solid fa-minus"></i>
-                                Tạm ẩn
-                            </button>
-                         {% endif %}
-                    </td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-
-
-            {% if pages > 1 %}
-                <div class="container d-flex justify-content-around" >
-                    <ul class="pagination " style="color:black">
-                        {% if prev_page %}
-                        <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
-                        {% endif %}
-                            {% for idx in range(1, pages+1) %}
-                                <li class="page-item">
-                                    <a class="page-link border-0"
-                                       href="{{ url_for('product.index',
-                                                         page=idx,
-                                                         kw=request.args.get('kw'),
-                                                         active=request.args.get('active'),
-                                                         provider_id=request.args.get('provider_id'),
-                                                         price_asc=request.args.get('price_asc'),
-                                                         import_price_asc=request.args.get('import_price_asc'),
-                                                         from_import_price=request.args.get('from_import_price'),
-                                                         to_import_price=request.args.get('to_import_price'),
-                                                         from_price=request.args.get('from_price'),
-                                                         to_price=request.args.get('to_price')) }}">
-                                        {{idx}}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        {% if next_page %}
-                        <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
-                        {% endif %}
-                    </ul>
+        <div class="row">
+            <div class="col-5">
+                <div>
+                    <img src="{{ url_for('static', filename=product.image) }}"
+                     alt="{{ product.name }}"
+                     style="width:450px; height: 300px;">
                 </div>
-             {% endif %}
-
-
-<form action="{{ url_for('product.create_product') }}"
-      method="POST"
-      id="productCreateForm"
-      enctype="multipart/form-data">
-    <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3 class="modal-title font-weight-bold" id="exampleModalLabel">Tạo sản phẩm mới </h3>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-              <div class="form-group">
-                  <label><b style="font-size: 20px;">Tên sản phẩm:</b></label>
-                  <input type="text"
-                         class="form-control"
-                         name="product_name">
-              </div>
-              <div class="form-group">
-                  <label><b style="font-size: 20px;">Chọn loại sản phẩm: </b></label>
-                  <select name="category_id"
-                          class="custom-select">
-                      <option value="">Loại sản phẩm</option>
-                      {% for category in categories %}
-                      <option value="{{ category.id }}">{{ category.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="form-group">
-                  <label><b style="font-size: 20px;">Chọn nhà cung cấp: </b></label>
-                  <select name="provider_id"
-                          class="custom-select">
-                      <option value="">Loại sản phẩm</option>
-                      {% for provider in providers %}
-                      <option value="{{ provider.id }}">{{ provider.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="form-group">
-                  <label><b style="font-size: 20px;">Chọn thương hiệu: </b></label>
-                  <select name="brand_id" class="custom-select">
-                      <option value="">Thương hiệu</option>
-                      {% for brand in brands %}
-                      <option value="{{ brand.id }}">{{ brand.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="form-group">
-                  <label><b style="font-size: 20px;">Mô tả sản phẩm </b></label>
-                  <textarea name="description"
-                            cols="30"
-                            rows="10"
-                            class="form-control"
-                            onkeyup="checkLength()">
-                  </textarea>
-                  <span class="text-danger mt-1"
-                        id="alertDescription">
-                      <i class="fa-solid fa-circle-xmark mr-2"></i>
-                      Mô tả quá dài ( < 255 ký tự )
-                  </span>
-              </div>
-              <div class="form-group">
-                  <label><b style="font-size:20px;">Ảnh sản phẩm: </b></label>
-                  <div class="custom-file">
-                    <input type="file" class="form-control" name="product_image">
-                  </div>
-              </div>
-
-              <div class="form-inline row">
-                  <div class="form-group mr-5 col-5">
-                      <label><b style="font-size: 20px;">Giá nhập: </b></label>
-                      <input type="text"
-                             class="form-control mr-1"
-                             name="import_price"
-                             onchange="calculateProfit()"> đ
-                  </div>
-                  <div class="form-group col-5">
-                      <label><b style="font-size: 20px;">Giá bán: </b></label>
-                      <input type="text"
-                             class="form-control mr-1"
-                             name="price"
-                             onchange="calculateProfit()"> đ
-                  </div>
-              </div>
-
-              <div class="row">
-                  <div class="form-group col-6 mt-2">
-                      <label><b style="font-size: 20px;">Lợi nhuận: </b></label>
-                      <div class="row">
-                          <input type="text"
-                                 class="form-control ml-3"
-                                 style="width:276px;"
-                                 name="profit"
-                                 onchange="calculatePrice()">%
-                      </div>
-                  </div>
-              </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-            <button type="submit"
-                    class="btn btn-dark"
-                    id="createButton">
-                <i class="fa-solid fa-folder-plus mr-2"></i>
-                Thêm sản phẩm mới
-            </button>
-          </div>
+            </div>
+            <div class="col-7">
+                <table class="table table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th colspan="2">
+                                <h3 class="text-center">Thông tin sản phẩm</h3>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>Mã sản phẩm:</b> </td>
+                            <td class="text-center">{{ product.id }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Tên sản phẩm:</b> </td>
+                            <td class="text-center">{{ product.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Phân loại:</b> </td>
+                            <td class="text-center">{{ product.category_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Giá nhập:</b> </td>
+                            <td class="text-center">{{ "{:,.0f}".format(product.import_price) }}đ</td>
+                        </tr>
+                         <tr>
+                            <td><b>Giá bán:</b> </td>
+                            <td class="text-center">{{ "{:,.0f}".format(product.price) }}đ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
-    </div>
-</form>
+            <a href="{{ url_for('product.index') }}"
+               class="btn btn-dark form-control" >
+                Quay lại
+            </a>
 
 
+
+{% else %}
+
+<!--HEADER MENU-->
+            <div id="productMenuBar"
+                 class="row">
+                <a href="{{ url_for('product.index') }}"
+                   style="margin-left: 40px;"
+                   class="btn col text-center pt-3 rounded-0 {% if not promotion %} active {% else %} {% endif %} ">
+                        Sản phẩm
+                </a>
+                <a href="{{ url_for('product.product_promotion' ) }}"
+                   class="btn mr-5 col text-center pt-3 rounded-0 {% if promotion %} active {% endif %}">
+                        Chương trình khuyến mãi
+                </a>
+            </div>
+
+        {% if not promotion %}
+            <h1 class="text-center text-dark mb-5"
+                style="margin-top: 100px;"> Quản lý sản phẩm </h1>
+            <hr>
+            <form action="" class="form-inline">
+                <div class="form-group form-inline">
+                    <input  style="font-size: 16px;"
+                            class="form-control mr-sm-2"
+                                    type="search"
+                                    placeholder="Mã sản phẩm hoặc tên"
+                                    aria-label="Search"
+                                    name="kw">
+
+                    <select class="form-control mr-sm-2" name="active">
+                      Trạng thái
+                      <option value="" selected>Trạng thái</option>
+                      <option value="True">Đang bán</option>
+                      <option value="False">Tạm ẩn</option>
+                    </select>
+
+                    <select class="form-control mr-sm-2" name="provider_id">
+                      Chọn nhà cung cấp
+                      <option value="" selected>Chọn nhà cung cấp</option>
+                      {% for provider in providers %}
+                        <option value="{{ provider.id }}">{{ provider.name }}</option>
+                      {% endfor %}
+                    </select>
+                </div>
+
+                 <div class="form-group form-inline mt-2 w-100">
+                    <label style="font-size:22px;margin-right:17px;">
+                        Sắp xếp theo:
+                    </label>
+                     <select class="custom-select ml-2"
+                             name="import_price_asc"
+                             style="width: 277px;">
+                         <option value="" selected>Giá nhập: </option>
+                         <option value="True">Tăng dần</option>
+                         <option value="False">Giảm dần</option>
+                     </select>
+                     <select class="custom-select ml-2"
+                             name="price_asc"
+                             style="width: 277px;">
+                         <option value="" selected>Giá bán</option>
+                         <option value="True">Tăng dần</option>
+                         <option value="False">Giảm dần</option>
+                     </select>
+                </div>
+
+                <div class="form-group form-inline mt-2">
+                    <label style="font-size:22px;margin-right:4px;">
+                        Chọn giá nhập:
+                    </label>
+                    <input type="text"
+                           placeholder="Giá từ"
+                           class="form-control ml-2"
+                           name="from_import_price">
+                    <input type="text"
+                           placeholder="Đến"
+                           class="ml-2 form-control"
+                           name="to_import_price">
+                </div>
+
+                <div class="form-group form-inline mt-2">
+                    <label style="font-size:22px; margin-right: 16px;">Chọn giá bán:</label>
+                    <input type="text"
+                           placeholder="Giá từ"
+                           class="form-control ml-2"
+                           name="from_price">
+                    <input type="text"
+                           placeholder="Đến"
+                           class="form-control ml-2"
+                           name="to_price">
+                </div>
+                    <button class="btn btn-dark mt-2 form-control w-25 ml-2"
+                            type="submit">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Tìm kiếm
+                    </button>
+                <div class="form-group form-inline mt-2 w-100 row">
+                     <button class="btn btn-warning mt-2 ml-2 form-control col-3"
+                            type="button"
+                            data-toggle="modal"
+                            data-target="#createModal">
+                            <i class="fa-solid fa-plus"></i>
+                            Thêm sản phẩm
+                     </button>
+                        <button class="btn btn-info mt-2 ml-2 form-control w-100 col-3"
+                            type="button"
+                            id="selectAllButton"
+                            onclick="selectAllCheckBox()">
+                            <i class="fa-solid fa-list-check"></i>
+                            Chọn tất cả
+                        </button>
+                        <button class="btn btn-secondary  mt-2 ml-2 form-control w-100 col-3"
+                            type="button"
+                            id="undoButton"
+                            onclick="selectAllCheckBox(revert=true)">
+                            <i class="fa-solid fa-undo"></i>
+                            Hoàn tác
+                        </button>
+                        <button class="btn btn-danger mt-2 ml-2 form-control col-2"
+                                id="hideAllButton"
+                                type="button"
+                                onclick="deactiveAll('deactive')">
+                                <i class="fa-solid fa-minus"></i>
+                                Ẩn tất cả
+                         </button>
+                        <button class="btn btn-success mt-2 ml-2 form-control col-2"
+                                id="activeAllButton"
+                                type="button"
+                                onclick="deactiveAll('active')">
+                                <i class="fa-solid fa-circle-check"></i>
+                                Kích hoạt tất cả
+                         </button>
+                </div>
+            </form>
+
+             <hr>
+            <table class="table table-hover table-bordered">
+              <thead class="thead-dark text-center">
+                <tr>
+                  <th scope="col">Chọn</th>
+                  <th scope="col">STT</th>
+                  <th scope="col">Mã sản phẩm</th>
+                  <th scope="col">Tên sản phẩm</th>
+                  <th scope="col">Giá nhập</th>
+                  <th scope="col">Giá bán</th>
+                    <th scope="col">Nhà cung cấp</th>
+                  <th scope="col">Trạng thái</th>
+                  <th scope="col"></th>
+
+                </tr>
+              </thead>
+              <tbody>
+              {% for product in products %}
+                <tr class="text-center">
+                    <td>
+                        <input type="checkbox"
+                               class="checkbox-input"
+                               name="checked_{{ product.id }}"
+                               data-product-id="{{ product.id }}"
+                               onchange="selectChange()">
+                    </td>
+                  <th scope="row">{{ page * size - size + loop.index }}</th>
+                        <td>
+                            <input type="text"
+                                   readonly
+                                   class="form-control text-center"
+                                   name="product_{{ product.id }}"
+                                   value="{{ product.id }}" >
+                        </td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
+                        <td>{{ "{:,.0f}".format(product.price) }}đ</td>
+                        <td>{{ product.provider_name }} </td>
+                        <td>
+                             {% if product.active %}
+                            <div class="dropdown">
+                                <button type="button"
+                                        class="btn btn-success status-btn dropdown-toggle"
+                                        data-toggle="dropdown"
+                                        aria-expanded="false">
+                                     <i class="fa-solid fa-check"></i>
+                                    Đang bán
+                                </button>
+                                <div class="dropdown-menu">
+                                        <a href="{{ url_for('product.deactive_product', product_id = product.id ) }}"
+                                           class="btn btn-secondary dropdown-button status-btn">
+                                        <i class="fa-solid fa-minus"></i>
+                                        Tạm ẩn
+                                    </a>
+                                </div>
+                            </div>
+
+                             {% else %}
+                                <div class="dropdown">
+                                <button type="button"
+                                        class="btn btn-secondary status-btn dropdown-toggle"
+                                        data-toggle="dropdown"
+                                        aria-expanded="false">
+                                     <i class="fa-solid fa-minus"></i>
+                                    Tạm ẩn
+                                </button>
+                                <div class="dropdown-menu">
+                                        <a href="{{ url_for('product.active_product', product_id = product.id ) }}"
+                                           class="btn btn-success dropdown-button status-btn">
+                                        <i class="fa-solid fa-check"></i>
+                                        Đang bán
+                                    </a>
+                                </div>
+                            </div>
+                             {% endif %}
+                        </td>
+                    <td>
+                        <a href="{{ url_for('product.product_update', product_id = product.id) }}"
+                            style="font-size:22px;" class="btn btn-secondary">
+                             <i class="fa-solid fa-pencil"></i>
+                         </a>
+                    </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+
+
+                {% if pages and pages > 1 %}
+                    <div class="container d-flex justify-content-around" >
+                        <ul class="pagination " style="color:black">
+                            {% if prev_page %}
+                            <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                            {% endif %}
+                                {% for idx in range(1, pages+1) %}
+                                    <li class="page-item">
+                                        <a class="page-link border-0"
+                                           href="{{ url_for('product.index',
+                                                             page=idx,
+                                                             kw=request.args.get('kw'),
+                                                             active=request.args.get('active'),
+                                                             provider_id=request.args.get('provider_id'),
+                                                             price_asc=request.args.get('price_asc'),
+                                                             import_price_asc=request.args.get('import_price_asc'),
+                                                             from_import_price=request.args.get('from_import_price'),
+                                                             to_import_price=request.args.get('to_import_price'),
+                                                             from_price=request.args.get('from_price'),
+                                                             to_price=request.args.get('to_price')) }}">
+                                            {{idx}}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            {% if next_page %}
+                            <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                 {% endif %}
+
+
+            <form action="{{ url_for('product.create_product') }}"
+                  method="POST"
+                  id="productCreateForm"
+                  enctype="multipart/form-data">
+                <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h3 class="modal-title font-weight-bold" id="exampleModalLabel">Tạo sản phẩm mới </h3>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                          <div class="form-group">
+                              <label><b style="font-size: 20px;">Tên sản phẩm:</b></label>
+                              <input type="text"
+                                     class="form-control"
+                                     name="product_name">
+                          </div>
+                          <div class="form-group">
+                              <label><b style="font-size: 20px;">Chọn loại sản phẩm: </b></label>
+                              <select name="category_id"
+                                      class="custom-select">
+                                  <option value="">Loại sản phẩm</option>
+                                  {% for category in categories %}
+                                  <option value="{{ category.id }}">{{ category.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                          <div class="form-group">
+                              <label><b style="font-size: 20px;">Chọn nhà cung cấp: </b></label>
+                              <select name="provider_id"
+                                      class="custom-select">
+                                  <option value="">Loại sản phẩm</option>
+                                  {% for provider in providers %}
+                                  <option value="{{ provider.id }}">{{ provider.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                          <div class="form-group">
+                              <label><b style="font-size: 20px;">Chọn thương hiệu: </b></label>
+                              <select name="brand_id" class="custom-select">
+                                  <option value="">Thương hiệu</option>
+                                  {% for brand in brands %}
+                                  <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                          <div class="form-group">
+                              <label><b style="font-size: 20px;">Mô tả sản phẩm </b></label>
+                              <textarea name="description"
+                                        cols="30"
+                                        rows="10"
+                                        class="form-control"
+                                        onkeyup="checkLength()">
+                              </textarea>
+                              <span class="text-danger mt-1"
+                                    id="alertDescription">
+                                  <i class="fa-solid fa-circle-xmark mr-2"></i>
+                                  Mô tả quá dài ( < 255 ký tự )
+                              </span>
+                          </div>
+                          <div class="form-group">
+                              <label><b style="font-size:20px;">Ảnh sản phẩm: </b></label>
+                              <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="customFile">
+                                <label class="custom-file-label" for="customFile">Chọn file ảnh</label>
+                              </div>
+                          </div>
+
+                          <div class="form-inline row">
+                              <div class="form-group mr-5 col-5">
+                                  <label><b style="font-size: 20px;">Giá nhập: </b></label>
+                                  <input type="text"
+                                         class="form-control mr-1"
+                                         name="import_price"
+                                         onchange="calculateProfit()"> đ
+                              </div>
+                              <div class="form-group col-5">
+                                  <label><b style="font-size: 20px;">Giá bán: </b></label>
+                                  <input type="text"
+                                         class="form-control mr-1"
+                                         name="price"
+                                         onchange="calculateProfit()"> đ
+                              </div>
+                          </div>
+
+                          <div class="row">
+                              <div class="form-group col-6 mt-2">
+                                  <label><b style="font-size: 20px;">Lợi nhuận: </b></label>
+                                  <div class="row">
+                                      <input type="text"
+                                             class="form-control ml-3"
+                                             style="width:276px;"
+                                             name="profit"
+                                             onchange="calculatePrice()">%
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                        <button type="submit"
+                                class="btn btn-dark"
+                                id="createButton">
+                            <i class="fa-solid fa-folder-plus mr-2"></i>
+                            Thêm sản phẩm mới
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </form>
 <script>
-
-
-   calculateProfit = () => {
+    calculateProfit = () => {
         let price = parseFloat(document.querySelector("input[name='price']").value) || 0;
         let import_price = parseFloat(document.querySelector("input[name='import_price']").value) || 0;
 
@@ -314,6 +457,423 @@
             document.getElementById('createButton').disabled = false
         }
     }
+
+    selectChange = () => {
+    let anyChecked = false;
+
+    for (let input of document.querySelectorAll('.checkbox-input')) {
+        if (input.checked) {
+            anyChecked = true;
+            break;
+        }
+    }
+
+    if (anyChecked) {
+        document.getElementById('hideAllButton').style.display = 'block';
+        document.getElementById('activeAllButton').style.display = 'block';
+    } else {
+        document.getElementById('hideAllButton').style.display = 'none';
+        document.getElementById('activeAllButton').style.display = 'none';
+    }
+    }
+
+    selectAllCheckBox = (revert) => {
+        if ( !revert ){
+                document.getElementById('hideAllButton').style.display = 'block'
+                document.getElementById('activeAllButton').style.display = 'block'
+                document.getElementById('selectAllButton').style.display = 'none'
+                document.getElementById('undoButton').style.display = 'block'
+
+                document.querySelectorAll(".checkbox-input").forEach(input => {
+                    if ( input.checked == false ){
+                        input.checked = true
+                    }
+            })
+        } else {
+                document.getElementById('hideAllButton').style.display = 'none'
+                document.getElementById('activeAllButton').style.display = 'none'
+                document.getElementById('selectAllButton').style.display = 'block'
+                document.getElementById('undoButton').style.display = 'none'
+
+                document.querySelectorAll(".checkbox-input").forEach(input => {
+                    if ( input.checked == true ){
+                        input.checked = false
+                    }
+            })
+
+        }
+        selectChange()
+    }
+
+
+    document.getElementById('hideAllButton').style.display = 'none'
+    document.getElementById('activeAllButton').style.display = 'none'
+    document.getElementById('undoButton').style.display = 'none'
+
+
+
+    deactiveAll = (func) => {
+
+        if ( confirm('Tạm ẩn tất cả các sản phẩm đã chọn ?') == true ){
+            const products_id = []
+            document.querySelectorAll("input[name^='checked_']").forEach(input => {
+                if (input.checked == true ) {
+                    products_id.push(input.getAttribute('data-product-id'))
+                }
+            })
+            console.log(products_id)
+
+            fetch('/api/change_status_product/', {
+                method:'PUT',
+                body: JSON.stringify(
+                    {
+                     products_id: products_id,
+                     func: func
+                     }
+                 ),
+                headers: {
+                     'Content-type': 'application/json'
+                }
+            }).then(res => res.json()).then(data => {
+                if ( data.success ){
+                    alert("Đã lưu thay đổi ")
+                    window.location.reload()
+                } else {
+                    alert(data.message || "Lỗi khi lưu thay đổi ")
+                }
+            }).catch(err => console.error(err))
+        }
+    }
+
+
+
+    $(".custom-file-input").on("change", function() {
+      var fileName = $(this).val().split("\\").pop();
+      $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+    });
+
+
+
+
+</script>
+        {% else %}
+
+
+            {% if not promotion_detail %}
+
+                 <h1 class="text-center text-dark mb-5"
+                    style="margin-top: 100px;"> Chương trình khuyến mãi </h1>
+                 <hr>
+
+                <form action="{{ url_for('product.product_promotion') }}"
+                      class="form-inline mb-2">
+                      <input class="form-control mr-sm-2"
+                             style="width: 40%;"
+                             type="search"
+                             placeholder="Nhập mã chương trình hoặc mã khuyến mãi"
+                             aria-label="Search"
+                             name="kw">
+                      <select class="form-control mr-sm-2" name="expired">
+                          Thời hạn khuyến mãi
+                          <option value="" selected>Thời hạn khuyến mãi</option>
+                          <option value="False"> Đang diễn ra </option>
+                          <option value="True">Hết hạn </option>
+                      </select>
+
+                      <button class="btn btn-outline-dark my-2 my-sm-0"
+                              type="submit">
+                           <i class="fa-solid fa-magnifying-glass"></i>
+                          Tìm kiếm
+                      </button>
+                </form>
+                <hr>
+                <table class="table table-hover table-bordered text-center">
+                    <thead class="thead-dark">
+                        <th scope="col">STT</th>
+                        <th scope="col">Mã chương trình & mã khuyến mãi</th>
+                        <th scope="col">Tên chương trình khuyến mãi</th>
+                        <th scope="col">Tình trạng</th>
+                        <th scope="col">Điều chỉnh</th>
+                    </thead>
+
+                    <tbody>
+                    {% for p in promotion %}
+                        {% if p.id != 3 %}
+                            <tr>
+                                <th scope="row">
+                                {{ loop.index }}
+                                </th>
+                                <td>
+                                    <span class="badge badge-dark"
+                                          style="font-size: 22px;">
+                                        {{ p.id }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ p.description }}
+                                </td>
+                                <td>
+                                    {% if p.end_date and p.end_date > current_time %}
+                                        <span class="badge badge-success"
+                                              id="promo_{{ p.id }}"
+                                              style="font-size: 18px; font-weight:light;">
+                                             Đang diễn ra
+                                        </span>
+                                    <div class="mt-2 font-weight-bold"
+                                         data-end-date="{{ p.end_date.isoformat() }}"
+                                         data-promotion-id="{{ p.id }}"
+                                         id="countdown-timer-{{ loop.index }}">
+
+                                    </div>
+
+                                    {% else %}
+                                        <span class="badge badge-danger"
+                                              style="font-size: 18px; font-weight:light;">
+                                             Đã hết hạn
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('product.promotion_detail', promotion_id=p.id) }}"
+                                       class="btn btn-white"
+                                       style="font-size: 24px;" >
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <br>
+                <br>
+            <script>
+                var countdownElements = document.querySelectorAll('[id^="countdown-timer-"]');
+
+                countdownElements.forEach(function(element) {
+                    var countDownDate = new Date(element.getAttribute('data-end-date')).getTime();
+
+                    var x = setInterval(function() {
+                        var now = new Date().getTime();
+                        var distance = countDownDate - now;
+
+                        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                        element.innerHTML = days + " ngày " + hours + " giờ " + minutes + " phút " + seconds + " giây ";
+
+                        if (distance < 0) {
+                            clearInterval(x);
+                            element.style.display = 'none'
+                            value = element.getAttribute(data-promotion-id)
+                            insert = document.getElementById(`promo_${value}`)
+                            insert.outerHTML = `element.innerHTML = <span class="badge badge-danger"
+                                                          style="font-size: 18px; font-weight:light;">
+                                                         Đã hết hạn
+                                                    </span>`;
+                        }
+                    }, 1000);
+                });
+
+            </script>
+            {% else %}
+                <h1 class="text-center text-dark mb-5"
+                    style="margin-top: 100px;"> Điều chỉnh chương trình khuyến mãi </h1>
+                 <hr>
+
+                <div class="row">
+                    <div class="col col-6">
+                        <form action="#"
+                              id="promotionUpdateForm">
+                            <div class="form-group">
+                                <span class="d-flex flex-row justify-content-between">
+                                    <label style="font-size: 22px;">
+                                    <b>Mã chương trình: </b>
+                                </label>
+                                <button class="btn btn-warning form-control w-50 font-weight-bold mb-2"
+                                    type="button"
+                                    id="updatePromotionButton">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    Lưu thay đổi
+                                </button>
+                                </span>
+
+                                <input type="text"
+                                       name="promotion_id"
+                                       class="form-control text-center"
+                                       value="{{ promotion[0].id }}"
+                                       data-promotion-id="{{ promotion[0].id }}" >
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 22px;">
+                                    <b>Mô tả:</b>
+                                </label>
+                                <input type="text"
+                                       name="promotion_description"
+                                       class="form-control text-center"
+                                       value="{{ promotion[0].description }}"
+                                       data-promotion-description="{{ promotion[0].description }}" >
+                            </div>
+                            <div class="form-group form-inline mt-5">
+                                <label style="font-size: 22px;">
+                                    <b>Ngày bắt đầu:</b>
+                                </label>
+                                <input type="text"
+                                       name="promotion_start_date"
+                                       readonly
+                                       class="form-control text-center w-50"
+                                       style="margin-left: 14px;"
+                                       value="{{ promotion[0].start_date.strftime(' %d-%m-%Y') }}"
+                                       data-promotion-start-date="{{ promotion[0].start_date }}" >
+                            </div>
+                            <div class="form-group form-inline mt-5">
+                                <label style="font-size: 22px;">
+                                    <b>Ngày kết thúc:</b>
+                                </label>
+                                <input type="text"
+                                       class="form-control text-center ml-2 mr-2 w-25"
+                                       value="{{ promotion[0].end_date.strftime('%d-%m-%Y') }}"
+                                       name="original_promotion_end_date"
+                                       data-promotion-end-date="{{ promotion[0].end_date.strftime('%Y-%m-%d') }}" >
+
+                                <label style="font-size: 22px;">
+                                    <b>Điều chỉnh:</b>
+                                </label>
+                                <input type="date"
+                                       readonly
+                                       class="form-control w-25 ml-1"
+                                       name="promotion_end_date">
+                            </div>
+                        </form>
+                    </div>
+
+<!--BUSSINESS REPORT-->
+                    <div class="col col-6 text-center align-text-bottom border border-dark mb-3"
+                          style="font-size: 24px; margin: 0px; padding: 0px;">
+                           <div class="container-fluid"
+                                style="margin: 0px; padding: 0px;">
+                                <div id="demo" class="carousel slide" data-ride="carousel">
+                                  <ul class="carousel-indicators">
+                                    <li data-target="#demo" data-slide-to="0" class="active"></li>
+                                    <li data-target="#demo" data-slide-to="1"></li>
+                                    <li data-target="#demo" data-slide-to="2"></li>
+                                  </ul>
+
+                                  <div class="carousel-inner no-gutters">
+                                    <div class="carousel-item active">
+                                            <img src="{{url_for('static', filename='images/slide1b.jpg') }}" alt="Iphone 15 Promax">
+                                    </div>
+                                    <div class="carousel-item">
+                                            <img src="{{url_for('static', filename='images/slide2.jpg') }}" alt="Oppo Find N3">
+                                    </div>
+                                    <div class="carousel-item">
+                                            <img src="{{url_for('static', filename='images/slide3b.jpg') }}" alt="Xiaomi 14 5G">
+                                    </div>
+                                  </div>
+
+                                  <a class="carousel-control-prev" href="#demo" data-slide="prev">
+                                    <span class="carousel-control-prev-icon"></span>
+                                  </a>
+                                  <a class="carousel-control-next" href="#demo" data-slide="next" id="slider-click-btn">
+                                    <span class="carousel-control-next-icon"></span>
+                                  </a>
+                                </div>
+                           </div>
+                    </div>
+                </div>
+
+            <hr>
+            {% if promotion[0].apply_for.value == 1 %}
+                <h2 class="text-center mt-4 mb-4"> Các sản phẩm áp dụng </h2>
+                    <table class="table table-hover table-bordered text-center mb-5">
+                        <thead class="thead-dark">
+                            <th scope="col">STT</th>
+                            <th scope="col">Mã sản phẩm</th>
+                            <th scope="col">Tên sản phẩm</th>
+                            <th scope="col">Giá nhập</th>
+                            <th scope="col">Giá bán</th>
+                            <th scope="col">Khuyến mãi</th>
+                        </thead>
+
+                        <tbody>
+                            {% for product in product_promotion %}
+                            <tr>
+                                <td scope="row">{{ loop.index }}</td>
+                                <td>{{ product.id }}</td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
+                                <td>{{ "{:,.0f}".format(product.price) }}đ</td>
+                                {% if product.discount_type.value == 1 or product.discount_type.value == 4 %}
+                                    <td class="font-weight-bold">
+                                        {{ "{:,.0f}".format(product.price * ( 100 - product.discount_value ) / 100) }}<br>
+
+                                        <p class="text-danger font-weight-bold">
+                                            ( - {{ "{:,.0f}".format(product.discount_value) }} {% if product.discount_type.value == 4 %} đ {% else %} % {% endif %})
+                                        </p>
+                                    </td>
+                                {% elif product.discount_type.value == 2 %}
+                                    <td class="font-weight-bold">
+                                        {{ promotion[0].description }}
+                                        <p class="text-danger font-weight-bold">
+                                            ( - {{ "{:,.0f}".format(product.price) }}đ )
+                                        </p>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                <br><br>
+            {% else %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endif %}
+<script>
+
+    const updateButton = document.querySelector('#updatePromotionButton')
+    updateButton.style.display = 'none';
+    const inputs = document.querySelectorAll('#promotionUpdateForm div input');
+
+    function checkForChanges() {
+        let isChanged = false;
+
+        inputs.forEach(function(input) {
+            const currentValue = input.value;
+            const originalValue = input.getAttribute('data-' + input.name.replace('_', '-'));
+
+            if (input.type === 'date' || input.type === 'datetime-local') {
+            // Chỉ có end_date là input riêng thoi
+                const inputDate = new Date(document.querySelector('input[name="promotion_end_date"]').value);
+                const originalDate = new Date(originalValue);
+
+                console.log("input + " + inputDate, originalDate)
+
+            if (originalValue !== null && inputDate.getTime() !== originalDate.getTime()) {
+                updateButton.style.display = 'block';
+            } else {
+                updateButton.style.display = 'none';
+            }
+        }
+
+            if (originalValue !== null && currentValue !== originalValue) {
+                isChanged = true;
+            }
+        });
+
+        if (isChanged) {
+            updateButton.style.display = 'block';
+        } else {
+            updateButton.style.display = 'none';
+        }
+    }
+
+
+    inputs.forEach(input => {
+        input.addEventListener('keyup', checkForChanges);
+        });
 
 </script>
 

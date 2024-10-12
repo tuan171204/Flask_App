@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import request, redirect, flash, session
 from flask_login import current_user
 from sqlalchemy import desc
@@ -150,7 +150,7 @@ data = {
 
 
 with app.app_context():
-    details, t_price, b_price = utils.load_receipt_detail(36,1 )
+  user = utils.get_user_receipt(1)
 
-    for d in details:
-      print(d.product_id)
+  for u in user:
+    print(u)

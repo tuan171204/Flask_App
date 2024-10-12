@@ -76,9 +76,10 @@
                         <tr class="text-center">
                           <th scope="col">STT</th>
                           <th scope="col">Mã sản phẩm</th>
-                          <th scope="col"> Tên sản phẩm</th>
+                          <th scope="col">Tên sản phẩm</th>
                           <th scope="col">Số lượng</th>
                           <th scope="col">Đơn giá</th>
+                          <th scope="col">Khuyến mãi áp dụng</th>
                           <th scope="col"></th>
                         </tr>
                       </thead>
@@ -97,7 +98,20 @@
                                        data-product-id="{{r.product_id}}">
                             </td>
                           <td>{{ "{:,.1f}".format(r.unit_price) }}đ</td>
-                          <td><button type="button" class="btn btn-danger" onclick="deleteDetail({{receipt_id}}, {{r.product_id}}, {{r.quantity}} )">Xóa</button></td>
+
+                          <td>{% if r.discount_info %}
+                                <p class="text-danger font-weight-bold">{{ r.discount_info }}</p>
+                              {% else %}
+                                không có
+                              {% endif %}
+                          </td>
+                          <td>
+                              <button type="button"
+                                      class="btn btn-danger"
+                                      onclick="deleteDetail({{receipt_id}}, {{r.product_id}}, {{r.quantity}} )">
+                                  Xóa
+                              </button>
+                          </td>
                         </tr>
                        {% endfor %}
                       </tbody>
@@ -108,7 +122,11 @@
                 {% else %}
                     <div class="form-group form-inline" id="total_price">
                         <label> <b>Tổng giá trị hóa đơn: </b></label>
-                        <button type="button" class="form-control" style="font-size:24px"><b>{{ "{:,.1f}".format(total_price) }}đ</b></button>
+                        <button type="button"
+                                class="form-control"
+                                style="font-size:24px">
+                            <b>{{ "{:,.1f}".format(total_price) }}đ</b>
+                        </button>
                     </div>
                 {% endif %}
                 <hr>
@@ -160,20 +178,20 @@
 <script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 <script>
     function deleteDetail(receipt_id, product_id, quantity) {
-    if (confirm("Xác nhận xóa chi tiết hóa đơn?") == true) {
-        fetch('/api/delete-detail/' + receipt_id + '/' + product_id + '/' + quantity, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(res => res.json()).then(data => {
-            if (data.success) {
-                alert("Xóa thành công ")
-                location.reload();
-            } else {
-                alert(data.message || "Có lỗi xảy ra khi xóa chi tiết hóa đơn");
-            }
-        }).catch(err => console.error(err));
+        if (confirm("Xác nhận xóa chi tiết hóa đơn?") == true) {
+            fetch('/api/delete-detail/' + receipt_id + '/' + product_id + '/' + quantity, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    alert("Xóa thành công ")
+                    location.reload();
+                } else {
+                    alert(data.message || "Có lỗi xảy ra khi xóa chi tiết hóa đơn");
+                }
+            }).catch(err => console.error(err));
         }
     }
 
@@ -244,6 +262,25 @@ function saveChanges(receipt_id) {
         }).catch(err => console.error(err))
     }
 }
+
+
+         fetch('/api/deactive_product/', {
+            method='PUT,
+            body: JSON.stringify(
+             products_id: products_id
+             ),
+            headers: {
+                    'Content-type': 'application/json'
+            }
+        }).then(res = > res.json()).then(data => {
+            if ( data.success ){
+                alert("Đã lưu thay đổi ")
+                window.location.reload()
+            } else {
+                alert(data.message || "Lỗi khi lưu thay đổi ")
+            }
+            }).catch(err => console.error(err))
+        }
 
 
 </script>

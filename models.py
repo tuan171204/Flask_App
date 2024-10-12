@@ -11,11 +11,15 @@ class Category(db.Model):
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(20), nullable=False)
+    name = Column(String(100), nullable=False)
+    parent_id = Column(Integer, ForeignKey('category.id'), nullable=True)
+    child = Column(Boolean, nullable=True, default=0)
+    children = relationship('Category', backref='parent', remote_side=[id], lazy=True)
     products = relationship('Product', backref='category', lazy=False)
 
     def __str__(self):
         return self.name
+
 
 
 class Product(db.Model):
@@ -298,16 +302,26 @@ class DiscountType(PyEnum):
     PERCENTAGE = 1
     GET_FREE = 2
     FIXED_AMOUNT = 3
+    PRICE = 4
 
+
+class ApplyObject(PyEnum):
+    Product = 1
+    Receipt = 2
 
 class Promotion(db.Model):
     __tablename__ = 'promotion'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(255), primary_key=True, autoincrement=True)
     description = Column(String(255), nullable=True)
+    start_date = Column(DateTime, nullable=False,default=datetime.now())
+    end_date = Column(DateTime, nullable=True)
+    apply_for = Column(Enum(ApplyObject), default=ApplyObject.Product, nullable=False)
+
 
     receipts = relationship('Receipt', backref='promotion', lazy=True)
     detail = relationship('PromotionDetail', backref='promotion', lazy=True)
+
 
 
 class PromotionDetail(db.Model):
@@ -318,6 +332,7 @@ class PromotionDetail(db.Model):
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
     discount_type = Column(Enum(DiscountType), nullable=False)
     discount_value = Column(Float, nullable=True)
+
 
 
 class District(db.Model):

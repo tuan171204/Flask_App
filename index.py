@@ -555,6 +555,37 @@ def load_product(provider_id):
     return jsonify(product_list)
 
 
+@app.route('/api/change_status_product/', methods=['PUT'])
+def deactive_product():
+    try:
+        data = request.json
+        func = data.get('func')
+        products_id = data.get('products_id', [])
+
+        if func == 'active':
+            for id in products_id:
+                if id:
+                    product = Product.query.filter(Product.id == id).first()
+                    product.active = True
+                else:
+                    pass
+
+        elif func == 'deactive':
+            for id in products_id:
+                if id:
+                    product = Product.query.filter(Product.id == id).first()
+                    product.active = False
+                else:
+                    pass
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 404
+
+    db.session.commit()
+    return jsonify({"success": True, "message": "Đã lưu thay đổi"}), 200
+
+
+
 if __name__ == "__main__":
     from Flask_App.admin import *
 

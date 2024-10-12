@@ -55,8 +55,10 @@
                             <tr class="text-center">
                               <th scope="col">STT</th>
                               <th scope="col">Mã sản phẩm</th>
+                              <th scope="col">Tên sản phẩm</th>
                               <th scope="col">Số lượng</th>
                               <th scope="col">Đơn giá</th>
+                              <th scope="col">Khuyến mãi áp dụng</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -64,31 +66,48 @@
                             <tr class="text-center">
                               <th scope="row">{{loop.index}}</th>
                               <td>{{r.product_id}}</td>
+                              <td>{{r.product_name}}</td>
                               <td>{{r.quantity}}</td>
                               <td>{{ "{:,.0f}".format(r.unit_price) }}đ</td>
+                               <td>{% if r.discount_info %}
+                                     <p class="text-danger font-weight-bold">{{ r.discount_info }}</p>
+                                  {% else %}
+                                    không có
+                                  {% endif %}
+                              </td>
                             </tr>
                            {% endfor %}
                           </tbody>
                         </table>
-
-
-
                     </div>
-                        <div class="form-group form-inline" id="total_price">
-                            <label> <b>Tổng giá trị hóa đơn </b></label>
-                            <button type="button" class="form-control"><b>{{ "{:,.0f}".format(total_price) }}đ</b></button>
-                        </div>
                 </div>
+        </form>
+                <div class="form-group form-inline" id="total_price">
+                    <label> <b>Tổng giá trị hóa đơn </b></label>
+                    <button type="button"
+                            class="form-control"
+                            style="font-size:24px;">
+                        <b>{{ "{:,.0f}".format(total_price) }}đ</b>
+                    </button>
+                </div>
+                <hr>
 
-                <a class="btn btn-secondary"
-                   style="font-weight:bold;
-                          font-size: 24px;"
-                   href="{{ url_for('receipt.index') }}">
+                {% if next_url %}
+                <a class="btn btn-dark"
+                   style="font-size: 24px;"
+                   href="{{ next_url }}">
+                    <i class="fa-solid fa-right-from-bracket"></i>
                     Quay lại
                 </a>
-        </form>
-
-
+                {% else %}
+                <a class="btn btn-dark"
+                   style="font-size: 24px;"
+                   href="{{ url_for('receipt.index') }}">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Quay lại
+                </a>
+                {% endif %}
+                <br><br>
     {% else %}
 
     <!--REPORT MODAL-->
