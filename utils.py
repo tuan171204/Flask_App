@@ -16,6 +16,9 @@ from flask_login import current_user
 from sqlalchemy import func, and_, or_, desc, Integer
 from sqlalchemy.sql import extract
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 def allowed_file(filename):
@@ -265,6 +268,7 @@ def get_product_detail_info_admin(product_id):
                                Product.price,
                                Product.import_price,
                                Product.description,
+                               Product.category_id,
                                Category.name.label('category_name'),
                                PromotionDetail.discount_value.label('discount_value'),
                                PromotionDetail.discount_type.label('discount_type'),
@@ -315,6 +319,16 @@ def check_login_admin(username, password):
                 return user
 
         return None
+
+
+def login_without_pass(username):
+    user = User.query.filter(User.username.__eq__(username.strip())).first()
+
+    if user:
+        user_permission = get_user_permission(user.id)
+
+        if user_permission.User_Role.login_admin:
+            return user
 
 
 def get_user_by_id(user_id):
@@ -416,6 +430,27 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
             db.session.add(d)
 
         db.session.commit()
+
+
+def calculate_total_revenue():
+    total_revenue = db.session.query(
+        func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price - ReceiptDetail.discount)).scalar()
+    return total_revenue
+
+
+def count_total_check():
+    total_check = db.session.query(func.count(Receipt.id)).scalar()
+    return total_check
+
+
+def count_complete_receipt():
+    return db.session.query(func.count(Receipt.id)) \
+        .filter(Receipt.status_id == 2).scalar()
+
+
+def count_customer():
+    return db.session.query(func.count(User.id)) \
+        .filter(User.active == True).scalar()
 
 
 def category_stats():
@@ -1142,3 +1177,119 @@ def get_product_with_promotion(promotion_id):
         .filter(PromotionDetail.promotion_id == promotion_id)
 
     return product.all()
+
+
+def update_product(product_id, **kwargs):
+    product = Product.query.filter(Product.id == product_id).first()
+
+    try:
+        product.name = kwargs.get('product_name'),
+        product.price = kwargs.get('price'),
+        product.category_id = kwargs.get('category_id'),
+        product.import_price = kwargs.get('import_price')
+
+        db.session.commit()
+        return "Cập nhật thông tin sản phẩm thành công"
+
+    except Exception as e:
+        db.session.rollback()
+        return str(e)
+
+
+def duplicate_product_with_new_id(product_id, up_product_id, **kwargs):
+    try:
+        # Lấy sản phẩm cũ
+        old_product = Product.query.filter(Product.id == product_id).first()
+        if not old_product:
+            return f"Không tìm thấy Product {product_id}"
+
+        # Tạo sản phẩm mới với ID mới
+        new_product = Product(
+            id=up_product_id,
+            name=kwargs.get('product_name'),
+            description=old_product.description,
+            price=kwargs.get('price'),
+            image=old_product.image,
+            active=old_product.active,
+            created_date=old_product.created_date,
+            rating=old_product.rating,
+            category_id=kwargs.get('category_id'),
+            brand_id=old_product.brand_id,
+            import_price=kwargs.get('import_price'),
+            warranty=old_product.warranty
+        )
+
+        db.session.add(new_product)
+        db.session.flush()
+
+        Distribution.query.filter(Distribution.product_id == product_id).update({'product_id': up_product_id})
+        ReceiptDetail.query.filter(ReceiptDetail.product_id == product_id).update({'product_id': up_product_id})
+        Goods_Received_Note_Detail.query.filter(Goods_Received_Note_Detail.product_id == product_id).update(
+            {'product_id': up_product_id})
+        Goods_Delivery_Note_Detail.query.filter(Goods_Delivery_Note_Detail.product_id == product_id).update(
+            {'product_id': up_product_id})
+        PromotionDetail.query.filter(PromotionDetail.product_id == product_id).update({'product_id': up_product_id})
+
+        db.session.delete(old_product)
+
+        db.session.commit()
+
+        return "Cập nhật thông tin sản phẩm thành công"
+
+    except Exception as e:
+        db.session.rollback()
+        return str(e)
+
+
+def send_email(subject, body, to_email):
+    smtp_server = 'smtp.gmail.com'  # serversmtp gửi mail
+    smtp_port = 587  # port mặc định gửi mail
+    from_email = 'tuanthai17122004@gmail.com'  # mail người gửi
+    from_password = 'kpkj hals ihln gppg'  # mật khẩu ứng dụng google
+
+    msg = MIMEMultipart()
+    # MIMEMultipart: Tạo một đối tượng email đa phần, cho phép bạn đính kèm các phần khác nhau
+    # (như văn bản, tệp đính kèm, hình ảnh) vào email.
+
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    # Thiết lập các trường cơ bản của email bao gồm người gửi, người nhận và tiêu đề.
+
+    # attach Thêm nội dung vào email
+    msg.attach(MIMEText(body, 'plain'))
+    # Chỉ định kiểu nội dung là văn bản thuần túy ( plain ) không phải HTML.
+
+    try:
+        # Kết nối máy chủ SMTP
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Bắt đầu kết nối TLS để bảo mật
+        server.login(from_email, from_password)
+
+        # Gửi email
+        server.send_message(msg)
+        print("Email đã được gửi thành công!")
+
+        server.quit()
+
+    except Exception as e:
+        print(f"Không thể gửi email. Lỗi: {e}")
+
+    # Sử dụng hàm gửi email
+    # code = generate_id()
+    # subject = "Mail khôi phục mật khẩu"
+    # body = f'{code} là mã khôi phục mật khẩu của bạn, vui lòng không chia sẻ với bất kỳ ai'
+    # to_email = "titofood17122004@gmail.com"
+    # subjetc: tiêu đề mai;
+    # body: nội dung mail
+    # to_email: mail người nhận
+    # send_email(subject, body, to_email)
+
+
+def check_restore_email_validation(username, email):
+    user = User.query.filter(and_(User.username == username), (User.email == email)).first()
+
+    if user:
+        return True
+
+    return False

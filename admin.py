@@ -12,9 +12,9 @@ from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
     Goods_Delivery_Note
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user, logout_user
+from flask_login import current_user, logout_user, login_user
 from flask_admin import BaseView, expose, AdminIndexView
-from flask import redirect, flash, url_for
+from flask import redirect, flash, url_for, session
 import utils
 from flask import request
 from datetime import datetime
@@ -228,15 +228,48 @@ class ProductView(ManageModelView):
         product.active = True
 
         db.session.commit()
-        flash("Đã đổi trạng thái sản phẩm", "info")
+        flash("Đã thay đổi trạng thái sản phẩm", "info")
         return redirect('/admin/product')
 
     @expose('product-update/<int:product_id>')
     def product_update(self, product_id):
         product = utils.get_product_detail_info_admin(product_id)
 
+        category = utils.load_categories_client()
+
         return self.render("admin/product.html",
-                           product=product)
+                           product=product,
+                           category=category)
+
+    @expose('update-product/<int:product_id>', methods=['POST'])
+    def update_product(self, product_id):
+        up_product_id = request.form.get('product_id')
+        product_name = request.form.get('product_name')
+        # GET ID
+        product_category_id = request.form.get('category_id')
+        product_price = request.form.get('product_price').replace(',', '')
+        product_import_price = request.form.get('import_price').replace(',', '')
+
+        if int(up_product_id) != int(product_id):
+            info = utils.duplicate_product_with_new_id(product_id=product_id,
+                                                       up_product_id=up_product_id,
+                                                       product_name=product_name,
+                                                       category_id=product_category_id,
+                                                       price=product_price,
+                                                       import_price=product_import_price)
+
+        else:
+            info = utils.update_product(product_id=product_id,
+                                        up_product_id=up_product_id,
+                                        product_name=product_name,
+                                        category_id=product_category_id,
+                                        price=product_price,
+                                        import_price=product_import_price)
+
+        if info:
+            flash(str(info), "success")
+
+        return redirect("/admin/product/")
 
     @expose('product-promotion')
     def product_promotion(self):
@@ -553,8 +586,67 @@ class MyAdminIndex(AdminIndexView):
 
     @expose('/')
     def index(self):
-        return self.render('admin/index.html', stats=utils.category_stats())
+        total_revenue = utils.calculate_total_revenue()
 
+        total_check = utils.count_total_check()
+
+        complete_receipt = utils.count_complete_receipt()
+
+        total_customer = utils.count_customer()
+
+        return self.render('admin/index.html',
+                           total_revenue=total_revenue,
+                           total_check=total_check,
+                           complete_receipt=complete_receipt,
+                           total_customer=total_customer,
+                           stats=utils.category_stats())
+
+    @expose('/forgot-password')
+    def forgot_password(self):
+        return self.render('admin/restore.html')
+
+    @expose('/forgot-email-valid', methods=['post'])
+    def forgot_email_valid(self):
+        username = request.form.get('restore_username')
+        email = request.form.get('email')
+
+        valid = utils.check_restore_email_validation(username=username,
+                                                     email=email)
+
+        code = utils.generate_id()
+        if valid:
+            session['restore_code'] = code
+            session['restore_username'] = username
+
+            subject = 'Khôi phục mật khẩu'
+            body = f'''
+                    Mã khôi phục mật khẩu của bạn là {code}, vui lòng không chia sẻ mã khôi phục với bất kỳ ai
+                '''
+            to_email = email
+            utils.send_email(subject, body, to_email)
+
+            return self.render('admin/restore.html', restore_code=True)
+
+        return self.render('admin/restore.html', err_msg='username và email không đúng, vui lòng thử lại')
+
+    @expose('/check-restore-code', methods=['post'])
+    def check_restore_code(self):
+        restore_code = request.form.get('restore_code')
+
+        if restore_code:
+            session_code = session.get('restore_code')
+            session_username = session.get('restore_username')
+
+            if int(restore_code) == int(session_code):
+                user = utils.login_without_pass(username=session_username)
+                login_user(user=user)
+                flash("Đăng nhập thành công", "success")
+                return redirect('/admin')
+
+            else:
+                return self.render('admin/restore.html',
+                                   err_msg='Mã khôi phục không đúng. vui lòng thử lại',
+                                   restore_code=True)
 
 class StatsView(ManageModelView):
     @expose('/')

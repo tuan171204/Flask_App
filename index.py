@@ -125,6 +125,7 @@ def signin_admin():
                                        password=password)
         if user:
             login_user(user=user)
+            flash("Đăng nhập thành công ", "success")
             return redirect('/admin')
 
         else:
@@ -583,7 +584,6 @@ def deactive_product():
 
     db.session.commit()
     return jsonify({"success": True, "message": "Đã lưu thay đổi"}), 200
-
 
 
 if __name__ == "__main__":

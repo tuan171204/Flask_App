@@ -12,48 +12,143 @@
                 <div>
                     <img src="{{ url_for('static', filename=product.image) }}"
                      alt="{{ product.name }}"
-                     style="width:450px; height: 300px;">
+                     style="width:450px; height: 400px;">
                 </div>
             </div>
             <div class="col-7">
-                <table class="table table-hover">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th colspan="2">
-                                <h3 class="text-center">Thông tin sản phẩm</h3>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><b>Mã sản phẩm:</b> </td>
-                            <td class="text-center">{{ product.id }}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Tên sản phẩm:</b> </td>
-                            <td class="text-center">{{ product.name }}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Phân loại:</b> </td>
-                            <td class="text-center">{{ product.category_name }}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Giá nhập:</b> </td>
-                            <td class="text-center">{{ "{:,.0f}".format(product.import_price) }}đ</td>
-                        </tr>
-                         <tr>
-                            <td><b>Giá bán:</b> </td>
-                            <td class="text-center">{{ "{:,.0f}".format(product.price) }}đ</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <form action="{{ url_for('product.update_product', product_id = product.id) }}"
+                      id="productUpdateForm"
+                      method="POST">
+                    <table class="table table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th colspan="2">
+                                    <h3 class="text-center">Thông tin sản phẩm</h3>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>Mã sản phẩm:</b> </td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control text-center"
+                                           name="product_id"
+                                           data-product-id="{{ product.id }}"
+                                           value="{{ product.id }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><b>Tên sản phẩm:</b> </td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control text-center"
+                                           name="product_name"
+                                           data-product-name="{{ product.name }}"
+                                           value="{{ product.name }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><b>Phân loại:</b> </td>
+                                <td>
+                                    <select name="category_id"
+                                            data-category-id="{{ product.category_id }}"
+                                            class="custom-select text-center"
+                                            onchange="checkForChangeSelect()">
+                                        <option value="{{ product.category_id }}"
+                                                selected>
+                                            {{ product.category_name }}
+                                        </option>
+                                        {% for c in category %}
+                                            {% if c.id != product.category_id and c.child == 0 %}
+                                                <option value="{{ c.id }}">{{ c.name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><b>Giá nhập:</b> </td>
+                                <td class="row">
+                                    <input type="text"
+                                           class="form-control w-75 text-center mr-2"
+                                           name="import_price"
+                                           data-import-price="{{ '{:,.0f}'.format(product.import_price) }}"
+                                           value="{{ '{:,.0f}'.format(product.import_price) }}">
+                                    <p class="unit_measure">đ</p>
+                                </td>
+                            </tr>
+                             <tr>
+                                <td><b>Giá bán:</b> </td>
+                                <td class="row">
+                                     <input type="text"
+                                           class="form-control w-75 text-center mr-2"
+                                           name="product_price"
+                                           data-product-price="{{ '{:,.0f}'.format(product.price) }}"
+                                           value="{{ '{:,.0f}'.format(product.price) }}">
+                                    <p class="unit_measure">đ</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="submit"
+                            class="btn btn-warning form-control mb-2"
+                            style="font-size:20px;"
+                            id="updateProductButton" >
+                         <i class="fa-solid fa-floppy-disk"></i>
+                         Lưu thay đổi
+                    </button>
+                    <a href="{{ url_for('product.index') }}"
+                       class="btn btn-dark form-control"
+                       style="font-size:20px;" >
+                       <i class="fa-solid fa-right-from-bracket"></i>
+                       Quay lại
+                    </a>
+                </form>
             </div>
         </div>
-            <a href="{{ url_for('product.index') }}"
-               class="btn btn-dark form-control" >
-                Quay lại
-            </a>
 
+<script>
+            const updateProductButton = document.querySelector('#updateProductButton')
+            updateProductButton.style.display = 'none';
+            const inputs = document.querySelectorAll('#productUpdateForm td input');
+
+            function checkForChanges() {
+                let isChanged = false;
+
+                inputs.forEach(function(input) {
+                    const currentValue = input.value;
+                    const originalValue = input.getAttribute('data-' + input.name.replace('_', '-'));
+
+                    if (originalValue !== null && currentValue !== originalValue) {
+                        isChanged = true;
+                    }
+                });
+
+                if (isChanged) {
+                    updateProductButton.style.display = 'block';
+                } else {
+                    updateProductButton.style.display = 'none';
+                }
+            }
+
+            inputs.forEach(input => {
+                input.addEventListener('keyup', checkForChanges);
+            });
+
+            function checkForChangeSelect(){
+                const selectElement = document.querySelector('select[name="category_id"]');
+                const originalValue = selectElement.getAttribute('data-category-id');
+
+                const currentValue = selectElement.value;
+                if (currentValue !== originalValue) {
+                    document.querySelector('#updateProductButton').style.display = 'block';
+                } else {
+                    document.querySelector('#updateProductButton').style.display = 'none';
+                }
+            }
+
+</script>
 
 
 {% else %}
@@ -167,9 +262,9 @@
                             Chọn tất cả
                         </button>
                         <button class="btn btn-secondary  mt-2 ml-2 form-control w-100 col-3"
-                            type="button"
-                            id="undoButton"
-                            onclick="selectAllCheckBox(revert=true)">
+                                type="button"
+                                id="undoButton"
+                                onclick="selectAllCheckBox(revert=true)">
                             <i class="fa-solid fa-undo"></i>
                             Hoàn tác
                         </button>
@@ -763,20 +858,20 @@
 
                                   <div class="carousel-inner no-gutters">
                                     <div class="carousel-item active">
-                                            <img src="{{url_for('static', filename='images/slide1b.jpg') }}" alt="Iphone 15 Promax">
+                                            Haha
                                     </div>
                                     <div class="carousel-item">
-                                            <img src="{{url_for('static', filename='images/slide2.jpg') }}" alt="Oppo Find N3">
+                                           Hoho
                                     </div>
                                     <div class="carousel-item">
-                                            <img src="{{url_for('static', filename='images/slide3b.jpg') }}" alt="Xiaomi 14 5G">
+                                            Hihi
                                     </div>
                                   </div>
 
-                                  <a class="carousel-control-prev" href="#demo" data-slide="prev">
+                                  <a class="carousel-control-prev btn-dark" href="#demo" data-slide="prev">
                                     <span class="carousel-control-prev-icon"></span>
                                   </a>
-                                  <a class="carousel-control-next" href="#demo" data-slide="next" id="slider-click-btn">
+                                  <a class="carousel-control-next btn-dark" href="#demo" data-slide="next" id="slider-click-btn">
                                     <span class="carousel-control-next-icon"></span>
                                   </a>
                                 </div>
@@ -832,7 +927,7 @@
     {% endif %}
 {% endif %}
 <script>
-
+    document.querySelector('.flash-messages').style.marginTop = "100px"
     const updateButton = document.querySelector('#updatePromotionButton')
     updateButton.style.display = 'none';
     const inputs = document.querySelectorAll('#promotionUpdateForm div input');
@@ -874,6 +969,7 @@
     inputs.forEach(input => {
         input.addEventListener('keyup', checkForChanges);
         });
+
 
 </script>
 

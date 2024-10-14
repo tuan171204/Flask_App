@@ -21,7 +21,6 @@ class Category(db.Model):
         return self.name
 
 
-
 class Product(db.Model):
     __tablename__ = 'product'
 
@@ -38,27 +37,12 @@ class Product(db.Model):
     import_price = Column(Float, nullable=False)
     warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
 
-    promotion_id = relationship('PromotionDetail', backref='product', lazy=True)
+    promotion= relationship('PromotionDetail', backref='product', lazy=True)
     receipt_details = relationship('ReceiptDetail', backref='product', lazy=True)
     goods_received_note_detail = relationship('Goods_Received_Note_Detail', backref='product', lazy=True)
     comments = relationship('Comment', backref='product', lazy=True)
     distribution = relationship('Distribution', backref='product', lazy=True)
     goods_delivery_note_detail = relationship('Goods_Delivery_Note_Detail', backref='product', lazy=True)
-
-    def apply_discount(self):
-        if self.promotion.discount_type.value == 1 and self.promotion.discount_value != None:  # PERCENTAGE
-            self.discount_price = self.price * (1 - self.promotion.discount_value / 100)
-
-        elif self.promotion.discount_type.value == 1:  # PERCENTAGE BY PRODUCT
-            self.discount_price = self.discount_price
-
-        elif self.promotion.discount_type.value == 2:  # BUY_ONE_GET_ONE
-            self.discount_price = self.price // 2
-
-        elif self.promotion.discount_type.value == 3:  # FIXED AMOUNT
-            self.discount_price = self.price
-
-        return self.discount_price
 
     def __str__(self):
         return self.name
@@ -309,19 +293,18 @@ class ApplyObject(PyEnum):
     Product = 1
     Receipt = 2
 
+
 class Promotion(db.Model):
     __tablename__ = 'promotion'
 
     id = Column(String(255), primary_key=True, autoincrement=True)
     description = Column(String(255), nullable=True)
-    start_date = Column(DateTime, nullable=False,default=datetime.now())
+    start_date = Column(DateTime, nullable=False, default=datetime.now())
     end_date = Column(DateTime, nullable=True)
     apply_for = Column(Enum(ApplyObject), default=ApplyObject.Product, nullable=False)
 
-
     receipts = relationship('Receipt', backref='promotion', lazy=True)
     detail = relationship('PromotionDetail', backref='promotion', lazy=True)
-
 
 
 class PromotionDetail(db.Model):
@@ -334,7 +317,6 @@ class PromotionDetail(db.Model):
     discount_value = Column(Float, nullable=True)
 
 
-
 class District(db.Model):
     __tablename__ = 'district'
 
@@ -342,12 +324,14 @@ class District(db.Model):
     name = Column(String(255))
     ward = relationship('Ward', backref='district', lazy=True)
 
+
 class Ward(db.Model):
     __tablename__ = 'ward'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     district_id = Column(Integer, ForeignKey(District.id), nullable=False)
     name = Column(String(255))
+
 
 if __name__ == "__main__":
     with app.app_context():

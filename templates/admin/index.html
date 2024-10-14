@@ -2,106 +2,183 @@
 
 {% block body %}
 
-{% if current_user.is_authenticated %}
-<div class="container-fluid">
-    <h2 class="text-center mt-4 font-weight-bold">Hệ thống quản lý</h2>
+    {% if current_user.is_authenticated %}
+    <div class="container-fluid">
+    <h1 class="text-center text-dark mt-4 mb-2"> Hệ thống quản lý </h1>
+        <hr>
 
-    <br>
-        <div class="row">
-            <div class="col-md-6 col-xs-12">
-                <table class="table table-hover table-bordered">
-                    <tr class="text-center thead-dark">
-                        <th>Mã danh mục</th>
-                        <th>Tên danh mục</th>
-                        <th>Số lượng sản phẩm</th>
-                    </tr>
-                    {% for s in stats %}
-                    <tr class="text-center">
-                        <td>{{s[0]}}</td>
-                        <td>{{s[1]}}</td>
-                        <td>{{s[2]}}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+        <div class="d-flex flex-row justify-content-around">
+            <div class="dashboard-info border text-center pt-3 row text-light"
+                 style="background: rgb(249,46,233);
+                        background: linear-gradient(166deg, rgba(249,46,233,1) 0%, rgba(2,0,64,1) 72%);">
+                <div class="col-9">
+                    <p style="font-size: 24px; font-weight: bold" >
+                        {{ "{:,.0f}".format(total_revenue) }}đ
+                    </p>
+                    <div>
+                        Tổng doanh thu
+                    </div>
+                </div>
+                <div class="col-3">
+                    <i class="fa-solid fa-signal mt-4"
+                       style="font-size: 28px;"></i>
+                </div>
             </div>
 
-            <div class="col-md-6 col-xs-12">
-                <canvas id="myCategoryChart"></canvas>
+            <div class="dashboard-info border text-center pt-3 row text-light"
+                 style="background: rgb(249,46,233);
+                        background: linear-gradient(166deg, rgba(249,46,233,1) 0%, rgba(214,0,0,1) 72%);">
+                <div class="col-9">
+                    <p style="font-size: 24px; font-weight: bold">
+                        {{ total_check }}
+                    </p>
+                    Số lượt mua
+                </div>
+                <div class="col-3">
+                    <i class="fa-solid fa-file-invoice-dollar mt-4"
+                       style="font-size: 28px;"></i>
+                </div>
             </div>
+
+            <div class="dashboard-info border text-center pt-3 row text-light"
+                 style="background: rgb(63,94,251);
+                        background: linear-gradient(11deg, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%);">
+                <div class="col-9">
+                    <p style="font-size: 24px;font-weight: bold">
+                        {{ complete_receipt }}
+                    </p>
+                    Đơn hàng hoàn thành
+                </div>
+                <div class="col-3">
+                    <i class="fa-solid fa-check-to-slot mt-4"
+                       style="font-size: 28px;"></i>
+                </div>
+            </div>
+
+            <div class="dashboard-info border text-center pt-3 row text-light"
+                 style="background: rgb(255,7,236);
+                        background: linear-gradient(342deg, rgba(255,7,236,1) 0%, rgba(0,19,250,1) 72%);">
+                <div class="col-9">
+                    <p style="font-size: 24px;font-weight: bold">
+                        {{ total_customer }}
+                    </p>
+                    Số thành viên
+                </div>
+                <div class="col-3">
+                    <i class="fa-solid fa-users mt-4"
+                       style="font-size: 28px;"></i>
+                </div>
+            </div>
+
 
         </div>
+        <br>
+
+        <div class="report-stats d-flex flex-row justify-content-around">
+            <div class="sales-report border">
+                <h3 class="text-left border-bottom p-3">Báo cáo doanh thu</h3>
+
+                <canvas id="salesChart">
+
+                </canvas>
+
+
+            </div>
+
+            <div class="users-report border">
+                <h3 class="text-left border-bottom p-3">Thống kê khách hàng</h3>
+
+                <canvas id="usersChart">
+
+                </canvas>
+
+
+            </div>
+        </div>
+        <br><br>
 
 
     {% else %}
 
+    <div class="container w-75 border border-dark mt-5 p-4 rounded">
+        <h2 class="text-center text-dark mt-4">ĐĂNG NHẬP QUẢN TRỊ</h2>
 
-    <h2 class="text-center text-dark mt-4">ĐĂNG NHẬP QUẢN TRỊ</h2>
-    {% if err_msg %}
-    <h2 class="text-center">{{err_msg}}</h2>
-
-
-    {% else %}
-    <form method="post" action="{{url_for('signin_admin')}}">
-        <div class="form-group">
-            <label for="username" >Username</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-        <div class="form-group">
-            <label for="pass" >Mật khẩu</label>
-            <input type="password" class="form-control" id="pass" name="password" required>
-        </div>
-        <input type="submit" value="Đăng nhập" class="btn btn-dark text-light">
-    </form>
-</div>
-
-    {% endif %}
-
-
-
+            {% if err_msg %}
+            <h2 class="text-center">{{err_msg}}</h2>
+            {% else %}
+                <form method="post"
+                      action="{{url_for('signin_admin')}}"
+                      id="signinForm">
+                        <div class="form-group">
+                            <label for="username" >Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pass" >Mật khẩu</label>
+                            <input type="password" class="form-control" id="pass" name="password" required>
+                        </div>
+                        <input type="submit"
+                               value="Đăng nhập"
+                               class="btn btn-dark text-light mr-2">
+                        <a href="/admin/forgot-password"
+                           class="btn btn-primary text-light"
+                           style="font-size: 20px;">
+                           Quên mật khẩu
+                        </a>
+                </form>
+            </div>
+    </div>
+            {% endif %}
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let labels = []
-        let data = []
-        let colors = []
-        let borderColors = []
-        let r, g, b;
-
-
-        {% for s in stats %}
-            labels.push('{{ s[1] }}')
-            data.push({{ s[2] }})
-
-            r = Math.random()*255
-            g = Math.random()*255
-            b = Math.random()*255
-
-            colors.push(`rgba(${r}, ${g}, ${b}, 1)`)
-            borderColors.push(`rgba(${r}, ${g}, ${b}, 1)`)
-        {% endfor %}
-
-        window.onload = function() {
-            const ctx = document.getElementById('myCategoryChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                  labels: labels,
-                  datasets: [{
-                    label: 'So luong san pham',
-                    data: data,
-                    backgroundColor: colors,
-                    borderColor: borderColors,
-                    borderWidth: 1
-                  }]
-                },
-                options: {
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
+        const ctx = document.getElementById('salesChart');
+        const ctx2 = document.getElementById('usersChart');
+          const mixedChart = new Chart(ctx, {
+            data: {
+                datasets: [{
+                    fill: true,
+                    type: 'bar',
+                    label: 'Bar Dataset',
+                    data: [10, 20, 30, 40],
+                    backgroundColor: '#26A4FF'
+                }, {
+                    type: 'line',
+                    label: 'Line Dataset',
+                    data: [30, 50, 20, 10],
+                    borderColor: '#E4080A',
+                    backgroundColor: '#E4080A'
+                }],
+                labels: ['January', 'February', 'March', 'April']
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
                 }
-              });
-        }
+              }
+            }
+          });
+
+
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+              datasets: [{
+                data: [10, 20, 30, 40],
+                borderColor: ['#E4080A', '#3FE608', '#08DFE6', '#5908E6'],
+                backgroundColor: ['#E4080A', '#3FE608', '#08DFE6', '#5908E6'],
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+
     </script>
 {% endblock %}

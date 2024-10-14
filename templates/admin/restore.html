@@ -1,0 +1,71 @@
+{% extends 'admin/base.html' %}
+
+
+{% block body %}
+        {% if err_msg %}
+            <div class="alert alert-danger container text-center font-weight-bold flash-messages"
+                 style="font-size: 24px;">
+                {{ err_msg }}
+            </div>
+        {% endif %}
+
+        {% if not restore_code %}
+        <div class="container w-75 border border-dark mt-5 p-4 rounded">
+            <h2 class="text-center text-dark mt-4">QUÊN MẬT KHẨU</h2>
+            <form method="post"
+                  action="{{ url_for('admin.forgot_email_valid') }}"
+                  id="forgotPasswordForm"  >
+                <div class="form-group">
+                    <label for="username" >Username</label>
+                    <input type="text"
+                           class="form-control"
+                           id="restore_username"
+                           name="restore_username"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="pass" >Email</label>
+                    <input type="email"
+                           class="form-control"
+                           id="email"
+                           name="email"
+                           required>
+                </div>
+                <input type="submit"
+                       value="Gửi"
+                       class="btn btn-primary text-light mr-2">
+            </form>
+        </div>
+        {% else %}
+        <div class="container w-75 border border-dark mt-5 p-4 rounded">
+            <h2 class="text-center text-dark mt-4 mb-2">QUÊN MẬT KHẨU</h2>
+            <form method="post"
+                  action="{{url_for('admin.check_restore_code')}}"
+                  class="container"
+                  id="restoreForm">
+                <div class="form-group text-center container">
+                    <label style="font-size: 24px;">Nhập mã khôi phục đã gửi qua email</label>
+                    <input type="text"
+                           class="form-control mt-2"
+                           id="restore_code"
+                           name="restore_code"
+                           required>
+                </div>
+                <input type="submit"
+                       value="Xác nhận"
+                       class="btn btn-dark form-control text-light">
+            </form>
+        </div>
+        {% endif %}
+<script>
+    const flashMessages = document.querySelectorAll('.flash-messages');
+        flashMessages.forEach((flashMessage, index) => {
+            setTimeout(function() {
+                flashMessage.style.display = 'none';
+            }, (index + 1) * 5000);
+        });
+</script>
+
+
+
+{% endblock %}

@@ -125,7 +125,7 @@
                         <button type="button"
                                 class="form-control"
                                 style="font-size:24px">
-                            <b>{{ "{:,.1f}".format(total_price) }}đ</b>
+                            <b>{{ "{:,.0f}".format(total_price) }}đ</b>
                         </button>
                     </div>
                 {% endif %}
@@ -161,7 +161,7 @@
                         <div class="form-group">
                             <button type="button"
                                     class="btn btn-warning text-dark mr-5 font-weight-light"
-                                    onclick="saveChanges( {{ receipt_id }} )"
+                                    onclick="saveChanges({{ receipt_id }})"
                                     style="font-size:18px">
                                 <i class="fa-solid fa-clipboard-check"></i>
                                 Lưu thay đổi
@@ -175,7 +175,7 @@
 
     {% endif %}
 
-<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
+
 <script>
     function deleteDetail(receipt_id, product_id, quantity) {
         if (confirm("Xác nhận xóa chi tiết hóa đơn?") == true) {
@@ -224,64 +224,44 @@
     }
 
 
-function saveChanges(receipt_id) {
-    if ( confirm("Bạn chắc chắn muốn lưu thay đổi chứ ?") == true ){
-        const receiptDetails = []
-        const status_id = document.getElementById('status_id_receipt').value
+    function saveChanges(receipt_id) {
+        if ( confirm("Bạn chắc chắn muốn lưu thay đổi chứ ?") == true ){
+            const receiptDetails = []
+            const status_id = document.getElementById('status_id_receipt').value
 
-        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-            const productId = input.getAttribute('data-product-id')
-            const quantity = input.value
+            document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+                const productId = input.getAttribute('data-product-id')
+                const quantity = input.value
 
-            if ( quantity > 0){
-                receiptDetails.push({
-                    product_id : productId,
-                    quantity : quantity
-                });
-            }
-        });
-
-
-        fetch(`/api/update-receipt-details/${receipt_id}`,{
-            method: 'PUT',
-            body: JSON.stringify({
-                receipt_details: receiptDetails,
-                status_id: status_id
-                }),
-            headers: {
-                    'Content-type': 'application/json'
+                if ( quantity > 0){
+                    receiptDetails.push({
+                        product_id : productId,
+                        quantity : quantity
+                    });
                 }
-        }).then(res => res.json()).then(data => {
-            if (data.success){
-                alert("Đã lưu thay đổi")
-                window.location.reload()
-
-            } else {
-                alert(data.message || "Lỗi khi lưu thay đổi ")
-            }
-        }).catch(err => console.error(err))
-    }
-}
+            });
 
 
-         fetch('/api/deactive_product/', {
-            method='PUT,
-            body: JSON.stringify(
-             products_id: products_id
-             ),
-            headers: {
-                    'Content-type': 'application/json'
-            }
-        }).then(res = > res.json()).then(data => {
-            if ( data.success ){
-                alert("Đã lưu thay đổi ")
-                window.location.reload()
-            } else {
-                alert(data.message || "Lỗi khi lưu thay đổi ")
-            }
+            fetch(`/api/update-receipt-details/${receipt_id}`,{
+                method: 'PUT',
+                body: JSON.stringify({
+                    receipt_details: receiptDetails,
+                    status_id: status_id
+                    }),
+                headers: {
+                        'Content-type': 'application/json'
+                    }
+            }).then(res => res.json()).then(data => {
+                if (data.success){
+                    alert("Đã lưu thay đổi")
+                    window.location.reload()
+
+                } else {
+                    alert(data.message || "Lỗi khi lưu thay đổi ")
+                }
             }).catch(err => console.error(err))
         }
-
-
+    }
 </script>
+<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 {% endblock %}
