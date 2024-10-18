@@ -3,7 +3,8 @@
 {% block body %}
 
     {% if current_user.is_authenticated %}
-    <div class="container-fluid">
+    <div class="container-fluid"
+         id="admin-container">
     <h1 class="text-center text-dark mt-4 mb-2"> Hệ thống quản lý </h1>
         <hr>
 
@@ -72,12 +73,13 @@
 
 
         </div>
-        <br>
+        <br><br>
 
-        <div class="report-stats d-flex flex-row justify-content-around">
-            <div class="sales-report border">
-                <h3 class="text-left border-bottom p-3">Báo cáo doanh thu</h3>
-
+        <div class="report-stats row">
+            <div class="sales-report ml-4 col-lg-8">
+                <div class="chart-header text-left text-dark border-bottom">
+                    Báo cáo doanh thu
+                </div>
                 <canvas id="salesChart">
 
                 </canvas>
@@ -85,9 +87,10 @@
 
             </div>
 
-            <div class="users-report border">
-                <h3 class="text-left border-bottom p-3">Thống kê khách hàng</h3>
-
+            <div class="users-report ml-5 col-lg-3">
+                <div class="chart-header text-center text-light border-bottom">
+                    Thống kê khách hàng
+                </div>
                 <canvas id="usersChart">
 
                 </canvas>
@@ -132,52 +135,110 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+
+        const months = []
+        const months_sale = []
+        {% for month in sale_month_stats %}
+            {% if month[1] %}
+                months.push('Tháng ' + '{{ month[0] }}')
+                months_sale.push( {{ month[1] }} )
+            {% endif %}
+        {% endfor %}
+
+
+        const months_ly = []
+        const months_sale_ly = []
+        {% for month in sale_month_stats_ly %}
+            {% if month[1] %}
+                months_ly.push('Tháng ' + '{{ month[0] }}')
+                months_sale_ly.push( {{ month[1] }} )
+            {% endif %}
+        {% endfor %}
+
+        const months_2 = []
+        const customers_count = []
+        {% for count in customer_month_stats %}
+            {% if count[1] %}
+                months_2.push( 'Tháng ' + '{{ count[0] }}')
+                customers_count.push( {{ count[1] }} )
+            {% endif %}
+        {% endfor %}
+
+
+
         const ctx = document.getElementById('salesChart');
         const ctx2 = document.getElementById('usersChart');
-          const mixedChart = new Chart(ctx, {
+        const mixedChart = new Chart(ctx, {
             data: {
                 datasets: [{
-                    fill: true,
                     type: 'bar',
-                    label: 'Bar Dataset',
-                    data: [10, 20, 30, 40],
-                    backgroundColor: '#26A4FF'
+                    label: 'Doanh thu tháng này',
+                    data: months_sale,
+                    order: 2,
                 }, {
-                    type: 'line',
-                    label: 'Line Dataset',
-                    data: [30, 50, 20, 10],
-                    borderColor: '#E4080A',
-                    backgroundColor: '#E4080A'
+                    type: 'bar',
+                    label: 'Năm trước',
+                    data: months_sale_ly,
+                    order: 1
                 }],
-                labels: ['January', 'February', 'March', 'April']
+                labels: months
             },
             options: {
-              scales: {
-                y: {
-                  beginAtZero: true
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            // Format y-axis labels with 'đ'
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + 'đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                return label;
+                            }
+                        }
+                    }
                 }
-              }
             }
-          });
+        });
 
 
         new Chart(ctx2, {
             type: 'doughnut',
             data: {
-              datasets: [{
-                data: [10, 20, 30, 40],
-                borderColor: ['#E4080A', '#3FE608', '#08DFE6', '#5908E6'],
-                backgroundColor: ['#E4080A', '#3FE608', '#08DFE6', '#5908E6'],
-              }]
+                labels: months_2,
+                datasets: [{
+                    label: 'Số khách hàng',
+                    data: customers_count,
+                }]
             },
             options: {
-              scales: {
-                y: {
-                  beginAtZero: true
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.raw + ' người';
+                                return label;
+                            }
+                        }
+                    }
                 }
-              }
             }
-          });
+        });
 
 
     </script>

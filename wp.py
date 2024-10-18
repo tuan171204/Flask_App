@@ -146,5 +146,7 @@ data = {
 }
 
 with app.app_context():
-    total = utils.calculate_total_revenue()
-    print(total)
+    re = utils.product_months_stats(2023)
+
+    for r in re:
+        print(r[0], r[1])

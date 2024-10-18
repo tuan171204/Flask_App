@@ -491,10 +491,18 @@ def product_stats(kw=None, from_date=None, to_date=None):
 def product_months_stats(year):
     return db.session.query(extract('month', Receipt.created_date),
                             func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price)) \
-        .join(ReceiptDetail, ReceiptDetail.receipt_id.__eq__(Receipt.id)) \
+        .outerjoin(ReceiptDetail, ReceiptDetail.receipt_id.__eq__(Receipt.id)) \
         .filter(extract('year', Receipt.created_date) == year) \
         .group_by(extract('month', Receipt.created_date)) \
         .order_by(extract('month', Receipt.created_date)).all()
+
+
+def customer_months_stats(year):
+    return db.session.query(extract('month', Receipt.created_date),
+                            func.count(func.distinct(Receipt.user_id)))\
+                .filter(extract('year', Receipt.created_date) == year) \
+                .group_by(extract('month', Receipt.created_date)) \
+                .order_by(extract('month', Receipt.created_date)).all()
 
 
 def add_comment(content, product_id):

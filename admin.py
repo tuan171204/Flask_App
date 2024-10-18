@@ -594,12 +594,20 @@ class MyAdminIndex(AdminIndexView):
 
         total_customer = utils.count_customer()
 
+        sale_month_stats = utils.product_months_stats(datetime.now().year)
+
+        sale_month_stats_last_year = utils.product_months_stats(datetime.now().year - 1)
+
+        customer_month_stats = utils.customer_months_stats(datetime.now().year)
+
         return self.render('admin/index.html',
                            total_revenue=total_revenue,
                            total_check=total_check,
                            complete_receipt=complete_receipt,
                            total_customer=total_customer,
-                           stats=utils.category_stats())
+                           sale_month_stats=sale_month_stats,
+                           sale_month_stats_ly=sale_month_stats_last_year,
+                           customer_month_stats=customer_month_stats)
 
     @expose('/forgot-password')
     def forgot_password(self):
