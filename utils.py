@@ -489,12 +489,19 @@ def product_stats(kw=None, from_date=None, to_date=None):
 
 
 def product_months_stats(year):
-    return db.session.query(extract('month', Receipt.created_date),
+    stats = db.session.query(extract('month', Receipt.created_date),
                             func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price)) \
         .outerjoin(ReceiptDetail, ReceiptDetail.receipt_id.__eq__(Receipt.id)) \
         .filter(extract('year', Receipt.created_date) == year) \
         .group_by(extract('month', Receipt.created_date)) \
         .order_by(extract('month', Receipt.created_date)).all()
+
+    monthly_data = {month: 0 for month in range(1, 13)}
+
+    for month, total in stats:
+        monthly_data[month] = total
+
+    return [(month, monthly_data[month]) for month in range(1, 13)]
 
 
 def customer_months_stats(year):

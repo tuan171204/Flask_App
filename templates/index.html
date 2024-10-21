@@ -4,186 +4,187 @@
 
 {% block content %}
 
-<div class="bg-video d-flex flex px-0 carousel-item">
-    <div class="containVideo">
-        <video autoplay muted id="myVideo2">
-            <source src="{{url_for('static', filename='video/samsung.mp4')}}" type="video/mp4">
-            Your browser does not support HTML5 video.
-        </video>
-    </div>
-        <div class="carousel-caption text-left" style="color: black; ">
-            <h1>Galaxy Z Fold 6 | Z Flip 6</h1>
-            <p style="font-size: 30px">Ưu đãi giảm sốc 15%</p>
-            <a href="{{ url_for('product_detail', product_id = 42 ) }}">
-                <div id="seeMore" class="text-light text-center font-bold " style="background-color:black;font-size: 30px; width: 200px; padding:10px;"> Xem thêm</div>
-            </a>
-        </div>
-</div>
 
-<br>
-<br>
-<br><br>
 
-<!--Content -->
-    {% if products %}
-    {% if not cate_name %}
-        <div data-spy="scroll" data-target="#navbar-example2" data-offset="0" class="container best-seller mb-5" id="something" style="background-color:white">
-            <div id="middlepage" class="header-img">
-                <h2 class="text-center text-dark"><b>Các sản phẩm của shop</b></h2>
+<div class="large-container">
+        <div class="bg-video d-flex flex px-0 carousel-item">
+            <div class="containVideo">
+                <video autoplay muted id="myVideo2">
+                    <source src="{{url_for('static', filename='video/samsung.mp4')}}" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
             </div>
-        {% else %}
-        <div data-spy="scroll" data-target="#navbar-example2" data-offset="0" class="container best-seller mb-5" style="background-color:white">
-            <div id="middlepage" class="header-img">
-                <h2 class="text-dark text-center">{{cate_name}}</h2>
-            </div>
-        {% endif %}
-
-
-        <div class="row mt-3" style="padding: 20px; background-color:white">
-            {% for p in products %}
-            <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
-                <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
-                    <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
-                        <img class="card-img-top" src="{{url_for('static', filename=p.image) }}" alt="Product" style="height:fit-content;">
+                <div class="carousel-caption text-left" style="color: black; ">
+                    <h1>Galaxy Z Fold 6 | Z Flip 6</h1>
+                    <p style="font-size: 30px">Ưu đãi giảm sốc 15%</p>
+                    <a class="btn"
+                       href="{{ url_for('product_detail', product_id = 42 ) }}">
+                        <div id="seeMore" class="text-light text-center font-bold " style="background-color:black;font-size: 30px; width: 200px; padding:10px;"> Xem thêm</div>
                     </a>
-                   <div class="card-body" style="bottom: 10px;">
-                    <h4 class="card-title text-center">{{p.name}}</h4>
-                       {% if p.promotion_id == 1 %}
-                        <div class="overlay">  
-                            <div class="overlay-content">
-                                <a href="{{url_for('product_detail', product_id = p.id) }}"
-                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
-                            </div>
-                        </div>
-                            {% else %}
-                        <div class="overlay">
-                            <div class="overlay-content">
-                                <a href="{{url_for('product_detail', product_id = p.id) }}"
-                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
-                            </div>
-                        </div>
-                       {% endif %}
-                  </div>
                 </div>
-            </div>
-            {% endfor %}
         </div>
+        <br><br>
 
-            {% if pages > 1 %}
-            <div class="container d-flex justify-content-around" >
-                <ul class="pagination " style="color:black">
-                    {% if prev_page %}
-                    <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
-                    {% endif %}
-                    {% for idx in range(1, pages+1) %}
-                        {% if 'category_id' in request.args %}
-                        <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx, category_id=request.args.get('category_id')) }}">{{idx}}</a></li>
-                        {% elif 'kw' in request.args %}
-                        <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx, kw=request.args.get('kw')) }}">{{idx}}</a></li>
-                        {% else %}
-                        <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx) }}">{{idx}}</a></li>
-                        {% endif %}
-                    {% endfor %}
-                    {% if next_page %}
-                    <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
-                    {% endif %}
-                </ul>
-            </div>
-            {% endif %}    `
-
-            {% else %}
-        <div class="text-center bg-dark text-light font-bold">
-            <h1><i> Không có sản phẩm nào !!!</i></h1>
-        </div>
-            {% endif %}
-
-    </div>
-
-<!-- MIDDLE SILDER -->
-<div class="container">
-    <div id="demo" class="carousel slide" data-ride="carousel">
-
-
-      <ul class="carousel-indicators">
-        <li data-target="#demo" data-slide-to="0" class="active"></li>
-        <li data-target="#demo" data-slide-to="1"></li>
-        <li data-target="#demo" data-slide-to="2"></li>
-      </ul>
-
-
-      <div class="carousel-inner no-gutters">
-        <div class="carousel-item active">
-            <a class="images-group" href="{{url_for('product_detail', product_id = 38) }}">
-                <img src="{{url_for('static', filename='images/slide1.jpg') }}" alt="Iphone 15 Promax">
-                <img src="{{url_for('static', filename='images/slide1b.jpg') }}" alt="Iphone 15 Promax">
-            </a>
-        </div>
-        <div class="carousel-item">
-            <a class="images-group" href="{{url_for('product_detail', product_id = 39) }}">
-                <img src="{{url_for('static', filename='images/slide2.jpg') }}" alt="Oppo Find N3">
-                <img src="{{url_for('static', filename='images/slide2b.jpg') }}" alt="Oppo Find N3">
-            </a>
-        </div>
-        <div class="carousel-item">
-            <a class="images-group" href="{{url_for('product_detail', product_id = 41) }}">
-                <img src="{{url_for('static', filename='images/slide3.jpg') }}" alt="Xiaomi 14 5G">
-                <img src="{{url_for('static', filename='images/slide3b.jpg') }}" alt="Xiaomi 14 5G">
-            </a>
-        </div>
-      </div>
-
-
-      <a class="carousel-control-prev" href="#demo" data-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-      </a>
-      <a class="carousel-control-next" href="#demo" data-slide="next" id="slider-click-btn">
-        <span class="carousel-control-next-icon"></span>
-      </a>
-
-    </div>
-</div>
-
-  <br><br>
-
-{% if recommend_id %}
-<div class="container bg-warning best-seller mb-5">
-            <div class="header-img">
-                <h2 class="text-light ml-3"><i class="fa fa-fire bg-warning mr-3" style="font-size: 50px;color: #FE4000;"></i> Gợi ý hôm nay  </h2>
-            </div>
-
-        <div class="row mt-3" style="padding: 20px;">
-            {% for p in all_products %}
-            {% if p.id in recommend_id %}
-                <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
-                <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
-                    <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
-                        <img class="card-img-top" src="{{url_for('static', filename=p.image)}}" alt="Product" style="height:fit-content;">
-                    </a>
-                   <div class="card-body" style="bottom: 10px;">
-                    <h4 class="card-title text-center">{{p.name}}</h4>
-
-                           {% if p.promotion_id == 1 %}
-                        <div class="overlay">
-                            <div class="overlay-content">
-                                <a href="{{url_for('product_detail', product_id = p.id) }}"
-                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
-                            </div>
-                        </div>
-                            {% else %}
-                        <div class="overlay">
-                            <div class="overlay-content">
-                                <a href="{{url_for('product_detail', product_id = p.id) }}"
-                                class="btn mt-1 form-control text-left">Xem chi tiết</a>
-                            </div>
-                        </div>
-                       {% endif %}
-                      </div>
+        <!--Content -->
+            {% if products %}
+            {% if not cate_name %}
+                <div data-spy="scroll" data-target="#navbar-example2" data-offset="0" class="container best-seller mb-5" id="something" style="background-color:white">
+                    <div id="middlepage" class="header-img">
+                        <h2 class="text-center text-dark"><b>Các sản phẩm của shop</b></h2>
                     </div>
+                {% else %}
+                <div data-spy="scroll" data-target="#navbar-example2" data-offset="0" class="container best-seller mb-5" style="background-color:white">
+                    <div id="middlepage" class="header-img">
+                        <h2 class="text-dark text-center">{{cate_name}}</h2>
+                    </div>
+                {% endif %}
+
+
+                <div class="row mt-3" style="padding: 20px; background-color:white">
+                    {% for p in products %}
+                    <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
+                        <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
+                            <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
+                                <img class="card-img-top" src="{{url_for('static', filename=p.image) }}" alt="Product" style="height:fit-content;">
+                            </a>
+                           <div class="card-body" style="bottom: 10px;">
+                            <h4 class="card-title text-center">{{p.name}}</h4>
+                               {% if p.promotion_id == 1 %}
+                                <div class="overlay">
+                                    <div class="overlay-content">
+                                        <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                        class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                                    </div>
+                                </div>
+                                    {% else %}
+                                <div class="overlay">
+                                    <div class="overlay-content">
+                                        <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                        class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                                    </div>
+                                </div>
+                               {% endif %}
+                          </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
-            {% endif %}
-            {% endfor %}
+
+                    {% if pages > 1 %}
+                    <div class="container d-flex justify-content-around" >
+                        <ul class="pagination " style="color:black">
+                            {% if prev_page %}
+                            <li class="page-item "><a class="page-link border-0" href="{{ prev_page }}">Sau</a></li>
+                            {% endif %}
+                            {% for idx in range(1, pages+1) %}
+                                {% if 'category_id' in request.args %}
+                                <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx, category_id=request.args.get('category_id')) }}">{{idx}}</a></li>
+                                {% elif 'kw' in request.args %}
+                                <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx, kw=request.args.get('kw')) }}">{{idx}}</a></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link border-0" href="{{url_for('home', page=idx) }}">{{idx}}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if next_page %}
+                            <li class="page-item"><a class="page-link border-0" href="{{ next_page }}">Trước</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}    `
+
+                    {% else %}
+                <div class="text-center bg-dark text-light font-bold">
+                    <h1><i> Không có sản phẩm nào !!!</i></h1>
+                </div>
+                    {% endif %}
+
+            </div>
+
+        <!-- MIDDLE SILDER -->
+        <div class="container">
+            <div id="demo" class="carousel slide" data-ride="carousel">
+
+
+              <ul class="carousel-indicators">
+                <li data-target="#demo" data-slide-to="0" class="active"></li>
+                <li data-target="#demo" data-slide-to="1"></li>
+                <li data-target="#demo" data-slide-to="2"></li>
+              </ul>
+
+
+              <div class="carousel-inner no-gutters">
+                <div class="carousel-item active">
+                    <a class="images-group" href="{{url_for('product_detail', product_id = 38) }}">
+                        <img src="{{url_for('static', filename='images/slide1.jpg') }}" alt="Iphone 15 Promax">
+                        <img src="{{url_for('static', filename='images/slide1b.jpg') }}" alt="Iphone 15 Promax">
+                    </a>
+                </div>
+                <div class="carousel-item">
+                    <a class="images-group" href="{{url_for('product_detail', product_id = 39) }}">
+                        <img src="{{url_for('static', filename='images/slide2.jpg') }}" alt="Oppo Find N3">
+                        <img src="{{url_for('static', filename='images/slide2b.jpg') }}" alt="Oppo Find N3">
+                    </a>
+                </div>
+                <div class="carousel-item">
+                    <a class="images-group" href="{{url_for('product_detail', product_id = 41) }}">
+                        <img src="{{url_for('static', filename='images/slide3.jpg') }}" alt="Xiaomi 14 5G">
+                        <img src="{{url_for('static', filename='images/slide3b.jpg') }}" alt="Xiaomi 14 5G">
+                    </a>
+                </div>
+              </div>
+
+
+              <a class="carousel-control-prev" href="#demo" data-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+              </a>
+              <a class="carousel-control-next" href="#demo" data-slide="next" id="slider-click-btn">
+                <span class="carousel-control-next-icon"></span>
+              </a>
+
+            </div>
         </div>
 
+          <br><br>
+
+        {% if recommend_id %}
+        <div class="container bg-warning best-seller mb-5">
+                    <div class="header-img">
+                        <h2 class="text-light ml-3"><i class="fa fa-fire bg-warning mr-3" style="font-size: 50px;color: #FE4000;"></i> Gợi ý hôm nay  </h2>
+                    </div>
+
+                <div class="row mt-3" style="padding: 20px;">
+                    {% for p in all_products %}
+                    {% if p.id in recommend_id %}
+                        <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
+                        <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
+                            <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
+                                <img class="card-img-top" src="{{url_for('static', filename=p.image)}}" alt="Product" style="height:fit-content;">
+                            </a>
+                           <div class="card-body" style="bottom: 10px;">
+                            <h4 class="card-title text-center">{{p.name}}</h4>
+
+                                   {% if p.promotion_id == 1 %}
+                                <div class="overlay">
+                                    <div class="overlay-content">
+                                        <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                        class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                                    </div>
+                                </div>
+                                    {% else %}
+                                <div class="overlay">
+                                    <div class="overlay-content">
+                                        <a href="{{url_for('product_detail', product_id = p.id) }}"
+                                        class="btn mt-1 form-control text-left">Xem chi tiết</a>
+                                    </div>
+                                </div>
+                               {% endif %}
+                              </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+        </div>
 {% endif %}
 
 <script>

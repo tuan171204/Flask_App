@@ -1,14 +1,17 @@
 * {
+    margin: 0;
+    padding: 0;
     font-family: Arial, Helvetica, sans-serif
 }
 
-html{
+html {
     scroll-behavior: smooth;
 }
 
 h1.subject {
     text-align: center;
 }
+
 body {
     background-color: black;
 }
@@ -39,21 +42,22 @@ table td {
     position: relative;
 }
 
-.bg-video .containVideo {
-    position: relative;
-    /* Ensures video stays behind content */
-    top: 0;
+.bg-video {
+    position: fixed;
     width: 100%;
-    height: 65vh;
-
+    height: 70vh;
+    top: 0;
+    left: 0;
 }
 
-#myVideo,
 #myVideo2 {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Scales video to fill container */
+    z-index: -2;
+    top: 0;
+    left: 0;
+    position: fixed;
 }
 
 .intro-img {
@@ -113,8 +117,8 @@ table td {
 
 }
 
-.form-group label{
-    font-weight:bold;
+.form-group label {
+    font-weight: bold;
 }
 
 #dropdown-user {
@@ -127,7 +131,6 @@ table td {
 #dropdown-user:hover {
     color: white;
     background-color: black;
-
 }
 
 .carousel-caption h1,
@@ -143,7 +146,6 @@ table td {
     animation: videoCaption2;
     animation-duration: 5s;
 }
-
 
 #seeMore:hover {
     background-color: #fff;
@@ -178,10 +180,10 @@ table td {
     }
 
     100% {
-        opacity: 90;
+        opacity: 100;
     }
-
 }
+
 
 .overlay {
     position: absolute;
@@ -262,51 +264,173 @@ i {
     font-weight: bold;
 }
 
-.containVideo {
-    position: relative;
-    z-index: 10; /* Đảm bảo video nằm trên các phần tử khác */
-    width: 100%;
-    height: auto;
-}
-
-.status-btn{
+.status-btn {
     width: 280px;
 }
 
 .promotion-info {
-  animation: bounce 0.5s infinite alternate;
-  width:200px;
-  font-size:16px;
+    animation: bounce 0.5s infinite alternate;
+    width: 200px;
+    font-size: 16px;
 }
+
 @keyframes bounce {
-  to { transform: scale(1.2); }
+    to {
+        transform: scale(1.2);
+    }
 }
 
-
-#ads_membership img{
-    height: 750px;
-}
-
-#account-setting-container{
+#account-setting-container {
     border: 1px solid #888888;
     box-shadow: 3px 5px black;
 }
 
 
-button.delete{
+button.delete {
     background-color: red;
     color: white;
 }
 
 table td,
 table th,
-table td span{
+table td span {
     font-size: 24px;
 }
 
-.payment-info{
+.payment-info {
     width: 900px;
     padding: 20px;
 
 }
 
+#main-navbar {
+    z-index: -100;
+}
+
+.containers {
+    width: 100%;
+    height: 100vh;
+}
+
+.containers video{
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -2;
+}
+
+.copy{
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: space-around;
+    color: #fff;
+    font-size: 12px;
+}
+
+.blocks {
+    width: 100%;
+    height: 100vh;
+}
+
+.block {
+    position: fixed;
+    width: 50%;
+    height: 100vh;
+    z-index: 0;
+    background: #fff;
+}
+
+.block-left {
+    left: 0;
+}
+
+.block-right {
+    right: 0;
+}
+
+.letter {
+    position: absolute;
+    z-index: 10000;
+    padding: 0 0.2em;
+    font-size: 8em;
+    color: #fff;
+    mix-blend-mode: difference;
+    transition: opacity 1s ease;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.rows {
+    width: 100%;
+    height: 50vh;
+}
+
+.top-left,
+.top-right,
+.bottom-right {
+    position: absolute;
+    z-index: 10000;
+}
+
+
+.top-left,
+.top-right,
+.bottom-left{
+    animation: fadeOut 1s ease forwards;
+    animation-delay: 2s;
+    }
+
+
+
+.top-left {
+    top: 32%;
+    left: 42%;
+}
+
+.top-right {
+    top: 32%;
+    right: 42%
+}
+
+.bottom-left {
+    bottom: 22%;
+    left: 42%;
+}
+
+.bottom-right {
+    bottom: 22%;
+    right: 25%;
+}
+
+.bottom-right a{
+    animation: videoCaption2;
+    animation-duration: 4.2s;
+    background-color: #fff;
+    color: #000;
+    transition-duration: 0.4s;
+    cursor: pointer
+}
+
+.bottom-right a:hover{
+    background-color: #000;
+    color: #fff;
+}
+
+@media(max-width: 900px){
+    .letter{
+        font-size: 2em;
+    }
+}

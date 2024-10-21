@@ -43,6 +43,7 @@ class Product(db.Model):
     comments = relationship('Comment', backref='product', lazy=True)
     distribution = relationship('Distribution', backref='product', lazy=True)
     goods_delivery_note_detail = relationship('Goods_Delivery_Note_Detail', backref='product', lazy=True)
+    warranty_detail = relationship('WarrantyDetail', backref='product', lazy=True)
 
     def __str__(self):
         return self.name
@@ -276,10 +277,18 @@ class Warranty(db.Model):
 
     id = Column(Integer, primary_key=True)
     description = Column(String(255), nullable=True, autoincrement=True)
+    product = relationship('Product', backref='warranty_product', lazy=True)
+    warranty_detail = relationship('WarrantyDetail', backref='warranty_product', lazy=True)
+
+
+class WarrantyDetail(db.Model):
+    __tablename__ = 'warranty_detail'
+
+    id = Column(Integer, primary_key=True)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
+    warranty_id = Column(Integer, ForeignKey(Warranty.id), nullable=False)
     warranty_period = Column(Integer, nullable=False)
     time_unit = Column(Enum(TimeUnitEnum), default=TimeUnitEnum.MONTH, nullable=False)
-
-    product = relationship('Product', backref='warranty_product', lazy=True)
 
 
 class DiscountType(PyEnum):

@@ -9,6 +9,10 @@ from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 
 
 @app.route('/')
+def intro():
+    return render_template('intro.html')
+
+@app.route('/product')
 def home():
     page = request.args.get('page', 1)
 

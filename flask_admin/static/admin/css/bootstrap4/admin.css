@@ -1,0 +1,308 @@
+/* List View - fix trash icon inside table column */
+.model-list form.icon {
+    display: inline;
+}
+
+.model-list form.icon button {
+    border: none;
+    background: transparent;
+    text-decoration: none;
+    padding: 0;
+    line-height: normal;
+}
+
+.model-list a.icon:first-child {
+    margin-left: 10px;
+}
+
+/* List View - prevent link icons from differing from trash icon */
+.model-list a.icon {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* List View - fix checkbox column width */
+.list-checkbox-column {
+    width: 14px;
+}
+
+/* List View - fix overlapping border between actions and table */
+.model-list {
+    position: static;
+    margin-top: -1px;
+    z-index: 999;
+}
+
+/* List View Search Form - fix gap between form and table */
+.actions-nav form.navbar-form {
+    margin: 1px 0 0 0;
+}
+
+/* List View - prevent word wrap on buttons column, to keep it on one line */
+.list-buttons-column {
+    white-space: nowrap;
+}
+
+/* Filters */
+table.filters {
+    border-collapse: collapse;
+    border-spacing: 4px;
+}
+
+/* prevents gap between table and actions while there are no filters set */
+table.filters:not(:empty) {
+    margin: 12px 0px 20px 0px;
+}
+
+/* spacing between filter X button, operation, and value field */
+/* uses tables instead of form classes for bootstrap2-3 compatibility */
+table.filters tr td {
+    padding-right: 5px;
+    padding-bottom: 3px;
+}
+
+/* Filters - Select2 Boxes */
+.filters .filter-op {
+    width: 130px;
+}
+
+.filters .filter-val {
+    width: 220px;
+}
+
+/* Image thumbnails */
+.image-thumbnail img {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+/* Forms */
+/* adds spacing between navbar and edit/create form (non-modal only) */
+/* required because form-horizontal removes top padding */
+div.container>.admin-form {
+    margin-top: 35px;
+}
+
+/* Form Field Description - Appears when field has 'description' attribute */
+/* Test with: form_args = {'name':{'description': 'test'}} */
+/* prevents awkward gap after help-block - This is default for bootstrap2 */
+.admin-form .help-block {
+    margin-bottom: 0px;
+}
+
+/* Modals */
+/* hack to prevent cut-off left side of select2 inside of modal */
+/* may be able to remove this after Bootstrap v3.3.5 */
+body.modal-open {
+    overflow-y: scroll;
+    padding-right: 0 !important;
+}
+
+/* Details View - add space between navbar and results */
+.fa_filter_container {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.navbar {
+    background-color: black;
+}
+
+#receipt_detail_form button {
+    border: none;
+}
+
+#receipt_detail_form div#total_price {
+
+    padding: 10px;
+    font-size: 24px;
+}
+
+.status-btn {
+    font-weight: bold;
+    width: 280px;
+}
+
+#order-product-form {
+    font-family: 'Times New Roman', Times, serif !important
+}
+
+#delivery-product-form {
+    font-family: 'Times New Roman', Times, serif !important
+}
+
+#order-product-form {
+    font-family: 'Times New Roman', Times, serif !important
+}
+
+#delivery-product-form {
+    font-family: 'Times New Roman', Times, serif !important
+}
+
+* {
+    font-family: Arial, Helvetica, sans-serif
+}
+
+.pagination li a {
+    color: black !important;
+    background-color: white !important;
+    cursor: pointer !important;
+    padding: 10px !important;
+}
+
+.pagination li a:hover,
+.pagination li:hover {
+    color: white !important;
+    background-color: #888888 !important;
+}
+
+#navbrand-logo {
+    margin-bottom: 8px;
+}
+
+.pagination {
+    font-size: 20px;
+}
+
+#categoryForm label,
+#categoryForm input {
+    font-size: 2px;
+}
+
+#createModal button {
+    font-size: 18px;
+}
+
+form button,
+form input,
+form select {
+    font-size: 20px !important;
+}
+
+
+.detail-btn {
+    transition: all 0.5s;
+
+}
+
+.detail-btn span {
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: 0.5s;
+}
+
+.detail-btn span:after {
+    content: '\00bb';
+    position: absolute;
+    opacity: 0;
+    top: 0;
+    right: -20px;
+    transition: 0.5s;
+}
+
+.detail-btn:hover span {
+    padding-right: 25px;
+}
+
+.detail-btn:hover span:after {
+    opacity: 1;
+    right: 0;
+}
+
+#productCreateForm label {
+    margin-top: 10px;
+}
+
+#promotionButton {
+    width: 300px;
+    height: 100px;
+    background-color: rgb(44, 44, 44);
+    color: white;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+#promotionButton:hover {
+    opacity: 80%;
+}
+
+#productMenuBar {
+    top: 0px;
+    position: fixed;
+    left: 140px;
+    width: 100%;
+    height: 70px;
+    z-index: 10;
+}
+
+#productMenuBar a {
+    background-color: rgb(190, 190, 190);
+    font-size: 22px;
+    font-weight: light;
+    color: black;
+}
+
+#productMenuBar a:hover {
+    background-color: rgb(44, 44, 44);
+    color: white;
+
+}
+
+#productMenuBar a.active {
+    background-color: rgb(44, 44, 44);
+    color: white;
+}
+
+.carousel img {
+    height: 370px;
+}
+
+#userInfoForm img {
+    width: 350px;
+}
+
+.unit_measure {
+    font-size: 24px;
+}
+
+.dashboard-info {
+    width: 260px;
+    height: 120px;
+}
+
+.chart-header {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.sales-report {
+    height: 500px;
+    margin: 0;
+}
+
+.sales-report .chart-header {
+    background-color: rgb(252, 114, 40);
+    width: 100%;
+    padding: 10px;
+}
+
+.user-report {
+    height: 200px;
+    margin: 0;
+}
+
+.users-report .chart-header {
+    background-color: rgb(245, 53, 143);
+    padding: 10px;
+    margin-bottom: 80px;
+}

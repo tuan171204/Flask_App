@@ -11,142 +11,35 @@ from Flask_App.models import Distribution, User, User_Role, Privileged, Product,
 from Flask_App import app, db, utils
 import requests
 from Flask_App.utils import get_receipt_by_id
+import pandas as pd
 
-data = {
-    "districts": [
-        {
-            "name": "Quận 10",
-            "wards": [
-                {"name": "Phường 1"},
-                {"name": "Phường 2"},
-                {"name": "Phường 3"},
-                {"name": "Phường 4"},
-                {"name": "Phường 5"},
-                {"name": "Phường 6"},
-                {"name": "Phường 7"},
-                {"name": "Phường 8"},
-                {"name": "Phường 9"},
-                {"name": "Phường 10"},
-                {"name": "Phường 11"},
-                {"name": "Phường 12"},
-                {"name": "Phường 13"},
-                {"name": "Phường 14"},
-                {"name": "Phường 15"}
-            ]
-        },
-        {
-            "name": "Quận 11",
-            "wards": [
-                {"name": "Phường 1"},
-                {"name": "Phường 2"},
-                {"name": "Phường 3"},
-                {"name": "Phường 4"},
-                {"name": "Phường 5"},
-                {"name": "Phường 6"},
-                {"name": "Phường 7"},
-                {"name": "Phường 8"},
-                {"name": "Phường 9"},
-                {"name": "Phường 10"},
-                {"name": "Phường 11"},
-                {"name": "Phường 12"},
-                {"name": "Phường 13"},
-                {"name": "Phường 14"},
-                {"name": "Phường 15"},
-                {"name": "Phường 16"}
-            ]
-        },
-        {
-            "name": "Quận 12",
-            "wards": [
-                {"name": "Phường An Phú Đông"},
-                {"name": "Phường Đông Hưng Thuận"},
-                {"name": "Phường Hiệp Thành"},
-                {"name": "Phường Tân Chánh Hiệp"},
-                {"name": "Phường Tân Hưng Thuận"},
-                {"name": "Phường Tân Thới Hiệp"},
-                {"name": "Phường Tân Thới Nhất"},
-                {"name": "Phường Thạnh Lộc"},
-                {"name": "Phường Thạnh Xuân"},
-                {"name": "Phường Thới An"},
-                {"name": "Phường Trung Mỹ Tây"}
-            ]
-        },
-        {
-            "name": "Quận Bình Tân",
-            "wards": [
-                {"name": "Phường An Lạc"},
-                {"name": "Phường An Lạc A"},
-                {"name": "Phường Bình Hưng Hòa"},
-                {"name": "Phường Bình Hưng Hòa A"},
-                {"name": "Phường Bình Hưng Hòa B"},
-                {"name": "Phường Bình Trị Đông"},
-                {"name": "Phường Bình Trị Đông A"},
-                {"name": "Phường Bình Trị Đông B"},
-                {"name": "Phường Tân Tạo"},
-                {"name": "Phường Tân Tạo A"}
-            ]
-        },
-        {
-            "name": "Quận Phú Nhuận",
-            "wards": [
-                {"name": "Phường 1"},
-                {"name": "Phường 2"},
-                {"name": "Phường 3"},
-                {"name": "Phường 4"},
-                {"name": "Phường 5"},
-                {"name": "Phường 7"},
-                {"name": "Phường 8"},
-                {"name": "Phường 9"},
-                {"name": "Phường 10"},
-                {"name": "Phường 11"},
-                {"name": "Phường 12"},
-                {"name": "Phường 13"},
-                {"name": "Phường 14"},
-                {"name": "Phường 15"},
-                {"name": "Phường 17"}
-            ]
-        },
-        {
-            "name": "Quận Tân Phú",
-            "wards": [
-                {"name": "Phường Hiệp Tân"},
-                {"name": "Phường Hòa Thạnh"},
-                {"name": "Phường Phú Thạnh"},
-                {"name": "Phường Phú Thọ Hòa"},
-                {"name": "Phường Phú Trung"},
-                {"name": "Phường Sơn Kỳ"},
-                {"name": "Phường Tân Qúy"},
-                {"name": "Phường Tân Sơn Nhì"},
-                {"name": "Phường Tân Thành"},
-                {"name": "Phường Tân Thới Hòa"},
-                {"name": "Phường Tây Thạnh"}
-            ]
-        },
-        {
-            "name": "Quận Tân Bình",
-            "wards": [
-                {"name": "Phường 1"},
-                {"name": "Phường 2"},
-                {"name": "Phường 3"},
-                {"name": "Phường 4"},
-                {"name": "Phường 5"},
-                {"name": "Phường 6"},
-                {"name": "Phường 7"},
-                {"name": "Phường 8"},
-                {"name": "Phường 9"},
-                {"name": "Phường 10"},
-                {"name": "Phường 11"},
-                {"name": "Phường 12"},
-                {"name": "Phường 13"},
-                {"name": "Phường 14"},
-                {"name": "Phường 15"}
-            ]
-        }
-    ]
-}
+
+# with app.app_context():
+#     receipt_list = Receipt.query.all()
+#
+#     data = [{
+#         "id": receipt.id,
+#         "created_date": receipt.created_date
+#     } for receipt in receipt_list]
+#
+#     df = pd.DataFrame(data)
+#
+#     daily_counts = df['created_date'].dt.date.value_counts().sort_index()
+#     print(daily_counts)
+#
+#     # Đếm số lượng hóa đơn theo tháng
+#     monthly_counts = df['created_date'].dt.to_period('M').value_counts().sort_index()
+#     print(monthly_counts)
+
+
 
 with app.app_context():
-    re = utils.product_months_stats(2023)
+    sale_month_stats_last_year = utils.product_months_stats(datetime.now().year - 1)
 
-    for r in re:
-        print(r[0], r[1])
+    customer_month_stats = utils.customer_months_stats(datetime.now().year)
+
+    print(sale_month_stats_last_year)
+    for s in sale_month_stats_last_year:
+        print(s[0])
+
+    print(customer_month_stats)

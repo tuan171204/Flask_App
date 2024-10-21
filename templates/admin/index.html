@@ -9,9 +9,7 @@
         <hr>
 
         <div class="d-flex flex-row justify-content-around">
-            <div class="dashboard-info border text-center pt-3 row text-light"
-                 style="background: rgb(249,46,233);
-                        background: linear-gradient(166deg, rgba(249,46,233,1) 0%, rgba(2,0,64,1) 72%);">
+            <div class="dashboard-info border text-center pt-3 row text-light bg-dark">
                 <div class="col-9">
                     <p style="font-size: 24px; font-weight: bold" >
                         {{ "{:,.0f}".format(total_revenue) }}đ
@@ -26,9 +24,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-info border text-center pt-3 row text-light"
-                 style="background: rgb(249,46,233);
-                        background: linear-gradient(166deg, rgba(249,46,233,1) 0%, rgba(214,0,0,1) 72%);">
+            <div class="dashboard-info border text-center pt-3 row text-dark bg-warning">
                 <div class="col-9">
                     <p style="font-size: 24px; font-weight: bold">
                         {{ total_check }}
@@ -41,9 +37,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-info border text-center pt-3 row text-light"
-                 style="background: rgb(63,94,251);
-                        background: linear-gradient(11deg, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%);">
+            <div class="dashboard-info border text-center pt-3 row text-light bg-success">
                 <div class="col-9">
                     <p style="font-size: 24px;font-weight: bold">
                         {{ complete_receipt }}
@@ -56,9 +50,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-info border text-center pt-3 row text-light"
-                 style="background: rgb(255,7,236);
-                        background: linear-gradient(342deg, rgba(255,7,236,1) 0%, rgba(0,19,250,1) 72%);">
+            <div class="dashboard-info border text-center pt-3 row text-light bg-info"">
                 <div class="col-9">
                     <p style="font-size: 24px;font-weight: bold">
                         {{ total_customer }}
@@ -76,26 +68,21 @@
         <br><br>
 
         <div class="report-stats row">
-            <div class="sales-report ml-4 col-lg-8">
-                <div class="chart-header text-left text-dark border-bottom">
+            <div class="sales-report ml-3 col-lg-8">
+                <div class="chart-header text-left text-light border-bottom">
                     Báo cáo doanh thu
                 </div>
                 <canvas id="salesChart">
-
                 </canvas>
-
-
             </div>
 
-            <div class="users-report ml-5 col-lg-3">
+            <div class="users-report col-lg-3"
+                 style="margin-left: 68px;"   >
                 <div class="chart-header text-center text-light border-bottom">
                     Thống kê khách hàng
                 </div>
                 <canvas id="usersChart">
-
                 </canvas>
-
-
             </div>
         </div>
         <br><br>
@@ -136,23 +123,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 
-        const months = []
-        const months_sale = []
+        const months = ["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"];
+        const months_sale = [];
+        const months_sale_ly = [];
+
         {% for month in sale_month_stats %}
-            {% if month[1] %}
-                months.push('Tháng ' + '{{ month[0] }}')
-                months_sale.push( {{ month[1] }} )
-            {% endif %}
+            months_sale.push({{ month[1] }});
         {% endfor %}
 
-
-        const months_ly = []
-        const months_sale_ly = []
         {% for month in sale_month_stats_ly %}
-            {% if month[1] %}
-                months_ly.push('Tháng ' + '{{ month[0] }}')
-                months_sale_ly.push( {{ month[1] }} )
-            {% endif %}
+            months_sale_ly.push({{ month[1] }});
         {% endfor %}
 
         const months_2 = []
@@ -167,7 +147,6 @@
 
 
         const ctx = document.getElementById('salesChart');
-        const ctx2 = document.getElementById('usersChart');
         const mixedChart = new Chart(ctx, {
             data: {
                 datasets: [{
@@ -213,6 +192,7 @@
         });
 
 
+        const ctx2 = document.getElementById('usersChart');
         new Chart(ctx2, {
             type: 'doughnut',
             data: {

@@ -1,10 +1,12 @@
 
-<nav id="navbar-example2" class="navbar navbar-expand-md d-flex flex-column " style="background-color:#FFF ;z-index: 1">
+<nav id="main-navbar"
+     class="navbar navbar-expand-md d-flex flex-column"
+     style="background-color:#FFF ;z-index: 0">
   <!-- Brand -->
 
 <div class="row-1">
     <div class="mr-5">
-        <a class="navbar-brand font-bold text-dark" href="/">
+        <a class="navbar-brand font-bold text-dark" href="/product">
             <!-- <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo" style="width:70px;"> -->
             <b style="font-size:25px;font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif">AANT WEBSITE</b>
         </a>
@@ -62,8 +64,9 @@
 </div>
 
 
-<div class="row-2">
-    <ul class="navbar-nav">
+<div class="row-2 mt-2 mb-2">
+    <ul class="navbar-nav"
+        style="font-size: 18px">
         {% for category in categories %}
             {% if not category.parent_id %}
                 {% if category.child %}
