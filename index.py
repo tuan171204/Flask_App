@@ -590,6 +590,21 @@ def deactive_product():
     return jsonify({"success": True, "message": "Đã lưu thay đổi"}), 200
 
 
+@app.route('/api/delete_warranty/<int:warranty_id>', methods=['DELETE'])
+def delete_warranty(warranty_id):
+    warranty = Warranty.query.get(warranty_id)
+
+    if not warranty:
+        return jsonify({"error": "Warranty not found"}), 404
+
+    try:
+        utils.delete_warranty(warranty_id)
+
+        return jsonify({"success": True, "message": "Warranty deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 if __name__ == "__main__":
     from Flask_App.admin import *
 

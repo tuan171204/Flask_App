@@ -291,7 +291,6 @@ form select {
 }
 
 .sales-report .chart-header {
-    background-color: rgb(252, 114, 40);
     width: 100%;
     padding: 10px;
 }
@@ -302,7 +301,33 @@ form select {
 }
 
 .users-report .chart-header {
-    background-color: rgb(245, 53, 143);
     padding: 10px;
     margin-bottom: 80px;
 }
+
+.user-table a{
+    width: 100px;
+}
+
+.user-table a,
+.user-table button{
+    width: 150px;
+}
+
+.product-detail-table,
+#createUserModal label,
+.update-warranty-table,
+#update-warranty-form label,
+#createWarranty label,
+.format-btn
+{
+   font-size: 20px;
+}
+
+.warranty-table td,
+.warranty-table td span{
+    font-size: 24px;
+}
+
+
+

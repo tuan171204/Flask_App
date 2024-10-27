@@ -1,16 +1,17 @@
 import math
 import string
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from PIL import Image
+from dateutil.relativedelta import relativedelta
 from flask import flash
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.orm import aliased
 from Flask_App import app, db, ALLOWED_EXTENSIONS
 from Flask_App.models import Category, Product, User, Receipt, ReceiptDetail, User_Role, Comment, Payment, \
     Provider, Distribution, Receipt_Status, Privileged, Report_Type, Receipt_Report, Delivery_Reason, \
     Goods_Received_Note, Goods_Received_Note_Detail, Goods_Delivery_Note, Goods_Delivery_Note_Detail, Promotion, \
-    Warranty, Brand, PromotionDetail, District, Ward
+    Warranty, Brand, PromotionDetail, District, Ward, WarrantyDetail, TimeUnitEnum
 import hashlib
 from flask_login import current_user
 from sqlalchemy import func, and_, or_, desc, Integer
@@ -287,13 +288,29 @@ def get_cate_by_id(cate_id):
 
 def add_user(name, username, password, **kwargs):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
-    user = User(name=name.strip(),
+    user = User.query.order_by(desc(User.id)).first()
+    user_id = user.id + 1
+
+    user = User(id=user_id,
+                name=name.strip(),
                 username=username.strip(),
                 password=password,
                 email=kwargs.get('email'),
                 avatar=kwargs.get('avatar'))
 
     db.session.add(user)
+    db.session.flush()
+
+    user_role = User_Role(id=user_id)
+
+    privileged = Privileged(user_id=user_id,
+                            user_role=user_id)
+
+    db.session.add(user_role)
+    db.session.flush()
+
+    db.session.add(privileged)
+
     db.session.commit()
 
 
@@ -422,6 +439,15 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
                                   discount=math.floor(c['quantity'] / 2) * c['price'],
                                   discount_info=c['promotion']
                                   )
+            elif product.discount_type.value == 1:
+                d = ReceiptDetail(receipt=receipt,
+                                  product_id=int(c['id']),
+                                  quantity=c['quantity'],
+                                  unit_price=product.price,
+                                  discount=product.price - c['price'],
+                                  discount_info=c['promotion']
+                                  )
+
             else:
                 d = ReceiptDetail(receipt=receipt,
                                   product_id=int(c['id']),
@@ -434,8 +460,9 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
 
 def calculate_total_revenue():
     total_revenue = db.session.query(
-        func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price - ReceiptDetail.discount)).scalar()
-    return total_revenue
+        func.sum((ReceiptDetail.quantity * ReceiptDetail.unit_price) - func.coalesce(ReceiptDetail.discount, 0))
+    ).join(Receipt, Receipt.id == ReceiptDetail.receipt_id)
+    return total_revenue.scalar()
 
 
 def count_total_check():
@@ -490,7 +517,7 @@ def product_stats(kw=None, from_date=None, to_date=None):
 
 def product_months_stats(year):
     stats = db.session.query(extract('month', Receipt.created_date),
-                            func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price)) \
+                             func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price)) \
         .outerjoin(ReceiptDetail, ReceiptDetail.receipt_id.__eq__(Receipt.id)) \
         .filter(extract('year', Receipt.created_date) == year) \
         .group_by(extract('month', Receipt.created_date)) \
@@ -504,12 +531,30 @@ def product_months_stats(year):
     return [(month, monthly_data[month]) for month in range(1, 13)]
 
 
+def product_profit_month_stats(year):
+    stats = db.session.query(extract('month', Receipt.created_date),
+                             func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price).label('total_revenue'),
+                             func.sum(ReceiptDetail.quantity * Product.import_price).label('total_cost')) \
+        .outerjoin(ReceiptDetail, ReceiptDetail.receipt_id.__eq__(Receipt.id)) \
+        .outerjoin(Product, Product.id.__eq__(ReceiptDetail.product_id)) \
+        .filter(extract('year', Receipt.created_date) == year) \
+        .group_by(extract('month', Receipt.created_date)) \
+        .order_by(extract('month', Receipt.created_date)).all()
+
+    monthly_data = {month: 0 for month in range(1, 13)}
+
+    for month, total_revenue, total_cost in stats:
+        monthly_data[month] = total_revenue - total_cost
+
+    return [(month, monthly_data[month]) for month in range(1, 13)]
+
+
 def customer_months_stats(year):
     return db.session.query(extract('month', Receipt.created_date),
-                            func.count(func.distinct(Receipt.user_id)))\
-                .filter(extract('year', Receipt.created_date) == year) \
-                .group_by(extract('month', Receipt.created_date)) \
-                .order_by(extract('month', Receipt.created_date)).all()
+                            func.count(func.distinct(Receipt.user_id))) \
+        .filter(extract('year', Receipt.created_date) == year) \
+        .group_by(extract('month', Receipt.created_date)) \
+        .order_by(extract('month', Receipt.created_date)).all()
 
 
 def add_comment(content, product_id):
@@ -617,6 +662,8 @@ def get_receipt_by_id_2(receipt_id):
 
 
 def load_receipt_detail(receipt_id, product_id=None, product_name=None):
+    calculate_warranty_valid(receipt_id)
+
     receipt_details = db.session.query(
         ReceiptDetail.receipt_id,
         ReceiptDetail.product_id,
@@ -624,9 +671,13 @@ def load_receipt_detail(receipt_id, product_id=None, product_name=None):
         ReceiptDetail.unit_price,
         ReceiptDetail.discount,
         ReceiptDetail.discount_info,
+        ReceiptDetail.on_warranty,
+        WarrantyDetail.warranty_period.label('warranty_period'),
+        WarrantyDetail.time_unit.label('time_unit'),
         Product.name.label('product_name'),
         Product.image.label('product_image')
-    ).join(Product, Product.id == ReceiptDetail.product_id)
+    ).join(Product, Product.id == ReceiptDetail.product_id) \
+        .outerjoin(WarrantyDetail, WarrantyDetail.product_id == ReceiptDetail.product_id)
 
     receipt_details = receipt_details.filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
 
@@ -1308,3 +1359,143 @@ def check_restore_email_validation(username, email):
         return True
 
     return False
+
+
+def change_user_info(user_id, **kwargs):
+    try:
+        user = User.query.filter(User.id == user_id).first()
+
+        if not user:
+            return {"success": False, "message": "Không tìm thấy người dùng"}
+        for key, value in kwargs.items():
+            print(key, value)
+
+        user.name = kwargs.get('name')
+        user.username = kwargs.get('username')
+        user.email = kwargs.get('email')
+        user.phone_number = kwargs.get('phone_number')
+        user.address = kwargs.get('address')
+        db.session.commit()
+
+        return {"success": True, "message": "Cập nhật thông tin thành công"}
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return {"success": False, "message": f"Đã có lỗi xảy ra: {str(e)}"}
+
+
+def load_product_warranty(product_id):
+    warranty = db.session.query(Warranty.description,
+                                WarrantyDetail.product_id,
+                                WarrantyDetail.warranty_period,
+                                WarrantyDetail.time_unit) \
+        .join(WarrantyDetail, Warranty.id == WarrantyDetail.warranty_id) \
+        .filter(WarrantyDetail.product_id == product_id).all()
+    return warranty
+
+
+def load_warranty(info=None):
+    warranty = Warranty.query
+    if info:
+        if info.isdigit():
+            warranty = warranty.filter(Warranty.id == int(info))
+        else:
+            warranty = warranty.filter(Warranty.description.contains(info))
+    return warranty.all()
+
+
+def get_warranty(warranty_id):
+    return Warranty.query.filter(Warranty.id == warranty_id).first()
+
+
+def get_void_warranty_detail(warranty_id):
+    return db.session.query(Warranty.description.label('warranty_description'),
+                            Warranty.id.label('warranty_id')) \
+        .filter(Warranty.id == warranty_id).all()
+
+
+def get_warranty_detail(warranty_id):
+    warranty_detail = db.session.query(Warranty.description.label('warranty_description'),
+                                       Product.id.label('product_id'),
+                                       Product.name.label('product_name'),
+                                       WarrantyDetail.warranty_id,
+                                       WarrantyDetail.warranty_period,
+                                       WarrantyDetail.time_unit) \
+        .outerjoin(Warranty, Warranty.id == WarrantyDetail.warranty_id) \
+        .outerjoin(Product, Product.id == WarrantyDetail.product_id) \
+        .filter(WarrantyDetail.warranty_id == warranty_id)
+
+    return warranty_detail.all()
+
+
+def calculate_warranty_valid(receipt_id):
+    receipt = Receipt.query.filter(Receipt.id == receipt_id).first()
+
+    if not receipt:
+        return {"success": False, "message": "Receipt không tồn tại."}
+
+    created_date = receipt.created_date
+
+    receipt_details = db.session.query(ReceiptDetail, WarrantyDetail.warranty_period, WarrantyDetail.time_unit) \
+        .join(WarrantyDetail, ReceiptDetail.product_id == WarrantyDetail.product_id) \
+        .filter(ReceiptDetail.receipt_id == receipt.id).all()
+
+    for detail, warranty_period, time_unit in receipt_details:
+        if time_unit == TimeUnitEnum.YEAR:
+            warranty_end_date = created_date + relativedelta(years=warranty_period)
+        elif time_unit == TimeUnitEnum.MONTH:
+            warranty_end_date = created_date + relativedelta(months=warranty_period)
+        elif time_unit == TimeUnitEnum.WEEK:
+            warranty_end_date = created_date + timedelta(weeks=warranty_period)
+        else:
+            continue
+
+        if datetime.now() <= warranty_end_date:
+            detail.on_warranty = True
+        else:
+            detail.on_warranty = False
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return {"success": False, "message": f"Lỗi: {str(e)}"}
+
+
+def apply_warranty_for_all(warranty_id, warranty_period, time_unit):
+    products = Product.query.all()
+    try:
+        for product in products:
+            warranty_detail = WarrantyDetail(
+                product_id=product.id,
+                warranty_id=warranty_id,
+                warranty_period=int(warranty_period),
+                time_unit=TimeUnitEnum[time_unit]
+            )
+            db.session.add(warranty_detail)
+        db.session.commit()
+        return {'success': True}
+
+    except Exception as e:
+        return {'success': False, 'msg': f'Lỗi xảy ra {str(e)}'}
+
+
+def delete_warranty(warranty_id):
+    warranty = Warranty.query.get(warranty_id)
+
+    warranty_details = WarrantyDetail.query.filter(WarrantyDetail.warranty_id==warranty_id).all()
+
+    for detail in warranty_details:
+        db.session.delete(detail)
+
+    db.session.delete(warranty)
+
+    db.session.commit()
+
+
+def load_product_applied_yet(warranty_id):
+    subquery = db.session.query(WarrantyDetail.product_id)\
+                         .filter(WarrantyDetail.warranty_id == warranty_id).subquery()
+
+    products = Product.query.filter(Product.id.notin_(subquery)).all()
+
+    return products

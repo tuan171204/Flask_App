@@ -88,7 +88,7 @@ class User(db.Model, UserMixin):
     password = Column(String(50), nullable=False)
     avatar = Column(String(100))
     email = Column(String(50), unique=True)
-    phone_number = Column(String(11), nullable=False)
+    phone_number = Column(String(11), nullable=True)
     address = Column(String(255), nullable=True)
     active = Column(Boolean, default=True)
     joined_date = Column(DateTime, default=datetime.now())
@@ -140,6 +140,7 @@ class ReceiptDetail(db.Model):
     unit_price = Column(Float, default=0)
     discount = Column(Float, default=0, nullable=True)
     discount_info = Column(String(255), nullable=True)
+    on_warranty = Column(Boolean, default=True)
 
 
 class Comment(db.Model):
@@ -267,9 +268,9 @@ class Receipt_Report(db.Model):
 
 
 class TimeUnitEnum(PyEnum):
-    YEAR = "year"
-    MONTH = "month"
-    WEEK = "week"
+    YEAR = "năm"
+    MONTH = "tháng"
+    WEEK = "tuần"
 
 
 class Warranty(db.Model):

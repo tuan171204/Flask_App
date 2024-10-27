@@ -91,7 +91,7 @@ def recommend_products_by_user_receipt(user_id):
                               ReceiptDetail.query.filter(ReceiptDetail.receipt_id.in_(user_receipts))]
     # Lấy danh sách product_id được đề xuất
     recommended_product_ids = recommend_similar_products(
-        user_purchased_product, number=6
+        user_purchased_product, number=8
     )
 
     recommended_product_ids = set(recommended_product_ids) - set(user_purchased_product)

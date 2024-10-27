@@ -1,20 +1,19 @@
 import math
 import os
 from itertools import product
-
 from num2words import num2words
 import random
-
+from sqlalchemy.dialects.postgresql import phraseto_tsquery
+from torch._C import wait
 from werkzeug.utils import secure_filename
-
 from Flask_App import app, db, UPLOAD_FOLDER
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
-    Goods_Delivery_Note
+    Goods_Delivery_Note, Warranty
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user, login_user
 from flask_admin import BaseView, expose, AdminIndexView
-from flask import redirect, flash, url_for, session
+from flask import redirect, flash, url_for, session, jsonify
 import utils
 from flask import request
 from datetime import datetime
@@ -80,16 +79,93 @@ class UserView(ManageModelView):
                            size=app.config['VIEW_SIZE'])
 
     @expose('user-detail/<int:user_id>')
-    def user_detail(self, user_id):
+    @expose('user-detail/<int:user_id>/<url>/<int:receipt_id>')
+    def user_detail(self, user_id, url=None, receipt_id=None):
         user = utils.get_user_detail_admin(user_id)
 
         user_receipts = utils.get_user_receipt(user_id)
+
+        if url == 'receipt':
+            back_url = url_for('receipt.receipt_detail_view',
+                               receipt_id=receipt_id)
+        elif url == 'receipt_update':
+            back_url = url_for('receipt.receipt_detail_update',
+                               receipt_id=receipt_id)
+        else:
+            back_url = None
+
+        print(back_url)
 
         return self.render('admin/user.html',
                            user=user,
                            user_receipts=user_receipts,
                            user_detail=True,
+                           back_url=back_url,
                            status_colors=self.status_colors)
+
+    @expose('update-info/<int:user_id>', methods=['POST'])
+    def update_info(self, user_id):
+        username = request.form.get('user_username')
+        name = request.form.get('user_name')
+        email = request.form.get('user_email')
+        phone_number = request.form.get('user_phone')
+        if phone_number == 'Không có':
+            phone_number = None
+        address = request.form.get('user_address')
+        if address == 'Không có':
+            address = None
+
+        result = utils.change_user_info(user_id,
+                                        name=name,
+                                        username=username,
+                                        email=email,
+                                        phone_number=str(phone_number),
+                                        address=address)
+
+        if result["success"]:
+            flash("Cập nhật thông tin thành công.", "success")
+        else:
+            flash(f"{result['message']}", "danger")
+
+        return redirect(f'/admin/user_admin/user-detail/{user_id}')
+
+    @expose('deactive-user/<int:user_id>')
+    def deactive_user(self, user_id):
+        user = User.query.filter(User.id == user_id).first()
+        user.active = False
+
+        db.session.commit()
+        flash("Đã tạm khóa tài khoản", "info")
+        return redirect('/admin/user_admin')
+
+    @expose('active-user/<int:user_id>')
+    def active_user(self, user_id):
+        user = User.query.filter(User.id == user_id).first()
+        user.active = True
+
+        db.session.commit()
+        flash("Đã thay đổi trạng thái tài khoản", "info")
+        return redirect('/admin/user_admin')
+
+    @expose('create-user', methods=['POST'])
+    def create_user(self):
+        username = request.form.get('username')
+        password = request.form.get('password')
+        name = request.form.get('fullname')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        address = request.form.get('address')
+
+        utils.add_user(name=name,
+                       username=username,
+                       password=password,
+                       email=email,
+                       phone_number=phone_number,
+                       address=address)
+
+        flash("Thêm người dùng thành công", "success")
+
+        return redirect('/admin/user_admin/')
 
     def is_accessible(self):
         return self.check_permission('view_user')
@@ -237,9 +313,12 @@ class ProductView(ManageModelView):
 
         category = utils.load_categories_client()
 
+        product_warranty = utils.load_product_warranty(product_id)
+
         return self.render("admin/product.html",
                            product=product,
-                           category=category)
+                           category=category,
+                           product_warranty=product_warranty)
 
     @expose('update-product/<int:product_id>', methods=['POST'])
     def update_product(self, product_id):
@@ -587,6 +666,7 @@ class MyAdminIndex(AdminIndexView):
     @expose('/')
     def index(self):
         total_revenue = utils.calculate_total_revenue()
+        print(total_revenue)
 
         total_check = utils.count_total_check()
 
@@ -600,6 +680,8 @@ class MyAdminIndex(AdminIndexView):
 
         customer_month_stats = utils.customer_months_stats(datetime.now().year)
 
+        profit_month_stats = utils.product_profit_month_stats(datetime.now().year)
+
         return self.render('admin/index.html',
                            total_revenue=total_revenue,
                            total_check=total_check,
@@ -607,7 +689,8 @@ class MyAdminIndex(AdminIndexView):
                            total_customer=total_customer,
                            sale_month_stats=sale_month_stats,
                            sale_month_stats_ly=sale_month_stats_last_year,
-                           customer_month_stats=customer_month_stats)
+                           customer_month_stats=customer_month_stats,
+                           profit_month_stats=profit_month_stats)
 
     @expose('/forgot-password')
     def forgot_password(self):
@@ -655,6 +738,7 @@ class MyAdminIndex(AdminIndexView):
                 return self.render('admin/restore.html',
                                    err_msg='Mã khôi phục không đúng. vui lòng thử lại',
                                    restore_code=True)
+
 
 class StatsView(ManageModelView):
     @expose('/')
@@ -907,7 +991,8 @@ class ReceiptView(ManageModelView):
                            next_url=url)
 
     @expose('/receipt-update/<int:receipt_id>')
-    def receipt_detail_update(self, receipt_id):
+    @expose('/view-detail/<int:receipt_id>/<next_url>/<int:user_id>')
+    def receipt_detail_update(self, receipt_id, next_url=None, user_id=None):
 
         user_permission = utils.get_user_permission(current_user.id)
 
@@ -925,6 +1010,12 @@ class ReceiptView(ManageModelView):
 
             receipt_status = utils.load_receipt_status()
 
+            if next_url and user_id:
+                url = url_for('user_admin.user_detail',
+                              user_id=user_id)
+            else:
+                url = None
+
             return self.render('admin/receipt_update.html',
                                receipt_id=receipt_id,
                                receipt_details=receipt_details,
@@ -932,7 +1023,8 @@ class ReceiptView(ManageModelView):
                                receipts=receipts,
                                total_price=total_price,
                                product_id=product_id,
-                               status_colors=self.status_colors)
+                               status_colors=self.status_colors,
+                               next_url=url)
 
         else:
             return self.render('admin/receipt_update.html',
@@ -1118,6 +1210,58 @@ class UserRoleView(ManageModelView):
         return getattr(user_permission, 'user_privileged', False)
 
 
+class WarrantyView(ManageModelView):
+    @expose('/')
+    def index(self):
+        info = request.args.get('info')
+
+        warrantys = utils.load_warranty(info=info)
+
+        return self.render('admin/warranty.html',
+                           warrantys=warrantys)
+
+    @expose('/warranty-update/<int:warranty_id>')
+    def warranty_update(self, warranty_id):
+        warranty_detail = utils.get_warranty_detail(warranty_id)
+
+        products = utils.load_product_applied_yet(warranty_id)
+
+        if len(warranty_detail) < 1:
+            warranty_detail = utils.get_void_warranty_detail(warranty_id)
+            return self.render('admin/warranty.html',
+                               warranty_detail=warranty_detail,
+                               products=products,
+                               void=True)
+
+        return self.render('admin/warranty.html',
+                           warranty_detail=warranty_detail,
+                           products=products)
+
+    @expose('/create-warranty', methods=['POST'])
+    def create_warranty(self):
+        description = request.form.get('description')
+        apply_all = request.form.get('apply_all')
+        warranty_period = request.form.get('warranty_period')
+        time_unit = request.form.get('time_unit')
+
+        new_warranty = Warranty(description=description)
+
+        db.session.add(new_warranty)
+        db.session.commit()
+
+        if apply_all:
+            apply_warranty = utils.apply_warranty_for_all(new_warranty.id, warranty_period, time_unit)
+
+            if not apply_warranty['success']:
+                print(apply_warranty['msg'])
+
+        flash('Chương trình bảo hành đã được thêm thành công!', 'success')
+        return redirect(url_for('warranty.index'))
+
+    def is_accessible(self):
+        return self.check_permission('view_product')
+
+
 admin = Admin(app=app,
               name="ANNNPTT Website",
               template_mode="bootstrap4",
@@ -1183,6 +1327,13 @@ admin.add_view(UserRoleView(User_Role, db.session,
                             endpoint='user_privileged',
                             menu_icon_type='fa',
                             menu_icon_value='fa-solid fa-people-roof'
+                            ))
+
+admin.add_view(WarrantyView(Warranty, db.session,
+                            name='Bảo hành',
+                            endpoint='warranty',
+                            menu_icon_type='fa',
+                            menu_icon_value='fa-solid fa-wrench'
                             ))
 
 admin.add_view(LogoutView(name='Đăng xuất',

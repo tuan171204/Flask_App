@@ -51,7 +51,8 @@
 
             #admin-navbar-menu {
                 background-color: #ffffff00;
-                overflow: hidden;
+                overflow-x: hidden;
+                overflow-y: hidden;
                 display: flex;
                 flex-direction: column;
             }
@@ -70,7 +71,7 @@
             #navbar_menu a{
                 color:rgb(217, 216, 216);
                 text-align: left;
-                margin-bottom: 15px;
+                margin-bottom: 10px;
                 font-size: 18px;
                 opacity: 70%;
             }
@@ -96,8 +97,9 @@
   </head>
 <body>
 {% block page_body %}
-    <div class="container-fluid row" >
-        <div class="col-lg-2"
+    <div class="container-fluid row"
+         style="background-color: #FFF">
+        <div class="col-lg-2 col-md-4 col-sm-4"
              id="menu-links-container">
             <nav class="navbar navbar-expand-lg mb-2 text-center w-100"
                  id="admin-navbar-menu"
@@ -138,8 +140,8 @@
             </nav>
         </div>
         
-        <div class="col-lg-10"
-             style="margin-left: 260px;">
+        <div class="col-lg-10 col-md-8 col-sm-8"
+             style="margin-left: 265px;">
         {% block messages %}
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}

@@ -15,7 +15,7 @@ class Select2Widget(widgets.Select):
     """
         `Select2 <https://github.com/ivaynberg/select2>`_ styled select widget.
 
-        You must include select2.js, form-x.x.x.js and select2 stylesheet for it to
+        You must include select2.bootstrap, form-x.x.x.bootstrap and select2 stylesheet for it to
         work.
     """
     def __call__(self, field, **kwargs):
@@ -30,7 +30,7 @@ class Select2Widget(widgets.Select):
 
 class Select2TagsWidget(widgets.TextInput):
     """`Select2 <http://ivaynberg.github.com/select2/#tags>`_ styled text widget.
-    You must include select2.js, form-x.x.x.js and select2 stylesheet for it to work.
+    You must include select2.bootstrap, form-x.x.x.bootstrap and select2 stylesheet for it to work.
     """
     def __call__(self, field, **kwargs):
         kwargs.setdefault('data-role', u'select2-tags')
@@ -42,7 +42,7 @@ class DatePickerWidget(widgets.TextInput):
     """
         Date picker widget.
 
-        You must include bootstrap-datepicker.js and form-x.x.x.js for styling to work.
+        You must include bootstrap-datepicker.bootstrap and form-x.x.x.bootstrap for styling to work.
     """
     def __call__(self, field, **kwargs):
         kwargs.setdefault('data-role', u'datepicker')
@@ -56,7 +56,7 @@ class DateTimePickerWidget(widgets.TextInput):
     """
         Datetime picker widget.
 
-        You must include bootstrap-datepicker.js and form-x.x.x.js for styling to work.
+        You must include bootstrap-datepicker.bootstrap and form-x.x.x.bootstrap for styling to work.
     """
     def __call__(self, field, **kwargs):
         kwargs.setdefault('data-role', u'datetimepicker')
@@ -68,7 +68,7 @@ class TimePickerWidget(widgets.TextInput):
     """
         Date picker widget.
 
-        You must include bootstrap-datepicker.js and form-x.x.x.js for styling to work.
+        You must include bootstrap-datepicker.bootstrap and form-x.x.x.bootstrap for styling to work.
     """
     def __call__(self, field, **kwargs):
         kwargs.setdefault('data-role', u'timepicker')

@@ -1,0 +1,335 @@
+{% extends 'admin/base.html' %}
+
+
+{% block body %}
+
+
+{% if not warranty_detail %}
+        <h1 class="text-center text-dark mt-4 mb-5"> Bảo hành & bảo trì sản phẩm </h1>
+        <hr>
+        <form class="form-inline my-2 my-lg-0">
+              <input class="form-control mr-sm-2"
+                     type="search"
+                     style="width: 30%"
+                     placeholder="Tên chương trình hoặc mã bảo hành"
+                     aria-label="Search"
+                     name="info">
+
+              <button class="btn btn-outline-dark my-2 my-sm-0"
+                      type="submit">
+                   <i class="fa-solid fa-magnifying-glass"></i>
+                  Tìm kiếm
+              </button>
+            </form>
+            <button style="width: 41.5%; font-size: 18px;"
+                    data-toggle="modal"
+                    data-target="#createWarranty"
+                    class="btn btn-warning mt-2 form-control font-weight-bold">
+                 <i class="fa-solid fa-plus"></i>
+                 Thêm chương trình bảo hành mới
+            </button>
+        <hr>
+
+        <table class="table table-hover table-bordered text-center">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">STT</th>
+                    <th scope="col">Mã chương trình</th>
+                    <th scope="col">Tên chương trình bảo hành</th>
+                    <th scope="col">Tùy chỉnh</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for warranty in warrantys %}
+                    <tr id="warranty-row-{{ warranty.id }}">
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>{{ warranty.id }}</td>
+                        <td>{{ warranty.description }}</td>
+                        <td>
+                            <a href="{{ url_for('warranty.warranty_update', warranty_id = warranty.id) }}"
+                               class="btn btn-dark" >
+                                <i class="fa-solid fa-pencil"></i>
+                            </a>
+                            <a onclick="deleteWarranty({{ warranty.id }})"
+                               class="btn btn-danger text-light" >
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+
+    <!--CREATE MODAL-->
+    <form action="{{ url_for('warranty.create_warranty') }}"
+          method="POST">
+        <div class="modal fade" id="createWarranty">
+          <div class="modal-dialog">
+            <div class="modal-content">
+
+              <!-- Modal Header -->
+              <div class="modal-header bg-dark text-light">
+                <h4 class="modal-title">Thêm chương trình bảo hành</h4>
+                <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+              </div>
+
+              <!-- Modal body -->
+              <div class="modal-body">
+                <div class="form-group">
+                    <label>Mô tả chương trình bảo hành:</label>
+                    <input type="text"
+                           class="form-control"
+                           name="description" >
+                </div>
+                <div class="form-group">
+                    <input type="checkbox"
+                           class="custom-checkbox"
+                           name="apply_all">
+                    Áp dụng cho tất cả sản phẩm
+                </div>
+                <div class="form-group warranty-time">
+                    <label>Thời hạn bảo hành: </label>
+                    <div class="form-inline">
+                        <input type="text"
+                               class="form-control"
+                               style="width: 23%;"
+                               name="warranty_period">
+                        <select name="time_unit"
+                                id="select_time_unit"
+                                class="custom-select ml-2 w-75">
+                            <option value="" selected>Đơn vị</option>
+                            <option value="WEEK">tuần</option>
+                            <option value="MONTH">tháng</option>
+                            <option value="YEAR">năm</option>
+                        </select>
+                    </div>
+                </div>
+              </div>
+
+              <!-- Modal footer -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <i class="fa-solid fa-xmark"></i>
+                    Đóng
+                </button>
+                  <button type="submit" class="btn btn-warning">
+                      <i class="fa-solid fa-check-to-slot"></i>
+                      Thêm
+                  </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+    </form>
+
+<script>
+    const checkbox = document.querySelector("input[name='apply_all']")
+    const warrantyTimeBlock = document.querySelector('.warranty-time')
+
+    toggleWarrantyTime = () => {
+        if ( checkbox.checked ){
+            warrantyTimeBlock.style.display = 'block'
+        } else {
+            warrantyTimeBlock.style.display = 'none'
+        }
+    }
+
+    checkbox.addEventListener('change', toggleWarrantyTime)
+
+    toggleWarrantyTime()
+
+
+    deleteWarranty = (warrantyId) => {
+        if (confirm("Bạn có chắc chắn muốn xóa chương trình bảo hành này?")) {
+
+            fetch(`/api/delete_warranty/${warrantyId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json' 
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    const row = document.querySelector(`#warranty-row-${warrantyId}`)
+                    if (row){
+                        row.remove()
+                    }
+                    alert("Chương trình bảo hành đã được xóa thành công!");
+                }   
+                    else {
+                    alert("Đã có lỗi xảy ra khi xóa chương trình !");
+                }
+            }).catch(error => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra khi xóa chương trình bảo hành.");
+            })
+        }
+    }
+
+</script>
+
+
+{% else %}
+        <h1 class="text-center text-dark mt-4 mb-5"> Chỉnh sửa thông tin bảo hành </h1>
+        <hr>
+        <form action=""
+              id="update-warranty-form"  >
+                <div class="form-group">
+                    <label>Mã bảo hành:</label>
+                    <input type="text"
+                           value="{{ warranty_detail[0].warranty_id }}"
+                           class="form-control mr-2"
+                           readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nội dung: </label>
+                    <input type="text"
+                           value="{{ warranty_detail[0].warranty_description }}"
+                           class="form-control mr-2">
+                </div>
+        </form>
+        <br>
+        <hr>
+        {% if void %}
+            <h2 class="text-center text-dark mt-4 mb-4"> Hiện chưa có sản phẩm nào áp dụng </h2>
+        {% else %}
+        <h2 class="text-center text-dark mt-4 mb-4"> Các sản phẩm áp dụng </h2>
+        <a class="btn btn-warning format-btn font-weight-bold"
+           data-toggle="modal"
+           data-target="#applyWarrantyModal">
+            <i class="fa-solid fa-list-check"></i>
+            Thêm sản phẩm áp dụng
+        </a>
+
+        <hr>
+
+        <table class="table table-hover table-bordered text-center update-warranty-table">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">STT</th>
+                    <th scope="col">Mã sản phẩm</th>
+                    <th scope="col">Tên sản phẩm</th>
+                    <th scope="col">Thời hạn áp dụng</th>
+                    <th scope="col">Bỏ áp dụng</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in warranty_detail %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>{{ item.product_id }}</td>
+                        <td>{{ item.product_name}}</td>
+                        <td>{{ item.warranty_period }} {{ item.time_unit.value }}</td>
+                        <td>
+                            <a href=""
+                               class="btn btn-danger">
+                                <i class="fa-solid fa-ban"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ url_for('warranty.index') }}"
+           style="font-size: 24px;"
+           class="btn btn-dark mt-2 mb-5">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Quay lại
+        </a>
+
+<!--APPLY WARRANTY FOR PRODUCT MODAL-->
+        <div class="modal fade ml-5" id="applyWarrantyModal">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+
+              <div class="modal-header bg-dark text-light">
+                <h4 class="modal-title">Áp dụng bảo hành cho sản phẩm</h4>
+                <button type="button" class="close  text-light" data-dismiss="modal">&times;</button>
+              </div>
+
+              <div class="modal-body">
+                  <h3 class="text-center mb-3">Danh sách sản phẩm chưa áp dụng</h3>
+                  <input type="text"
+                         class="form-control w-50 mb-2"
+                         id="productInput"
+                         onkeyup="filterProduct()"
+                         placeholder="Tìm tên sản phẩm...">
+                  <table class="table table-hover table-bordered text-center apply-warranty-table">
+                      <thead class="thead-dark">
+                           <tr>
+                               <th scope="col">Mã sản phẩm</th>
+                               <th scope="col">Tên sản phẩm</th>
+                               <th scope="col"></th>
+                           </tr>
+                      </thead>
+                      <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <th scope="row"
+                                    class="w-25">
+                                    {{ product.id }}
+                                </th>
+                                <td class="w-50">{{ product.name }}</td>
+                                <td class="w-25">
+                                    <input type="checkbox"
+                                           class="custom-checkbox"
+                                           name="checked_{{ product.id }}"
+                                           data-product-id="{{ product.id }}" >
+                                </td>
+                            </tr>
+                            {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-dismiss="modal">
+                    <i class="fa-solid fa-xmark"></i>
+                    Đóng
+                </button>
+                  <button type="submit"
+                          class="btn btn-warning"
+                          data-dismiss="modal">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Áp dụng
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+<script>
+    function filterProduct() {
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("productInput");
+      filter = input.value.toUpperCase();
+      table = document.querySelector('.apply-warranty-table')
+      tr = table.getElementsByTagName("tr");
+
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+
+</script>
+
+        {% endif %}
+
+{% endif %}
+
+{% endblock %}

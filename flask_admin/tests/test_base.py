@@ -157,7 +157,7 @@ def test_admin_customizations():
 
     # test custom static_url_path
     with app.test_request_context('/'):
-        rv = client.get(url_for('admin.static', filename='bootstrap/bootstrap2/css/bootstrap.css'))
+        rv = client.get(url_for('admin.static', filename='bootstrap/bootstrap2/bootstrap/bootstrap.bootstrap'))
     assert rv.status_code == 200
 
 
@@ -425,7 +425,7 @@ def test_root_mount():
 
     # test static files when url='/'
     with app.test_request_context('/'):
-        rv = client.get(url_for('admin.static', filename='bootstrap/bootstrap2/css/bootstrap.css'))
+        rv = client.get(url_for('admin.static', filename='bootstrap/bootstrap2/bootstrap/bootstrap.bootstrap'))
     assert rv.status_code == 200
 
 

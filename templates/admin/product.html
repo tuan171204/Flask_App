@@ -19,7 +19,7 @@
                 <form action="{{ url_for('product.update_product', product_id = product.id) }}"
                       id="productUpdateForm"
                       method="POST">
-                    <table class="table table-hover">
+                    <table class="table table-hover product-detail-table">
                         <thead class="thead-dark">
                             <tr>
                                 <th colspan="2">
@@ -99,7 +99,7 @@
                          Lưu thay đổi
                     </button>
                     <a href="{{ url_for('product.index') }}"
-                       class="btn btn-dark form-control"
+                       class="btn btn-primary form-control"
                        style="font-size:20px;" >
                        <i class="fa-solid fa-right-from-bracket"></i>
                        Quay lại
@@ -107,6 +107,39 @@
                 </form>
             </div>
         </div>
+
+        <br>
+        <hr>
+
+        {% if product_warranty %}
+        <h2 class="text-center text-dark mt-5 mb-5">Thông tin bảo hành sản phẩm</h2>
+        {% for warranty in product_warranty %}
+            <table class="table warranty-table mb-5">
+                <thead class="thead-dark">
+                    <tr>
+                        <th colspan="2" class="text-center">
+                            <h3>{{ warranty.description }}</h3>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border border-bottom">
+                        <td class="text-center mt-2">Thời hạn bảo hành:
+                            <span class="badge badge-danger mt-1">
+                                {{ warranty.warranty_period }} {{ warranty.time_unit.value }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        {% endfor %}
+
+        {% else %}
+        <h2 class="text-center text-dark mt-4 mb-5">Sản phẩm chưa có thông tin bảo hành nào</h2>
+
+        {% endif %}
+
+<br><br><br>
 
 <script>
             const updateProductButton = document.querySelector('#updateProductButton')
@@ -324,41 +357,40 @@
                         <td>{{ "{:,.0f}".format(product.price) }}đ</td>
                         <td>{{ product.provider_name }} </td>
                         <td>
-                             {% if product.active %}
-                            <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-success status-btn dropdown-toggle"
-                                        data-toggle="dropdown"
-                                        aria-expanded="false">
-                                     <i class="fa-solid fa-check"></i>
-                                    Đang bán
-                                </button>
-                                <div class="dropdown-menu">
-                                        <a href="{{ url_for('product.deactive_product', product_id = product.id ) }}"
-                                           class="btn btn-secondary dropdown-button status-btn">
-                                        <i class="fa-solid fa-minus"></i>
-                                        Tạm ẩn
-                                    </a>
+                            {% if product.active %}
+                                <div class="dropdown">
+                                    <button type="button"
+                                            class="btn btn-success status-btn dropdown-toggle"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                         <i class="fa-solid fa-check"></i>
+                                        Đang bán
+                                    </button>
+                                    <div class="dropdown-menu">
+                                            <a href="{{ url_for('product.deactive_product', product_id = product.id ) }}"
+                                               class="btn btn-secondary dropdown-button status-btn">
+                                            <i class="fa-solid fa-minus"></i>
+                                            Tạm ẩn
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
-
                              {% else %}
                                 <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-secondary status-btn dropdown-toggle"
-                                        data-toggle="dropdown"
-                                        aria-expanded="false">
-                                     <i class="fa-solid fa-minus"></i>
-                                    Tạm ẩn
-                                </button>
-                                <div class="dropdown-menu">
-                                        <a href="{{ url_for('product.active_product', product_id = product.id ) }}"
-                                           class="btn btn-success dropdown-button status-btn">
-                                        <i class="fa-solid fa-check"></i>
-                                        Đang bán
-                                    </a>
-                                </div>
-                            </div>
+                                    <button type="button"
+                                            class="btn btn-secondary status-btn dropdown-toggle"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                         <i class="fa-solid fa-minus"></i>
+                                        Tạm ẩn
+                                    </button>
+                                    <div class="dropdown-menu">
+                                            <a href="{{ url_for('product.active_product', product_id = product.id ) }}"
+                                               class="btn btn-success dropdown-button status-btn">
+                                            <i class="fa-solid fa-check"></i>
+                                            Đang bán
+                                        </a>
+                                    </div>
+                                 </div>
                              {% endif %}
                         </td>
                     <td>

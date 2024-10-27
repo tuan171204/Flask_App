@@ -21,7 +21,7 @@ function addToCart(id, name, price, image, promotion) {
     }).then(function (data) {
         console.info(data)
         let counter = document.getElementsByClassName('cart-counter')
-        for (let i = 0; i < count.length; i++)
+        for (let i = 0; i < counter.length; i++)
             counter[i].innerText = data.total_quantity
     }).catch(function (err) {
         console.error(err)

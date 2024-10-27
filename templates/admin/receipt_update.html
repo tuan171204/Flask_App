@@ -26,7 +26,17 @@
                     </div>
                     <div class="form-group">
                         <label><b>Tên khách hàng:</b></label>
-                        <input type="text" class="form-control" value =" {{ receipts[0].customer_name }}">
+                        <div class="d-flex">
+                            <input type="text"
+                                   class="form-control w-75 mr-2"
+                                   value =" {{ receipts[0].customer_name }}">
+
+                            <a href="{{ url_for('user_admin.user_detail', user_id = receipts[0].customer_id, url='receipt_update', receipt_id = receipt_id) }}"
+                               class="btn btn-dark form-control w-25">
+                            <i class="fa-solid fa-list"></i>
+                           Thông tin khách hàng
+                            </a>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -132,12 +142,22 @@
                 <hr>
 
                     <div class="form-inline">
+                        {% if next_url %}
+                            <a class="btn btn-dark text-light mr-5"
+                               href="{{ next_url }}"
+                               style="font-size:18px;">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                Quay lại
+                            </a>
+
+                        {% else %}
                             <a class="btn btn-dark text-light mr-5"
                                href="{{ url_for('receipt.index') }}"
                                style="font-size:18px;">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                                 Quay lại
                             </a>
+                        {% endif %}
                          <div class="form-group">
                             <button class="btn btn-danger text-light mr-5"
                                     onclick="deleteReceipt( {{ receipt_id }} )"

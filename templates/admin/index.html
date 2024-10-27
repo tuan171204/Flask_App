@@ -9,7 +9,7 @@
         <hr>
 
         <div class="d-flex flex-row justify-content-around">
-            <div class="dashboard-info border text-center pt-3 row text-light bg-dark">
+            <div class="dashboard-info border text-center pt-3 row text-light bg-danger">
                 <div class="col-9">
                     <p style="font-size: 24px; font-weight: bold" >
                         {{ "{:,.0f}".format(total_revenue) }}đ
@@ -69,7 +69,7 @@
 
         <div class="report-stats row">
             <div class="sales-report ml-3 col-lg-8">
-                <div class="chart-header text-left text-light border-bottom">
+                <div class="chart-header text-left text-light bg-dark border-bottom">
                     Báo cáo doanh thu
                 </div>
                 <canvas id="salesChart">
@@ -78,7 +78,7 @@
 
             <div class="users-report col-lg-3"
                  style="margin-left: 68px;"   >
-                <div class="chart-header text-center text-light border-bottom">
+                <div class="chart-header text-center text-light bg-secondary border-bottom">
                     Thống kê khách hàng
                 </div>
                 <canvas id="usersChart">
@@ -126,6 +126,24 @@
         const months = ["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"];
         const months_sale = [];
         const months_sale_ly = [];
+        const months_profit = [];
+
+        const barColor1 = 'rgb(228, 76, 76)'
+        const barColor2 = 'rgb(76, 102, 228)'
+        const barColor3 = 'rgb(76, 228, 101)'
+        doughnutColor = ['rgb(228, 76, 76)',
+         'rgb(228, 76, 162)',
+          'rgb(127, 76, 228)',
+           'rgb(228, 167, 76)',
+            'rgb(200, 228, 76)',
+             'rgb(76, 228, 104)',
+              'rgb(76, 228, 217)',
+               'rgb(6, 2, 112)',
+                'rgb(223, 197, 123)',
+                 'rgb(141, 111, 100)',
+                  'rgb(212, 195, 254)',
+                   'rgb(107, 1, 2)']
+
 
         {% for month in sale_month_stats %}
             months_sale.push({{ month[1] }});
@@ -133,6 +151,10 @@
 
         {% for month in sale_month_stats_ly %}
             months_sale_ly.push({{ month[1] }});
+        {% endfor %}
+
+        {% for month in profit_month_stats %}
+            months_profit.push({{ month[1] }})
         {% endfor %}
 
         const months_2 = []
@@ -149,16 +171,25 @@
         const ctx = document.getElementById('salesChart');
         const mixedChart = new Chart(ctx, {
             data: {
-                datasets: [{
+                datasets: [
+                 {
+                    type: 'bar',
+                    label: 'Doanh thu năm trước',
+                    data: months_sale_ly,
+                    order: 1,
+                    backgroundColor: barColor2
+                },{
                     type: 'bar',
                     label: 'Doanh thu tháng này',
                     data: months_sale,
-                    order: 2,
+                    order: 1,
+                    backgroundColor: barColor1
                 }, {
                     type: 'bar',
-                    label: 'Năm trước',
-                    data: months_sale_ly,
-                    order: 1
+                    label: 'Lợi nhuận',
+                    data: months_profit,
+                    order: 1,
+                    backgroundColor: barColor3
                 }],
                 labels: months
             },
@@ -200,6 +231,7 @@
                 datasets: [{
                     label: 'Số khách hàng',
                     data: customers_count,
+                    backgroundColor: doughnutColor
                 }]
             },
             options: {

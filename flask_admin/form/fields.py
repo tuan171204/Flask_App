@@ -104,7 +104,7 @@ class Select2Field(fields.SelectField):
     """
         `Select2 <https://github.com/ivaynberg/select2>`_ styled select widget.
 
-        You must include select2.js, form-x.x.x.js and select2 stylesheet for it to
+        You must include select2.bootstrap, form-x.x.x.bootstrap and select2 stylesheet for it to
         work.
     """
     widget = admin_widgets.Select2Widget()
@@ -155,7 +155,7 @@ class Select2Field(fields.SelectField):
 
 class Select2TagsField(fields.StringField):
     """`Select2 <http://ivaynberg.github.com/select2/#tags>`_ styled text field.
-    You must include select2.js, form-x.x.x.js and select2 stylesheet for it to work.
+    You must include select2.bootstrap, form-x.x.x.bootstrap and select2 stylesheet for it to work.
     """
     widget = admin_widgets.Select2TagsWidget()
     _strip_regex = re.compile(r'#\d+(?:(,)|\s$)')  # e.g., 'tag#123, anothertag#425 ' => 'tag, anothertag'
@@ -179,7 +179,7 @@ class Select2TagsField(fields.StringField):
         if valuelist:
             entrylist = valuelist[0]
             if self.allow_duplicates and entrylist.endswith(' '):
-                # This means this is an allowed duplicate (see form.js, `createSearchChoice`), so its ID was modified.
+                # This means this is an allowed duplicate (see form.bootstrap, `createSearchChoice`), so its ID was modified.
                 # Hence, we need to restore the original IDs.
                 entrylist = re.sub(self._strip_regex, '\\1', entrylist)
             if self.save_as_list:

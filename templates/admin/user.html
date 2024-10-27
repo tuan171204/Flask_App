@@ -7,9 +7,10 @@
         <h1 class="text-center text-dark mt-4 mb-5"> Quản lý người dùng </h1>
         <hr>
             <form class="form-inline my-2 my-lg-0">
-              <input class="form-control mr-sm-2 w-50"
+              <input class="form-control mr-sm-2"
                      type="search"
-                     placeholder="Nhập mã người dùng hoặc số điện thoại"
+                     style="width: 30%"
+                     placeholder="Mã người dùng hoặc số điện thoại"
                      aria-label="Search"
                      name="info">
               <select class="form-control mr-sm-2" name="active">
@@ -32,9 +33,16 @@
                   Tìm kiếm
               </button>
             </form>
+            <button style="width: 75%; font-size: 18px;"
+                    data-toggle="modal"
+                    data-target="#createUserModal"
+                    class="btn btn-info mt-2 form-control">
+                 <i class="fa-solid fa-plus"></i>
+                 Thêm người dùng mới
+            </button>
         <hr>
 
-        <table class="table table-hover table-bordered mb-5">
+        <table class="table table-hover table-bordered mb-5 user-table">
             <thead class="thead-dark">
               <tr class="text-center">
                 <th scope="col">STT</th>
@@ -57,19 +65,42 @@
                         <td> {{ user.name }}</td>
                         <td> {{ user.username }}</td>
                         <td> {{ user.email }}</td>
-                         {% if user.active %}
-                            <td>
-                                <button class="btn-success form-control">
-                                    <i class="fa-solid fa-check"></i>
-                                </button>
-                            </td>
-                         {% else %}
-                            <td>
-                                <button class="btn-secondary form-control">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
-                            </td>
-                         {% endif %}
+                         <td>{% if user.active %}
+                                <div class="dropdown">
+                                    <button type="button"
+                                            class="btn btn-success dropdown-toggle"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                         <i class="fa-solid fa-check"></i>
+                                        Hoạt động
+                                    </button>
+                                    <div class="dropdown-menu">
+                                            <a href="{{ url_for('user_admin.deactive_user', user_id = user.id ) }}"
+                                               class="btn btn-secondary dropdown-button">
+                                            <i class="fa-solid fa-minus"></i>
+                                            Khóa tài khoản
+                                        </a>
+                                    </div>
+                                </div>
+                             {% else %}
+                                <div class="dropdown">
+                                    <button type="button"
+                                            class="btn btn-secondary dropdown-toggle"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                         <i class="fa-solid fa-minus"></i>
+                                        Tạm khóa
+                                    </button>
+                                    <div class="dropdown-menu">
+                                            <a href="{{ url_for('user_admin.active_user', user_id = user.id ) }}"
+                                               class="btn btn-success dropdown-button">
+                                            <i class="fa-solid fa-check"></i>
+                                            Hoạt động
+                                        </a>
+                                    </div>
+                                 </div>
+                             {% endif %}
+                         </td>
                          <td>{{ user.joined_date.strftime(' %d-%m-%Y ') }}</td>
                          <td>
                              {% if user.phone_number %}
@@ -127,6 +158,78 @@
 
         {% endif %}
 
+<!--ADD USER MODAL -->
+<form action="{{ url_for('user_admin.create_user') }}"
+      method="POST"  >
+    <div class="modal fade" id="createUserModal">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title font-weight-bold">Thêm người dùng mới </h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+
+          <div class="modal-body">
+              <div class="form-group">
+                    <label><b>Tên đăng nhập:</b> </label>
+                    <input type="text"
+                           class="form-control"
+                           name="username" >
+              </div>
+              <div class="form-group">
+                    <label><b>Mật khẩu:</b> </label>
+                    <input type="text"
+                           readonly
+                           class="form-control"
+                           value="123"
+                           name="password" >
+              </div>
+              <div class="form-group">
+                    <label><b>Họ tên:</b> </label>
+                    <input type="text"
+                           class="form-control"
+                           name="fullname" >
+              </div>
+              <div class="form-group">
+                    <label><b>Email:</b> </label>
+                    <input type="text"
+                           class="form-control"
+                           name="email" >
+              </div>
+              <div class="form-group">
+                    <label><b>Số điện thoại</b> ( không bắt buộc ): </label>
+                    <input type="text"
+                           class="form-control"
+                           name="phone_number" >
+              </div>
+              <div class="form-group">
+                    <label><b>Địa chỉ</b> ( không bắt buộc ): </label>
+                    <input type="text"
+                           class="form-control"
+                           name="address" >
+              </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-dismiss="modal">
+                <i class="fa-solid fa-xmark"></i>
+                Đóng
+            </button>
+            <button type="submit"
+                    class="btn btn-warning">
+                <i class="fa-solid fa-user-plus"></i>
+                Tạo người dùng
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+</form>
+
+
     {% else %}
         <h1 class="text-center text-dark mt-4 mb-5"> Thông tin người dùng </h1>
         <hr>
@@ -134,17 +237,33 @@
         <div class="row rounded-top"
              id="userInfoForm">
             <div class="col-4">
+                {% if user.avatar %}
                 <img src="{{ user.avatar }}"
                      alt="Ảnh đại diện">
+                {% else  %}
+                <img src="{{ url_for('static', filename='images/user.png') }}"
+                     alt="Ảnh đại diện">
+                {% endif %}
+                {% if back_url %}
                   <a class="form-control btn btn-dark"
                      style="margin-top:30px;"
-                     href="{{ url_for('user_admin.index') }}" >
+                     href="{{ back_url }}">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     Quay lại
                   </a>
+                 {% else %}
+                  <a class="form-control btn btn-dark"
+                     style="margin-top:30px;"
+                     href="{{ url_for('user_admin.index') }}">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    Quay lại
+                  </a>
+                {% endif %}
             </div>
 
-            <form class="col-8 row mt-3">
+            <form class="col-8 row mt-3"
+                  action="{{ url_for('user_admin.update_info', user_id = user.id) }}"
+                  method="POST">
                 <div class="col-6">
                     <h4 class="mb-4 font-weight-bold text-center">
                         Tài khoản
@@ -152,6 +271,7 @@
                     <div class="form-group">
                         <label><b>Mã người dùng:</b> </label>
                         <input type="text"
+                               readonly
                                class="form-control text-center"
                                value="{{ user.id }}"
                                name="user_id"
@@ -222,7 +342,7 @@
                     </div>
                 </div>
                 <button class="form-control btn btn-warning mx-3"
-                        type="button"
+                        type="submit"
                         id="saveChangeInfoBtn">
                      <i class="fa-solid fa-floppy-disk"></i>
                     Lưu thay đổi

@@ -1,7 +1,7 @@
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container user-receipt-detail">
     <h1 class="text-center mt-5">Thông tin chi tiết hóa đon</h1>
     <br>
     <hr>
@@ -9,17 +9,17 @@
 <h2>Mã hóa đơn: <span class="badge badge-dark" style="font-size: 28px;">{{ receipt_id }}</span> </h2>
 
     <div class="container">
-        <div class="form-group">
+        <div class="form-group mb-4">
             <label> Tên người nhận:  </label>
             <input type="text" class="form-control" value="{{ receipt.receiver_name }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
             <label> Ngày mua: </label>
             <input type="text" class="form-control" value="{{ receipt.created_date.strftime('%d/%m/%Y  %H:%M:%S') }}">
         </div>
 
-        <div class="form-group payment-info">
+        <div class="form-group payment-info mb-4">
             <label> Phương thức thanh toán: </label>
             <button type="button"
                     class="form-control w-25 text-center">
@@ -28,7 +28,7 @@
             </button>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
             <label> Tình trạng đơn hàng: </label>
             <input type="text"
                    class="form-control w-50 text-center btn {{ status_colors[receipt.status_id] }}"
@@ -100,7 +100,7 @@
         <label>Tổng thanh toán:  <s>{{ "{:,.0f}".format(base_total_price) }}đ</s><u  class="text-danger ml-2"> {{ "{:,.0f}".format(total_price) }}đ </u></label>
     </div>
 
-    <a class="btn btn-dark"
+    <a class="btn btn-dark mb-5"
        href="{{ url_for('user_receipt', user_id = current_user.id) }}">
         <i class="fa-solid fa-right-from-bracket"></i>
         Quay lại

@@ -73,7 +73,6 @@ table td {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
-
 }
 
 .discount {
@@ -299,7 +298,6 @@ table td span {
 
 .payment-info {
     width: 900px;
-    padding: 20px;
 
 }
 
@@ -380,7 +378,8 @@ table td span {
 
 .top-left,
 .top-right,
-.bottom-right {
+.bottom-right,
+.bottom-left{
     position: absolute;
     z-index: 10000;
 }
@@ -388,34 +387,37 @@ table td span {
 
 .top-left,
 .top-right,
-.bottom-left{
+.bottom-left,
+.bottom-right{
     animation: fadeOut 1s ease forwards;
     animation-delay: 2s;
     }
 
-
-
 .top-left {
     top: 32%;
-    left: 42%;
+    left: 28%;
 }
 
 .top-right {
     top: 32%;
-    right: 42%
+    right: 26%
 }
 
 .bottom-left {
     bottom: 22%;
-    left: 42%;
+    left: 27%;
 }
 
 .bottom-right {
     bottom: 22%;
-    right: 25%;
+    right: 29%;
 }
 
-.bottom-right a{
+.main-menu-btn{
+    position: absolute;
+    z-index: 10000;
+    bottom: 2%;
+    right: 2%;
     animation: videoCaption2;
     animation-duration: 4.2s;
     background-color: #fff;
@@ -424,8 +426,8 @@ table td span {
     cursor: pointer
 }
 
-.bottom-right a:hover{
-    background-color: #000;
+.main-menu-btn:hover{
+    background-color: #001;
     color: #fff;
 }
 
@@ -433,4 +435,8 @@ table td span {
     .letter{
         font-size: 2em;
     }
+}
+
+.user-receipt-detail{
+    font-size: 20px;
 }

@@ -17,8 +17,8 @@ class LeafletWidget(TextArea):
         `TextArea` so that geographic data can be stored via the <textarea>
         (and edited there if the user's browser does not have Javascript).
 
-        You must include leaflet.js, form.js and leaflet stylesheet for it to
-        work. You also need leaflet.draw.js (and its stylesheet) for it to be
+        You must include leaflet.bootstrap, form.bootstrap and leaflet stylesheet for it to
+        work. You also need leaflet.draw.bootstrap (and its stylesheet) for it to be
         editable.
     """
     def __init__(
