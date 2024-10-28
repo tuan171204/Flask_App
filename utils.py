@@ -1482,7 +1482,7 @@ def apply_warranty_for_all(warranty_id, warranty_period, time_unit):
 def delete_warranty(warranty_id):
     warranty = Warranty.query.get(warranty_id)
 
-    warranty_details = WarrantyDetail.query.filter(WarrantyDetail.warranty_id==warranty_id).all()
+    warranty_details = WarrantyDetail.query.filter(WarrantyDetail.warranty_id == warranty_id).all()
 
     for detail in warranty_details:
         db.session.delete(detail)
@@ -1493,9 +1493,45 @@ def delete_warranty(warranty_id):
 
 
 def load_product_applied_yet(warranty_id):
-    subquery = db.session.query(WarrantyDetail.product_id)\
-                         .filter(WarrantyDetail.warranty_id == warranty_id).subquery()
+    subquery = db.session.query(WarrantyDetail.product_id) \
+        .filter(WarrantyDetail.warranty_id == warranty_id).subquery()
 
     products = Product.query.filter(Product.id.notin_(subquery)).all()
 
     return products
+
+
+def apply_warranty(product_id, warranty_id, warranty_period, time_unit):
+    warranty_detail = WarrantyDetail(
+        product_id=product_id,
+        warranty_id=warranty_id,
+        warranty_period=warranty_period,
+        time_unit=TimeUnitEnum[time_unit]
+    )
+
+    db.session.add(warranty_detail)
+    db.session.commit()
+
+
+def delete_warranty_detail(warranty_id, product_id):
+    detail = WarrantyDetail.query.filter(
+        and_(WarrantyDetail.warranty_id == warranty_id, WarrantyDetail.product_id == product_id)).first()
+
+    db.session.delete(detail)
+    db.session.commit()
+
+
+def update_warranty_detail(warranty_id, product_id, period, time_unit):
+    detail = WarrantyDetail.query.filter(
+        and_(WarrantyDetail.warranty_id == warranty_id, WarrantyDetail.product_id == product_id)).first()
+
+    if not detail:
+        raise Exception("Không tìm thấy thông tin bảo hành cho sản phẩm này.")
+
+    detail.warranty_period = period
+    try:
+        detail.time_unit = time_unit
+    except KeyError:
+        raise Exception("Giá trị time_unit không hợp lệ.")
+
+    db.session.commit()

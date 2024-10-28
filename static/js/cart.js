@@ -36,16 +36,23 @@ function pay() {
     const fullNameInput = document.querySelector('input[name="fullname"]');
     const phoneNumInput = document.querySelector('input[name="phone_number"]')
     const payment = document.getElementById('payment')
-    const deli_address = document.getElementById('delivery_address')
-    // Kiểm tra xem input đã được điền hay chưa
+    const district = document.querySelector("select[name='district']").value
+    const ward = document.querySelector("select[name='ward']").value
+    const address_detail = document.getElementById('delivery_address').value
+    const delivery_address = `${address_detail}, ${ward}, ${district}, TP Hồ Chí Minh`
+    console.log(delivery_address)
+
     if (!fullNameInput.value) {
         alert('Vui lòng nhập họ tên người nhận!');
-        return; // Thoát khỏi hàm nếu không điền
+        return;
     } else if (!phoneNumInput.value) {
         alert('Vui lòng nhập số điện thoại người nhận!');
         return
     } else if (!phoneNumInput.value.match(/^0[0-9]{9}$/)) {
         alert('Số điện thoại không hợp lệ!');
+        return;
+    } else if ( !district || !ward || !address_detail){
+        alert('Vui lòng nhập đầy đủ địa chỉ');
         return;
     }
 
@@ -55,7 +62,7 @@ function pay() {
             body: JSON.stringify({
                 'customer_name': fullNameInput.value,
                 'payment_id': payment.value,
-                'delivery_address': deli_address.value
+                'delivery_address': delivery_address
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -155,7 +162,10 @@ function pay() {
 
 
     function getWard() {
-    const districtId = document.querySelector('select[name="district"]').value;
+    const district_input = document.querySelector('select[name="district"]')
+    const selectedOption = district_input.options[district_input.selectedIndex];
+    const districtId = selectedOption.getAttribute('data-district-id');
+    console.log(districtId)
 
     if (districtId) {
 
@@ -169,7 +179,7 @@ function pay() {
 
                 data.forEach(ward => {
                     const option = document.createElement('option');
-                    option.value = ward.id;
+                    option.value = ward.name;
                     option.textContent = ward.name;
                     wardSelect.appendChild(option);
                 });

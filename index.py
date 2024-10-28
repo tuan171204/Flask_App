@@ -12,6 +12,7 @@ from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 def intro():
     return render_template('intro.html')
 
+
 @app.route('/product')
 def home():
     page = request.args.get('page', 1)
@@ -595,15 +596,115 @@ def delete_warranty(warranty_id):
     warranty = Warranty.query.get(warranty_id)
 
     if not warranty:
-        return jsonify({"error": "Warranty not found"}), 404
+        return jsonify({"error": "Không tìm thấy chương trình bảo hành"}), 404
 
     try:
         utils.delete_warranty(warranty_id)
 
-        return jsonify({"success": True, "message": "Warranty deleted successfully"}), 200
+        return jsonify({"success": True, "message": "Xoá chương trình bảo hành thành công"}), 200
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/api/delete_apply_warranty/', methods=['DELETE'])
+def delete_apply_warranty():
+    data = request.get_json()
+    warranty_id = data.get('warranty_id')
+    product_id = data.get('product_id')
+    warranty = Warranty.query.get(warranty_id)
+
+    if not warranty:
+        return jsonify({"error": "Không tìm thấy bảo hành và sản phẩm áp dụng"}), 404
+
+    try:
+        utils.delete_warranty_detail(warranty_id, product_id)
+
+        return jsonify({"success": True, "message": "Xóa bỏ bảo hành thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/api/apply_warranty', methods=['PUT'])
+def apply_warranty():
+    try:
+        data = request.get_json()
+        warranty_id = data.get('warranty_id')
+        products = data.get('products', [])
+
+        if not products:
+            return jsonify({"success": False, "message": "Không có sản phẩm nào được chọn"}), 400
+
+        for product in products:
+            product_id = product.get('product_id')
+            warranty_period = product.get('warranty_period')
+            time_unit = product.get('time_unit')
+
+            if not product_id or not warranty_period or not time_unit:
+                continue
+
+            utils.apply_warranty(
+                product_id=product_id,
+                warranty_id=warranty_id,
+                warranty_period=warranty_period,
+                time_unit=time_unit
+            )
+
+        return jsonify({"success": True, "message": "Áp dụng bảo hành thành công"}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"success": False, "message": "Đã có lỗi khi áp dụng bảo hành"}), 500
+
+
+@app.route('/api/update_warranty', methods=['PUT'])
+def update_warranty():
+    try:
+        data = request.get_json()
+        description = data.get('description')
+        warranty_id = data.get('warranty_id')
+
+        warranty = Warranty.query.filter(Warranty.id == warranty_id).first()
+        warranty.description = description
+
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Thay đổi thông tin bảo hành thành công"}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"success": False, "message": "Đã có lỗi khi cập nhật"}), 500
+
+
+@app.route('/api/change_warranty_detail', methods=['PUT'])
+def change_warranty_detail():
+    data = request.get_json()
+    warranty_id = data.get('warranty_id')
+    product_id = data.get('product_id')
+    period = data.get('period')
+    time_unit = data.get('time_unit')
+    if time_unit == 'TimeUnitEnum.MONTH':
+        time_unit = 'MONTH'
+
+    if time_unit == 'TimeUnitEnum.YEAR':
+        time_unit = 'YEAR'
+
+    if time_unit == 'TimeUnitEnum.WEEK':
+        time_unit = 'WEEK'
+
+    try:
+        utils.update_warranty_detail(warranty_id=warranty_id,
+                                     product_id=product_id,
+                                     period=period,
+                                     time_unit=time_unit)
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == "__main__":
     from Flask_App.admin import *

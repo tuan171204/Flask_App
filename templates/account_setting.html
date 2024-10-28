@@ -15,12 +15,13 @@
 <!--        MENU            -->
         <div class="col-md-4 p-4">
             <div class="form-group">
-              <button class="border-0 btn">
+              <button class="border-0 btn"
+                      onclick="load_account_setting('private_form')"  >
                   <i class="fa-solid fa-key mr-3"></i>
                   Thông tin cá nhân
               </button>
               <button class="border-0 btn"
-                      onclick="load_account_setting()">
+                      onclick="load_account_setting('account_form')">
                   <i class="fa-solid fa-gear mr-3"></i>
                   Tài khoản
               </button>
@@ -44,7 +45,7 @@
                 </span>
 
             </span>
-            <form id="changes_private_info_form">
+            <form id="private_form">
                 <div class="form-group row">
                     <div class="col-md-12">
                         <label>Họ và tên:</label>
@@ -118,7 +119,7 @@
 
 
 
-            <form id="changes_account_info">
+            <form id="account_form">
                 <div class="form-group row">
                      <div class="col-md-12">
                          <button type="button"
@@ -164,7 +165,7 @@
           </div>
         </div>
     </div>
-
+    <br><br><br>
 <script>
     function save_change(){
         const nameRegex = /^[a-zA-Z\s]+$/;
@@ -215,17 +216,16 @@
 
     }
 
-    part = document.querySelectorAll("form")
-    part[2].style.display = 'none'
 
-    load_account_setting = () => {
-        if ( part[2].style.display = 'none'){
-            for ( let i=0; i<part.length; i++){
-                part[i].style.display = 'none'
-            }
+    document.querySelector('#account_form').style.display = 'none'
 
-            part[2].style.display = 'block'
-        }
+    load_account_setting = (form_name) => {
+        part = document.querySelectorAll("form").forEach(form =>{
+            form.style.display = 'none'
+        })
+
+        document.querySelector(`#${form_name}`).style.display = 'block'
+
     }
 
 

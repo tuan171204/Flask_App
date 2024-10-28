@@ -74,7 +74,10 @@
                             onchange="getWard()">
                         <option value="" selected>Quận</option>
                         {% for d in district %}
-                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        <option value="{{ d.name }}"
+                                data-district-id="{{ d.id }}">
+                            {{ d.name }}
+                        </option>
                         {% endfor %}
                     </select>
 
@@ -82,10 +85,15 @@
                             class="custom-select mt-2">
                         <option value="" selected>Phường</option>
                         {% for w in ward %}
-                        <option value="{{ w.id }}">{{ w.name }}</option>
+                        <option value="{{ w.name }}"
+                                data-ward-id="{{ w.id }}">
+                            {{ w.name }}
+                        </option>
                         {% endfor %}
                     </select>
-                <input class="form-control mt-2" placeholder="Địa chỉ chi tiết ( số nhà, đường ... )" id="delivery_address" required>
+                <input class="form-control mt-2"
+                       placeholder="Địa chỉ chi tiết ( số nhà, đường ... )"
+                       id="delivery_address" required>
             </div>
 
             <div class="from-group">
@@ -119,7 +127,11 @@
 
     {% if current_user.is_authenticated  %}
 
-        <button type="submit" value="Thanh toán" onclick="pay()" class="btn text-light form-control" style="border-radius: 10px;background-color:black">Thanh toán</button>
+        <button type="submit"
+                value="Thanh toán"
+                onclick="pay()"
+                class="btn text-light form-control"
+                style="border-radius: 10px;background-color:black">Thanh toán</button>
     {% else %}
         <a class="btn btn-danger form-control font-weight-bold" href="{{url_for('user_signin', next='cart')}}">Đăng nhập để thanh toán</a>
     {% endif %}

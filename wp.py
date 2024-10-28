@@ -34,5 +34,4 @@ import pandas as pd
 
 
 with app.app_context():
-    warranty = Warranty.query.get(1)
-    print(warranty.description)
+    print(TimeUnitEnum[TimeUnitEnum.MONTH].value)

@@ -310,7 +310,7 @@ table td span {
     height: 100vh;
 }
 
-.containers video{
+.containers video {
     width: 100vw;
     height: 100vh;
     object-fit: cover;
@@ -320,7 +320,7 @@ table td span {
     z-index: -2;
 }
 
-.copy{
+.copy {
     position: absolute;
     top: 50%;
     width: 100%;
@@ -366,6 +366,7 @@ table td span {
     0% {
         opacity: 1;
     }
+
     100% {
         opacity: 0;
     }
@@ -379,7 +380,7 @@ table td span {
 .top-left,
 .top-right,
 .bottom-right,
-.bottom-left{
+.bottom-left {
     position: absolute;
     z-index: 10000;
 }
@@ -388,10 +389,10 @@ table td span {
 .top-left,
 .top-right,
 .bottom-left,
-.bottom-right{
+.bottom-right {
     animation: fadeOut 1s ease forwards;
     animation-delay: 2s;
-    }
+}
 
 .top-left {
     top: 32%;
@@ -413,7 +414,7 @@ table td span {
     right: 29%;
 }
 
-.main-menu-btn{
+.main-menu-btn {
     position: absolute;
     z-index: 10000;
     bottom: 2%;
@@ -426,17 +427,25 @@ table td span {
     cursor: pointer
 }
 
-.main-menu-btn:hover{
+.main-menu-btn:hover {
     background-color: #001;
     color: #fff;
 }
 
-@media(max-width: 900px){
-    .letter{
+@media(max-width: 900px) {
+    .letter {
         font-size: 2em;
     }
 }
 
-.user-receipt-detail{
+.user-receipt-detail {
     font-size: 20px;
+}
+
+.w-15 {
+    width: 15% !important;
+}
+
+.format-size {
+    font-size: 28px;
 }

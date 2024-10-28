@@ -49,10 +49,12 @@
                             <a href="{{ url_for('warranty.warranty_update', warranty_id = warranty.id) }}"
                                class="btn btn-dark" >
                                 <i class="fa-solid fa-pencil"></i>
+                                Chỉnh sửa
                             </a>
                             <a onclick="deleteWarranty({{ warranty.id }})"
                                class="btn btn-danger text-light" >
                                 <i class="fa-solid fa-trash"></i>
+                                Xóa
                             </a>
                         </td>
                     </tr>
@@ -187,8 +189,10 @@
                 <div class="form-group">
                     <label>Nội dung: </label>
                     <input type="text"
+                           name="warranty_description"
                            value="{{ warranty_detail[0].warranty_description }}"
-                           class="form-control mr-2">
+                           class="form-control mr-2"
+                           data-warranty-description="{{warranty_detail[0].warranty_description}}" >
                 </div>
         </form>
         <br>
@@ -197,10 +201,10 @@
             <h2 class="text-center text-dark mt-4 mb-4"> Hiện chưa có sản phẩm nào áp dụng </h2>
         {% else %}
         <h2 class="text-center text-dark mt-4 mb-4"> Các sản phẩm áp dụng </h2>
-        <a class="btn btn-warning format-btn font-weight-bold"
+        <a class="btn btn-warning format-btn font-weight-bold text-dark"
            data-toggle="modal"
            data-target="#applyWarrantyModal">
-            <i class="fa-solid fa-list-check"></i>
+            <i class="fa-solid fa-square-plus"></i>
             Thêm sản phẩm áp dụng
         </a>
 
@@ -213,21 +217,63 @@
                     <th scope="col">Mã sản phẩm</th>
                     <th scope="col">Tên sản phẩm</th>
                     <th scope="col">Thời hạn áp dụng</th>
-                    <th scope="col">Bỏ áp dụng</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in warranty_detail %}
-                    <tr>
+                    <tr id="warranty-row-{{item.product_id}}">
                         <th scope="row">{{ loop.index }}</th>
                         <td>{{ item.product_id }}</td>
                         <td>{{ item.product_name}}</td>
-                        <td>{{ item.warranty_period }} {{ item.time_unit.value }}</td>
                         <td>
-                            <a href=""
-                               class="btn btn-danger">
-                                <i class="fa-solid fa-ban"></i>
-                            </a>
+                            <p id="warranty_time_{{item.product_id}}">
+                                {{ item.warranty_period }} {{ item.time_unit.value }}
+                            </p>
+                            <div class="mt-2">
+                                <input type="text"
+                                       name="warranty_detail_period_{{ item.product_id }}"
+                                       value="{{ item.warranty_period }}"
+                                       class="form-control mr-2"
+                                       style="width: 45%">
+                                <select name="warranty_detail_time_unit_{{ item.product_id }}"
+                                        class="form-control"
+                                        style="width: 45%">
+                                    {% for time in time_unit %}
+                                        {% if time.value == item.time_unit.value %}
+                                            <option value="{{ item.time_unit }}" selected>{{ item.time_unit.value }}</option>
+                                        {% else %}
+                                            <option value="{{ time }}">{{ time.value }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    onclick="updateWarrantyDetail({{item.product_id}})"
+                                    class="btn btn-dark"
+                                    id="edit-btn-{{ item.product_id }}">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button"
+                                    onclick="updateWarrantyDetail({{item.product_id}}, 'undo')"
+                                    class="btn btn-warning"
+                                    id="undo-btn-{{ item.product_id }}">
+                                <i class="fa-solid fa-undo"></i>
+                            </button>
+                            <button type="button"
+                                    onclick="deleteApplyWarranty({{warranty_detail[0].warranty_id}}, {{item.product_id}})"
+                                    class="btn btn-danger">
+                                 <i class="fa-solid fa-ban"></i>
+                            </button>
+                            <br>
+                            <button class="btn btn-warning mt-2"
+                                    id="confirm-btn-{{ item.product_id }}"
+                                    onclick="changeWarrantyDetail({{item.product_id}})">
+                                <i class="fa-solid fa-circle-check"></i>
+                                    Lưu thay đổi
+                            </button>
                         </td>
                     </tr>
                 {% endfor %}
@@ -239,10 +285,18 @@
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
             Quay lại
         </a>
+        <button type="button"
+                id="save-change-btn"
+                style="font-size: 24px;"
+                class="btn btn-warning mt-2 mb-5"
+                onclick="saveChanges()">
+                <i class="fa-solid fa-floppy-disk"></i>
+                Lưu thay đổi
+        </button>
 
 <!--APPLY WARRANTY FOR PRODUCT MODAL-->
         <div class="modal fade ml-5" id="applyWarrantyModal">
-          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
 
               <div class="modal-header bg-dark text-light">
@@ -253,7 +307,7 @@
               <div class="modal-body">
                   <h3 class="text-center mb-3">Danh sách sản phẩm chưa áp dụng</h3>
                   <input type="text"
-                         class="form-control w-50 mb-2"
+                         class="form-control w-50 mb-2 border-dark"
                          id="productInput"
                          onkeyup="filterProduct()"
                          placeholder="Tìm tên sản phẩm...">
@@ -262,20 +316,35 @@
                            <tr>
                                <th scope="col">Mã sản phẩm</th>
                                <th scope="col">Tên sản phẩm</th>
+                               <th scope="col">Thời gian</th>
+                               <th scope="col">Đơn vị</th>
                                <th scope="col"></th>
                            </tr>
                       </thead>
                       <tbody>
                             {% for product in products %}
                             <tr>
-                                <th scope="row"
-                                    class="w-25">
+                                <th scope="row">
                                     {{ product.id }}
                                 </th>
-                                <td class="w-50">{{ product.name }}</td>
-                                <td class="w-25">
+                                <td>{{ product.name }}</td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="period_{{product.id}}">
+                                </td>
+                                <td>
+                                    <select name="time_unit_{{product.id}}"
+                                            class="custom-select">
+                                        <option value="" selected></option>
+                                        <option value="WEEK">Tuần</option>
+                                        <option value="MONTH">Tháng</option>
+                                        <option value="YEAR">Năm</option>
+                                    </select>
+                                </td>
+                                <td>
                                     <input type="checkbox"
-                                           class="custom-checkbox"
+                                           class="form-control"
                                            name="checked_{{ product.id }}"
                                            data-product-id="{{ product.id }}" >
                                 </td>
@@ -292,19 +361,71 @@
                     <i class="fa-solid fa-xmark"></i>
                     Đóng
                 </button>
-                  <button type="submit"
+                  <button type="button"
                           class="btn btn-warning"
-                          data-dismiss="modal">
+                          onclick="applyWarranty()">
                     <i class="fa-solid fa-floppy-disk"></i>
-                    Áp dụng
+                    Lưu áp dụng
                 </button>
               </div>
 
             </div>
           </div>
         </div>
+        <input type="hidden"
+               name="inputWarrantyId"
+               value="{{ warranty_detail[0].warranty_id }}" >
 
 <script>
+    const description_input = document.querySelector("input[name='warranty_description']")
+    const description_value = description_input.getAttribute('data-warranty-description')
+    const saveChangeButton = document.querySelector('#save-change-btn')
+    toggleChangeButton = () => {
+        if ( description_input.value != description_value ){
+            saveChangeButton.style.display = 'inline'
+        } else {
+            saveChangeButton.style.display = 'none'
+        }
+    }
+
+    description_input.addEventListener('keyup', toggleChangeButton)
+    toggleChangeButton()
+
+    saveChanges = () => {
+
+        if (confirm('Xác nhận lưu thay đổi ?') == true){
+            const description = document.querySelector("input[name='warranty_description']").value
+            const warrantyId = document.querySelector("input[name='inputWarrantyId']").value
+            
+
+            fetch('/api/update_warranty', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    warranty_id: warrantyId,
+                    description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    alert(data.message)
+                    document.querySelector("input[name='warranty_description']").innerText =  description
+                }
+                else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error: ', error)
+                alert("Đã có lỗi xảy ra khi cập nhật thông tin bảo hành")
+            })
+        }
+
+    }
+
     function filterProduct() {
       var input, filter, table, tr, td, i, txtValue;
       input = document.getElementById("productInput");
@@ -323,6 +444,195 @@
           }
         }
       }
+    }
+
+
+    applyWarranty = () => {
+        if (confirm ("Xác nhận áp dụng đối với các sản phẩm ? ")) {
+            const productsData = [];
+            const warrantyId = document.querySelector("input[name='inputWarrantyId']").value
+            let isValid = true;
+
+            document.querySelectorAll("input[name^='checked_']").forEach(input => {
+                if (input.checked) {
+                    const productId = input.getAttribute('data-product-id')
+
+                    const periodInput = document.querySelector(`input[name='period_${productId}']`)
+                    const timeUnitSelect = document.querySelector(`select[name='time_unit_${productId}']`)
+
+                    const period = periodInput.value;
+                    const timeUnit = timeUnitSelect.value;
+
+                    if (!period || !timeUnit) {
+                        alert(`Vui lòng nhập thời gian và đơn vị cho sản phẩm ID: ${productId}`)
+                        isValid = false;
+                    }
+
+                    productsData.push({
+                        product_id: productId,
+                        warranty_period: period,
+                        time_unit: timeUnit
+                    })
+                }
+            })
+
+            if (productsData.length === 0) {
+                alert("Bạn chưa chọn sản phẩm nào !")
+                return;
+            }
+
+            fetch('/api/apply_warranty', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    warranty_id: warrantyId,
+                    products: productsData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Chương trình bảo hành đã được áp dụng thành công cho các sản phẩm!")
+                    location.reload()
+                } else {
+                    alert("Có lỗi xảy ra khi áp dụng chương trình bảo hành.")
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra khi áp dụng chương trình bảo hành.")
+            })
+        }
+    }
+
+    deleteApplyWarranty = (warrantyId, productId) => {
+        if (confirm("Bỏ áp dụng chương trình bảo hành với sản phẩm này?")) {
+
+            fetch(`/api/delete_apply_warranty/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    warranty_id: warrantyId,
+                    product_id: productId
+                })
+                
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    const row = document.querySelector(`#warranty-row-${productId}`)
+                    if (row){
+                        row.remove()
+                    }
+                    alert("Đã bỏ áp dụng sản phẩm!");
+                    location.reload()
+                }
+                    else {
+                    alert("Đã có lỗi xảy ra khi bỏ áp dụng chương trình !");
+                }
+            }).catch(error => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra khi bỏ áp dụng chương trình.");
+            })
+        }
+    }
+
+
+    period_inputs = document.querySelectorAll(`input[name^='warranty_detail_period_']`).forEach(input =>{
+        input.style.display = 'none'
+    })
+
+    time_unit_inputs = document.querySelectorAll(`select[name^='warranty_detail_time_unit_']`).forEach(input =>{
+        input.style.display = 'none'
+    })
+
+    undo_btns = document.querySelectorAll("[id^='undo-btn-']").forEach(input =>{
+        input.style.display = 'none'
+    })
+
+    confirm_btns = document.querySelectorAll("[id^='confirm-btn-']").forEach(input =>{
+        input.style.display = 'none'
+    })
+
+    updateWarrantyDetail = (product_id, func) => {
+        const period_input = document.querySelector(`input[name='warranty_detail_period_${product_id}']`)
+        const time_unit_input = document.querySelector(`select[name='warranty_detail_time_unit_${product_id}']`)
+        const undo_btn = document.querySelector(`#undo-btn-${product_id}`)
+        const edit_btn = document.querySelector(`#edit-btn-${product_id}`)
+        const confirm_btn = document.querySelector(`#confirm-btn-${product_id}`)
+
+        if (func === 'undo') {
+            period_input.style.display = 'none'
+            time_unit_input.style.display = 'none'
+            undo_btn.style.display = 'none'
+            confirm_btn.style.display = 'none'
+            edit_btn.style.display='inline'
+        } else {
+            period_input.style.display = 'inline'
+            time_unit_input.style.display = 'inline'
+            undo_btn.style.display = 'inline'
+            confirm_btn.style.display = 'inline'
+            edit_btn.style.display='none'
+        }
+
+
+    }
+
+
+    changeWarrantyDetail = (productId) => {
+        const period = document.querySelector(`input[name='warranty_detail_period_${productId}']`).value
+        const time_unit = document.querySelector(`select[name='warranty_detail_time_unit_${productId}']`).value
+        TimeUnit = {
+            "TimeUnitEnum.MONTH": 'tháng',
+            "TimeUnitEnum.YEAR": 'năm',
+            "TimeUnitEnum.WEEK": 'tuần',
+
+        }
+        const time_unit_display = TimeUnit[time_unit]
+        console.log(time_unit_display)
+        const warrantyId = document.querySelector("input[name='inputWarrantyId']").value
+        fetch('/api/change_warranty_detail', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                warranty_id: warrantyId,
+                product_id: productId,
+                period: period,
+                time_unit: time_unit
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { 
+                    throw new Error(`Server Error: ${text}`); 
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success){
+                alert("Đã thay đổi thông tin bảo hành!");
+                document.querySelector(`#warranty_time_${productId}`).textContent = `${period} ${time_unit_display}`;
+
+                document.querySelector(`input[name='warranty_detail_period_${productId}']`).style.display = 'none';
+                document.querySelector(`select[name='warranty_detail_time_unit_${productId}']`).style.display = 'none';
+                document.querySelector(`#confirm-btn-${productId}`).style.display = 'none';
+                document.querySelector(`#undo-btn-${productId}`).style.display = 'none';
+
+                document.querySelector(`#edit-btn-${productId}`).style.display = 'inline';
+            }
+                else {
+                alert("Đã có lỗi xảy ra khi thay đổi thông tin chương trình !");
+            }
+        })
+        .catch(error => {
+            console.error("Error: ", error)
+            alert("Có lỗi xảy ra khi thay đổi thông tin chương trình.");
+        })
     }
 
 

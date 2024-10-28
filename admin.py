@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from Flask_App import app, db, UPLOAD_FOLDER
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
-    Goods_Delivery_Note, Warranty
+    Goods_Delivery_Note, Warranty, TimeUnitEnum
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user, login_user
 from flask_admin import BaseView, expose, AdminIndexView
@@ -1233,9 +1233,11 @@ class WarrantyView(ManageModelView):
                                products=products,
                                void=True)
 
+        time_unit = TimeUnitEnum
         return self.render('admin/warranty.html',
                            warranty_detail=warranty_detail,
-                           products=products)
+                           products=products,
+                           time_unit=time_unit)
 
     @expose('/create-warranty', methods=['POST'])
     def create_warranty(self):
