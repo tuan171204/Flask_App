@@ -27,10 +27,10 @@
 
               <li class="nav-item ">
                 <div class="dropdown">
-                  <a class="btn dropdown-toggle" id="dropdown-user" data-toggle="dropdown">
+                  <button class="btn dropdown-toggle" id="dropdown-user" data-toggle="dropdown">
                     <i class="fas fa-user"
                        style="font-size: 26px;"></i>
-                  </a>
+                  </button>
               {% if current_user.is_authenticated %}
                   <div class="dropdown-menu">
                     <a class="dropdown-item" href="#">
@@ -63,9 +63,10 @@
               </li>
 
                <li class="nav-item">
-                   <a href="#"
+                   <a href="{{ url_for('support_chat_room') }}"
                       class="nav-link ml-2"
-                      style="font-size: 18px;">
+                      style="font-size: 18px;"
+                      name="join">
                        <i class="fa-solid fa-headset" style="font-size: 26px;"></i>
                        Hỗ trợ trực tuyến
                    </a>
@@ -105,33 +106,12 @@
 
     </ul>
 </div>
-<!--   &lt;!&ndash; Toggler/collapsibe Button &ndash;&gt;-->
-<!--  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">-->
-<!--    <span class="navbar-toggler-icon"></span>-->
-<!--  </button>-->
 
 </nav>
 
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Cài đặt tài khoản</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        ...
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn modal-btn" data-dismiss="modal">Đóng</button>
-        <button type="button" class="btn modal-btn">Lưu</button>
-      </div>
-    </div>
-  </div>
-</div>
+<script>
+
+</script>
 
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>

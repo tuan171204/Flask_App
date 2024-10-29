@@ -1,12 +1,10 @@
 import math
 import os
-from itertools import product
 from num2words import num2words
 import random
-from sqlalchemy.dialects.postgresql import phraseto_tsquery
-from torch._C import wait
 from werkzeug.utils import secure_filename
 from Flask_App import app, db, UPLOAD_FOLDER
+from Flask_App.chat_rooms import rooms
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
     Goods_Delivery_Note, Warranty, TimeUnitEnum
@@ -93,8 +91,6 @@ class UserView(ManageModelView):
                                receipt_id=receipt_id)
         else:
             back_url = None
-
-        print(back_url)
 
         return self.render('admin/user.html',
                            user=user,
@@ -666,7 +662,6 @@ class MyAdminIndex(AdminIndexView):
     @expose('/')
     def index(self):
         total_revenue = utils.calculate_total_revenue()
-        print(total_revenue)
 
         total_check = utils.count_total_check()
 
@@ -1264,6 +1259,34 @@ class WarrantyView(ManageModelView):
         return self.check_permission('view_product')
 
 
+class SupportView(BaseView):
+    @expose("/")
+    def index(self):
+        rooms_list = [{"room_code": room, "members": data["members"]} for room, data in rooms.items()]
+
+        return self.render("admin/support.html", rooms=rooms_list)
+
+    @expose('/support-user/<room_code>', methods=['GET'])
+    def support_user(self, room_code):
+        room = room_code
+        name = "Nhân viên"
+
+        session["room"] = room  # store room_code in user session
+        session["name"] = name  # store user_name in user session
+
+        room = session.get("room")
+        name = session.get("name")
+
+        if room is None or name is None:
+            return redirect("/admin/support")
+
+        return self.render("admin/support.html",
+                           code=room,
+                           name=name,
+                           messages=rooms[room]["messages"],
+                           join=True)
+
+
 admin = Admin(app=app,
               name="ANNNPTT Website",
               template_mode="bootstrap4",
@@ -1337,6 +1360,12 @@ admin.add_view(WarrantyView(Warranty, db.session,
                             menu_icon_type='fa',
                             menu_icon_value='fa-solid fa-wrench'
                             ))
+
+admin.add_view(SupportView(name="Hỗ trợ trực tuyến",
+                           endpoint="support",
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-headset'
+                           ))
 
 admin.add_view(LogoutView(name='Đăng xuất',
                           menu_icon_type='fa',

@@ -1,0 +1,91 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Hỗ trợ trực tuyến{% endblock %}
+
+{% block content %}
+
+
+{% if error %}
+  <ul class="alert alert-danger text-center font-weight-bold">
+    <li>{{error}}</li>
+  </ul>
+{% endif %}
+
+<!--Chat Header-->
+    <div class="chat-box-header w-100 text-center mt-4">
+        <h2><i class="fa-solid fa-headset" style="font-size: 26px;"></i> Hỗ trợ trực tuyến</h2>
+    </div>
+
+<!--Chat Box-->
+    <div class="container chat-box mt-4 px-0 border border-dark rounded">
+{% if join %}
+          <h3 class="text-center mt-2">ROOM: {{ code }}</h3>
+          <div class="chat-box-content messages"
+               id="messages">
+
+          </div>
+
+          <div class="chat-box-input">
+            <input type="text"
+                   name="message"
+                   id="message"
+                   placeholder="Nhập gì đó..."
+                   class="form-control ml-3 mb-3 mr-3 msg-input border border-dark">
+            <button class="btn btn-dark rounded-circle ml-3 mb-3 mr-3 send-msg-btn"
+                    type="button"
+                    name="send"
+                    id="send-btn"
+                    onclick="sendMessage()">
+                  <i class="fa-solid fa-arrow-up"></i>
+            </button>
+          </div>
+
+{% endif %}
+    </div>
+
+
+<br><br><br>
+
+<script>
+    var socketio = io()
+
+    const messages = document.getElementById("messages")
+
+    const session_name = "{{ name }}";
+
+    const createdMessage = (name, msg) =>{
+
+      const alignClass = name === session_name ? "text-right mr-3" : "text-left ml-3";
+
+        const content = `
+        <div class="text ${alignClass}">
+            <span>
+                <strong>${name}</strong>: ${msg}
+            </span>
+        </div>
+        `
+        messages.innerHTML += content
+    }
+
+    socketio.on("message", (data) =>{
+      createdMessage(data.name, data.message)
+    })
+
+    const sendMessage = () =>{
+      const message = document.getElementById("message")
+      
+      if (message.value == "") return;
+
+      socketio.emit("message", {data: message.value })
+      message.value = ""
+    }
+</script>
+
+
+{% for msg in messages %}
+  <script>
+          createdMessage( "{{msg.name}}", "{{msg.message}}")
+  </script>
+{% endfor %}
+
+{% endblock %}

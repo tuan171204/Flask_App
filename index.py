@@ -1,11 +1,14 @@
-from flask import Flask, flash
 from flask import render_template, request, redirect, session, jsonify, url_for
-from Flask_App import app, login, utils, db
-import math
+from Flask_App import app, login, utils, db, socketio
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
 from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail, Ward
 from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
+from flask_socketio import join_room, leave_room, send
+import random
+from string import ascii_uppercase
+import logging
+from Flask_App.chat_rooms import rooms
 
 
 @app.route('/')
@@ -32,9 +35,9 @@ def home():
     prev_page = url_for('home', page=int(page) - 1) if int(page) > 1 else None
     next_page = url_for('home', page=int(page) + 1)
 
-    recommend_id = None
-    if current_user.is_authenticated:
-        recommend_id = recommend_products_by_user_receipt(current_user.id)
+    # recommend_id = None
+    # if current_user.is_authenticated:
+    #     recommend_id = recommend_products_by_user_receipt(current_user.id)
 
     return render_template('index.html',
                            scroll='something',
@@ -43,7 +46,6 @@ def home():
                            prev_page=prev_page,
                            next_page=next_page,
                            cate_name=cate_name,
-                           recommend_id=recommend_id,
                            all_products=all_products
                            )
 
@@ -706,7 +708,80 @@ def change_warranty_detail():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/support-chat-room', methods=['GET'])
+def support_chat_room():
+    session.clear()
+
+    room = f'ROOM{random.randint(100, 999)}'
+    name = "Khách"
+
+    if room not in rooms:
+        rooms[room] = {"members": 0, "messages": []}
+
+    session["room"] = room  # store room_code in user session
+    session["name"] = name  # store user_name in user session
+
+    return redirect(url_for("room"))
+
+
+@app.route("/room")
+def room():
+    room = session.get("room")
+    name = session.get("name")
+
+    if room is None or name is None:
+        return redirect(url_for("support_chat_room"))
+
+    return render_template("chat_room.html",
+                           code=room,
+                           name=name,
+                           messages=rooms[room]["messages"],
+                           join=True)
+
+
+@socketio.on("message")
+def message(data):
+    room = session.get("room")
+    if room not in rooms:
+        return
+
+    content = {
+        "name": session.get("name"),
+        "message": data["data"]
+    }
+
+    send(content, to=room)
+    rooms[room]["messages"].append(content)
+    print(f"{session.get('name')} said: {data['data']}")
+
+
+@socketio.on("connect")
+def connect(auth):
+    room = session.get("room")
+    name = session.get("name")
+    if not room or not name:
+        return
+    if room not in rooms:
+        leave_room(room)
+        return
+
+    join_room(room)
+    send({"name": name, "message": "has entered the room"}, to=room)
+    rooms[room]["members"] += 1
+    print(f"{name} joined room {room}")
+
+
+@socketio.on("disconnect")
+def disconnect():
+    room = session.get("room")
+    name = session.get("name")
+    leave_room(room)
+
+    send({"name": name, "message": "has left the room"}, to=room)
+    print(f"{name} has left the room {room}")
+
+
 if __name__ == "__main__":
     from Flask_App.admin import *
 
-    app.run(debug=True)
+    socketio.run(app, debug=True)

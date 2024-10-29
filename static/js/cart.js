@@ -1,3 +1,20 @@
+ window.addEventListener('load', function() {
+    document.getElementById('loading-overlay').style.display = 'none';
+  });
+
+  function showLoading() {
+    document.getElementById('loading-overlay').style.display = 'flex';
+  }
+
+  document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', function(event) {
+      showLoading();
+    });
+  });
+
+
+
+
 function addToCart(id, name, price, image, promotion) {
     event.preventDefault()
     // promise
@@ -51,7 +68,7 @@ function pay() {
     } else if (!phoneNumInput.value.match(/^0[0-9]{9}$/)) {
         alert('Số điện thoại không hợp lệ!');
         return;
-    } else if ( !district || !ward || !address_detail){
+    } else if (!district || !ward || !address_detail) {
         alert('Vui lòng nhập đầy đủ địa chỉ');
         return;
     }
@@ -80,13 +97,33 @@ function pay() {
 }
 
 
-    function updateCart(id, obj) {
-        fetch('/api/update-cart', {
-            method: 'put',
-            body: JSON.stringify({
-                'id': id,
-                'quantity': parseInt(obj.value)
-            }),
+function updateCart(id, obj) {
+    fetch('/api/update-cart', {
+        method: 'put',
+        body: JSON.stringify({
+            'id': id,
+            'quantity': parseInt(obj.value)
+        }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(res => res.json()).then(data => {
+        let counter = document.getElementsByClassName('cart-counter')
+        for (let i = 0; i < counter.length; i++)
+            counter[i].innerText = data.total_quantity
+
+        let amount = document.getElementById('total-amount')
+        let base_amount = document.getElementById('base-amount')
+        amount.innerHTML = new Intl.NumberFormat().format(data.total_amount) + "đ"
+        base_amount.innerHTML = `<s>${new Intl.NumberFormat().format(data.base_total_amount)}đ </s>`
+    }).catch(err => console.error(err))
+}
+
+
+function deleteCart(id) {
+    if (confirm("Bạn chắc chắn muốn xóa sản phẩm này chứ ?") == true) {
+        fetch('/api/delete-cart/' + id, {
+            method: 'delete',
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -96,54 +133,34 @@ function pay() {
                 counter[i].innerText = data.total_quantity
 
             let amount = document.getElementById('total-amount')
-            let base_amount = document.getElementById('base-amount')
-            amount.innerHTML = new Intl.NumberFormat().format(data.total_amount) + "đ"
-            base_amount.innerHTML = `<s>${new Intl.NumberFormat().format(data.base_total_amount)}đ </s>`
+            amount.innerText = new Intl.NumberFormat().format(data.total_amount)
+
+            let e = document.getElementById("product" + id)
+            e.style.display = "none"
         }).catch(err => console.error(err))
     }
+}
 
 
-    function deleteCart(id) {
-        if (confirm("Bạn chắc chắn muốn xóa sản phẩm này chứ ?") == true) {
-            fetch('/api/delete-cart/' + id, {
-                method: 'delete',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(res => res.json()).then(data => {
-                let counter = document.getElementsByClassName('cart-counter')
-                for (let i = 0; i < counter.length; i++)
-                    counter[i].innerText = data.total_quantity
+function add_comment(productId) {
+    let content = document.getElementById("commentId")
+    if (content !== null) {
+        fetch('/api/comment', {
+            method: 'post',
+            body: JSON.stringify({
+                'product_id': productId,
+                'content': content.value
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json()).then(data => {
+            if (data.status == 201) {
+                let c = data.comment
 
-                let amount = document.getElementById('total-amount')
-                amount.innerText = new Intl.NumberFormat().format(data.total_amount)
+                let area = document.getElementById("commentArea")
 
-                let e = document.getElementById("product" + id)
-                e.style.display = "none"
-            }).catch(err => console.error(err))
-        }
-    }
-
-
-    function add_comment(productId) {
-        let content = document.getElementById("commentId")
-        if (content !== null) {
-            fetch('/api/comment', {
-                method: 'post',
-                body: JSON.stringify({
-                    'product_id': productId,
-                    'content': content.value
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(res => res.json()).then(data => {
-                if (data.status == 201) {
-                    let c = data.comment
-
-                    let area = document.getElementById("commentArea")
-
-                    area.innerHTML = `<div class="row">
+                area.innerHTML = `<div class="row">
                                     <div class="col-md-1 col-xs-4">
                                         <img src="${c.user.avatar}"
                                              class="img-fluid rounded-circle" alt="avatar">
@@ -153,15 +170,15 @@ function pay() {
                                         <p>${c.created_date}</p>
                                     </div>
                                  </div>` + area.innerHTML
-                } else if (data.status == 404) {
-                    alert(data.err_msg)
-                }
-            })
-        }
+            } else if (data.status == 404) {
+                alert(data.err_msg)
+            }
+        })
     }
+}
 
 
-    function getWard() {
+function getWard() {
     const district_input = document.querySelector('select[name="district"]')
     const selectedOption = district_input.options[district_input.selectedIndex];
     const districtId = selectedOption.getAttribute('data-district-id');
@@ -187,6 +204,42 @@ function pay() {
             .catch(error => console.error('Error:', error));
     }
 }
+
+//support = () => {
+//    const name = document.getElementById("name").value
+//    document.querySelector(".chat-room-container").style.display = 'block'
+//    fetch('/api/start_chat', {
+//        method: "POST",
+//        body: JSON.stringify({
+//            "name": name,
+//            "join": true
+//        }),
+//        headers: {
+//            "Content-Type": "application/json"
+//        }
+//    }).then(response => response.json())
+//        .then(data => {
+//            if (data.success) {
+//                console.log(data.messages)
+//                data.messages.forEach(messages => {
+//                    createMessages(data.name, messages)
+//                })
+//            } else {
+//                alert(`Đã có lỗi ${data.error}`)
+//            }
+//        })
+//        .catch(error => {
+//            console.error("Error: ", error)
+//        })
+//}
+
+//support = () =>{
+//    document.querySelector(".chat-room-container").style.display = 'block'
+//}
+//
+//closeChat = () => {
+//    document.querySelector("div.chat-room-container").style.display = 'none'
+//}
 
 
 

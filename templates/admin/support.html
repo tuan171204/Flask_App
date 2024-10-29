@@ -1,0 +1,109 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+
+
+{% if not join %}
+    <h1 class="text-center text-dark mt-4 mb-5"> Danh sách Phòng Hỗ Trợ Trực Tuyến </h1>
+    <hr>
+    <table class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th>Mã Phòng</th>
+                <th>Số Lượng Thành Viên</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for room in rooms %}
+            <tr>
+                <td>{{ room.room_code }}</td>
+                <td>{{ room.members }}</td>
+                <td>
+                    <a href="{{ url_for('support.support_user', room_code = room.room_code) }}"
+                       class="btn btn-warning">
+                        Hỗ trợ
+                        <i class="fa-solid fa-comment"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% else %}
+    <div class="container-fluid px-0">
+        <div class="chat-box-header w-100 text-center mt-4">
+            <h2><i class="fa-solid fa-headset" style="font-size: 26px;"></i> Hỗ trợ trực tuyến</h2>
+        </div>
+
+        <div class="container chat-box mt-4 px-0 border border-dark rounded">
+              <h3 class="text-center mt-2">ROOM: {{ code }}</h3>
+              <div class="chat-box-content messages"
+                   id="messages">
+
+              </div>
+
+              <div class="chat-box-input">
+                <input type="text"
+                       name="message"
+                       id="message"
+                       placeholder="Nhập gì đó..."
+                       class="form-control ml-3 mb-3 mr-3 msg-input border border-dark">
+                <button class="btn btn-dark rounded-circle ml-3 mb-3 mr-3 send-msg-btn"
+                        type="button"
+                        name="send"
+                        id="send-btn"
+                        onclick="sendMessage()">
+                      <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              </div>
+        </div>
+    </div>
+
+{% endif %}
+
+
+<script>
+    var socketio = io()
+
+    const messages = document.getElementById("messages")
+
+    const session_name = "{{ name }}";
+
+    const createdMessage = (name, msg) =>{
+
+      const alignClass = name === session_name ? "text-right mr-3" : "text-left ml-3";
+
+        const content = `
+        <div class="text ${alignClass}">
+            <span>
+                <strong>${name}</strong>: ${msg}
+            </span>
+        </div>
+        `
+        messages.innerHTML += content
+    }
+
+    socketio.on("message", (data) =>{
+      createdMessage(data.name, data.message)
+    })
+
+    const sendMessage = () =>{
+      const message = document.getElementById("message")
+
+      if (message.value == "") return;
+
+      socketio.emit("message", {data: message.value })
+      message.value = ""
+    }
+</script>
+
+
+{% for msg in messages %}
+  <script>
+          createdMessage( "{{msg.name}}", "{{msg.message}}")
+  </script>
+{% endfor %}
+
+{% endblock %}
