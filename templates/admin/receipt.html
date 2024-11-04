@@ -332,6 +332,30 @@
                 </div>
         {% endif %}
     {% else %}
+        <form class="form-inline my-2 my-lg-0">
+          <input class="form-control mr-sm-2" type="search" placeholder="Nhập mã đơn hàng" aria-label="Search" name="receipt_id">
+          <select class="form-control mr-sm-2" name="status_id">
+              Tình trạng đơn hàng
+              <option value="" selected>Tình trạng đơn hàng</option>
+                {% for r in receipt_status %}
+                    <option value="{{ r.id }}">{{ r.status_name }}</option>
+                {% endfor %}
+          </select>
+
+          <select class="form-control mr-sm-2" name="asc">
+              <option value="" selected>Sắp xếp theo</option>
+              <option value="True">Mới nhất</option>
+              <option value="False">Cũ nhất</option>
+          </select>
+
+          <button class="btn btn-outline-dark my-2 my-sm-0"
+                  type="submit">
+               <i class="fa-solid fa-magnifying-glass"></i>
+              Tìm kiếm
+          </button>
+        </form>
+        <hr>
+
     <div class="alert alert-dark font-weight-bold text-center">
         <h2>Không tìm thấy hóa đơn nào !</h2>
     </div>

@@ -56,6 +56,8 @@
                 overflow-y: hidden;
                 display: flex;
                 flex-direction: column;
+                overflow-y: auto;
+                width: 100%;
             }
             #navbar_menu a:hover{
                 opacity: 100%;
@@ -97,12 +99,15 @@
     {% endblock %}
   </head>
 <body>
+
     <div id="loading-overlay" class="loading-overlay" style="display: none;">
         <div class="spinner">
 
         </div>
          <i class="fa-solid fa-mobile-screen-button spinner-icon"></i>
     </div>
+
+
 {% block page_body %}
     <div class="container-fluid row"
          style="background-color: #FFF">

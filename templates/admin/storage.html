@@ -1,0 +1,92 @@
+{% extends 'admin/base.html' %}
+
+
+
+{% block body %}
+<h1 class="text-center text-dark mt-4"> Kho & kiểm kho</h1>
+<br>
+<hr>
+
+<input type="text"
+       class="form-control w-50 mb-2 border-dark"
+       id="productInput"
+       onkeyup="filterProduct()"
+       placeholder="Tìm tên sản phẩm...">
+
+
+<table class="table table-hover table-bordered text-center"
+       id="storage-table" >
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">STT</th>
+            <th scope="col">Mã sản phẩm</th>
+            <th scope="col">Tên sản phẩm</th>
+            <th scope="col">Số lượng đặt</th>
+            <th scope="col">Số lượng thực nhận</th>
+            <th scope="col">Chênh lệch</th>
+            <th scope="col">Số lượng bán</th>
+            <th scope="col">Số lượng thực bán</th>
+            <th scope="col">Chênh lệch</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for amount in total_amount %}
+        {% set product_id = amount[0] %}
+        {% set product_name = amount[1] %}
+        {% set order_quantity = amount[2] %}
+        {% set receive_quantity = amount[3] %}
+        {% set sold_quantity = amount[4] %}
+        {% set delivered_quantity = amount[5] %}
+        <tr>
+            <th class="font-weight-bold">{{ loop.index }}</th>
+            <td>{{ product_id }}</td>
+            <td>{{ product_name  }}</td>
+            <td>{{ order_quantity }}</td>
+            <td>{{ receive_quantity }}</td>
+            {% if order_quantity > receive_quantity %}
+                <td class="text-danger"> - {{  order_quantity - receive_quantity }}</td>
+            {% elif  order_quantity < receive_quantity %}
+                <td class="text-success"> + {{  order_quantity - receive_quantity }}</td>
+            {% else %}
+                <td> {{  order_quantity -receive_quantity }}</td>
+            {% endif %}
+            <td>{{ sold_quantity }}</td>
+            <td>{{ delivered_quantity }}</td>
+            {% if sold_quantity > delivered_quantity %}
+                <td class="text-danger"> - {{ sold_quantity - delivered_quantity }}</td>
+            {% elif sold_quantity < delivered_quantity %}
+                <td class="text-success"> + {{ sold_quantity - delivered_quantity }}</td>
+            {% else %}
+                <td> {{ sold_quantity - delivered_quantity }}</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+
+<script>
+    function filterProduct() {
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("productInput");
+      filter = input.value.toUpperCase();
+      table = document.querySelector('#storage-table')
+      tr = table.getElementsByTagName("tr");
+
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+</script>
+
+
+{% endblock %}

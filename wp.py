@@ -15,23 +15,12 @@ import requests
 from Flask_App.utils import get_receipt_by_id
 import pandas as pd
 
-# with app.app_context():
-#     receipt_list = Receipt.query.all()
-#
-#     data = [{
-#         "id": receipt.id,
-#         "created_date": receipt.created_date
-#     } for receipt in receipt_list]
-#
-#     df = pd.DataFrame(data)
-#
-#     daily_counts = df['created_date'].dt.date.value_counts().sort_index()
-#     print(daily_counts)
-#
-#     # Đếm số lượng hóa đơn theo tháng
-#     monthly_counts = df['created_date'].dt.to_period('M').value_counts().sort_index()
-#     print(monthly_counts)
-
 
 with app.app_context():
-    print(TimeUnitEnum[TimeUnitEnum.MONTH].value)
+    discount_type = PromotionDetail.query.filter(PromotionDetail.promotion_id == 'PROMO1').first()
+    discount_type = discount_type.discount_type
+    print(discount_type)
+    print(discount_type.value)
+
+
+

@@ -7,7 +7,7 @@ from Flask_App import app, db, UPLOAD_FOLDER
 from Flask_App.chat_rooms import rooms
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
-    Goods_Delivery_Note, Warranty, TimeUnitEnum
+    Goods_Delivery_Note, Warranty, TimeUnitEnum, DiscountType, Promotion, PromotionDetail
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user, login_user
 from flask_admin import BaseView, expose, AdminIndexView
@@ -367,18 +367,87 @@ class ProductView(ManageModelView):
                            promotion=promotion,
                            current_time=current_time)
 
-    @expose('promotion-detail/<int:promotion_id>')
+    @expose('promotion-detail/<promotion_id>')
     def promotion_detail(self, promotion_id):
         promotion = utils.get_promotion(kw=str(promotion_id))
 
-        product_promotion = utils.get_product_with_promotion(promotion_id)
+        product_promotion, product_applied_yet = utils.get_product_with_promotion(promotion_id)
 
-        promotion_detail = utils.get_promotion_detail(promotion_id)
+        promotion_discount_type = PromotionDetail.query.filter(PromotionDetail.promotion_id==promotion_id).first()
+        discount_type = promotion_discount_type.discount_type
 
         return self.render('admin/product.html',
                            promotion_detail=True,
                            promotion=promotion,
-                           product_promotion=product_promotion)
+                           product_promotion=product_promotion,
+                           product_applied_yet=product_applied_yet,
+                           discount_type=discount_type)
+
+    @expose('create-promotion', methods=['POST'])
+    def create_promotion(self):
+        description = request.form.get('description')
+        start_date = request.form.get('promotion_start_date')
+        end_date = request.form.get('promotion_end_date')
+        apply_all = request.form.get('apply_all', False)
+
+        try:
+            start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+
+            new_promotion = Promotion(id=str(f'PROMO{random.randint(100, 999)}'),
+                                      description=description,
+                                      start_date=start_date_dt,
+                                      end_date=end_date_dt)
+
+            db.session.add(new_promotion)
+            db.session.commit()
+
+            if apply_all:
+                discount_type = request.form.get('discount_type')
+                discount_value = request.form.get('discount_value')
+
+                utils.apply_promotion_for_all(new_promotion.id, discount_type, discount_value)
+
+                flash("Thêm chương trình khuyến mãi và áp dụng thành công ", "success")
+
+                return redirect(url_for('product.product_promotion'))
+
+            flash("Thêm chương trình khuyến mãi thành công ", "success")
+
+        except Exception as e:
+            flash(f'Error: {str(e)}', "danger")
+
+            return redirect(url_for('product.product_promotion'))
+
+    @expose('promotion-detail-update', methods=['POST'])
+    def promotion_detail_update(self):
+        promotion_id = request.form.get('promotion_id')
+        promotion_description = request.form.get('promotion_description')
+        end_date = request.form.get('promotion_end_date', None)
+
+        try:
+            if end_date:
+                end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+
+            else:
+                end_date_dt = None
+
+        except Exception as e:
+            flash(str(e), "danger")
+
+            return redirect(url_for('product.promotion_detail', promotion_id=promotion_id))
+
+        result = utils.update_promotion(promotion_id=promotion_id,
+                                        description=promotion_description,
+                                        end_date=end_date_dt)
+
+        if result['success']:
+            flash(result['msg'], 'success')
+
+        else:
+            flash(result['msg'], 'danger')
+
+        return redirect(url_for('product.promotion_detail', promotion_id=promotion_id))
 
     def is_accessible(self):
         return self.check_permission('view_product')
@@ -738,15 +807,19 @@ class MyAdminIndex(AdminIndexView):
 class StatsView(ManageModelView):
     @expose('/')
     def index(self):
-        kw = request.args.get('kw')
-        from_date = request.args.get('from_date')
-        to_date = request.args.get('to_date')
-        year = request.args.get('year', datetime.now())
+        revenue_statistics = utils.calculate_revenue_statistics()
+
+        years = revenue_statistics['revenue_yearly']['year'].tolist()
+        months = revenue_statistics['revenue_monthly']['month'].tolist()
+        quarters = revenue_statistics['revenue_quarterly']['quarter'].tolist()
+
+        # image_path = utils.visualize_revenue_statistics(revenue_statistics)
 
         return self.render('admin/stats.html',
-                           month_stats=utils.product_months_stats(year=year),
-                           stats=utils.product_stats(kw=kw,
-                                                     from_date=from_date, to_date=to_date))
+                           revenue_stats=revenue_statistics,
+                           years=years,
+                           months=months,
+                           quarters=quarters)
 
     def is_accessible(self):
         return self.check_permission('view_stats')
@@ -1219,16 +1292,18 @@ class WarrantyView(ManageModelView):
     def warranty_update(self, warranty_id):
         warranty_detail = utils.get_warranty_detail(warranty_id)
 
-        products = utils.load_product_applied_yet(warranty_id)
+        products = utils.load_product_applied_warranty_yet(warranty_id)
+
+        time_unit = TimeUnitEnum
 
         if len(warranty_detail) < 1:
             warranty_detail = utils.get_void_warranty_detail(warranty_id)
             return self.render('admin/warranty.html',
                                warranty_detail=warranty_detail,
                                products=products,
+                               time_unit=time_unit,
                                void=True)
 
-        time_unit = TimeUnitEnum
         return self.render('admin/warranty.html',
                            warranty_detail=warranty_detail,
                            products=products,
@@ -1259,6 +1334,18 @@ class WarrantyView(ManageModelView):
         return self.check_permission('view_product')
 
 
+class StorageView(BaseView):
+    @expose("/")
+    def index(self):
+        total_amount = utils.get_total_receive_and_delivery()
+
+        return self.render('admin/storage.html',
+                           total_amount=total_amount)
+
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+
 class SupportView(BaseView):
     @expose("/")
     def index(self):
@@ -1286,9 +1373,12 @@ class SupportView(BaseView):
                            messages=rooms[room]["messages"],
                            join=True)
 
+    def is_accessible(self):
+        return current_user.is_authenticated
+
 
 admin = Admin(app=app,
-              name="ANNNPTT Website",
+              name="ANNNPTT WEB",
               template_mode="bootstrap4",
               index_view=MyAdminIndex(),
               category_icon_classes={
@@ -1360,6 +1450,12 @@ admin.add_view(WarrantyView(Warranty, db.session,
                             menu_icon_type='fa',
                             menu_icon_value='fa-solid fa-wrench'
                             ))
+
+admin.add_view(StorageView(name='Kiểm kho',
+                           endpoint='storage',
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-store'
+                           ))
 
 admin.add_view(SupportView(name="Hỗ trợ trực tuyến",
                            endpoint="support",

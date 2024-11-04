@@ -70,7 +70,7 @@
         <div class="report-stats row">
             <div class="sales-report ml-3 col-lg-8">
                 <div class="chart-header text-left text-light bg-dark border-bottom">
-                    Báo cáo doanh thu
+                    Báo cáo doanh thu tháng
                 </div>
                 <canvas id="salesChart">
                 </canvas>
@@ -78,14 +78,22 @@
 
             <div class="users-report col-lg-3"
                  style="margin-left: 68px;"   >
-                <div class="chart-header text-center text-light bg-secondary border-bottom">
+                <div class="chart-header text-center text-light bg-dark border-bottom">
                     Thống kê khách hàng
                 </div>
                 <canvas id="usersChart">
                 </canvas>
             </div>
         </div>
+        <br>
+        <a  href="{{ url_for('product_stats.index') }}"
+            class="form-control btn btn-dark format-btn">
+            Tới trang thống kê
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
         <br><br>
+
+
 
 
     {% else %}
@@ -198,7 +206,6 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            // Format y-axis labels with 'đ'
                             callback: function(value) {
                                 return value.toLocaleString('vi-VN') + 'đ';
                             }

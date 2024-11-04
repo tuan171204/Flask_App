@@ -1,25 +1,30 @@
 import math
+import os
 import string
 import random
 from datetime import datetime, timedelta
 from PIL import Image
 from dateutil.relativedelta import relativedelta
-from flask import flash
+from matplotlib.ticker import FuncFormatter
+from numpy import record
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import coalesce
+
 from Flask_App import app, db, ALLOWED_EXTENSIONS
 from Flask_App.models import Category, Product, User, Receipt, ReceiptDetail, User_Role, Comment, Payment, \
     Provider, Distribution, Receipt_Status, Privileged, Report_Type, Receipt_Report, Delivery_Reason, \
     Goods_Received_Note, Goods_Received_Note_Detail, Goods_Delivery_Note, Goods_Delivery_Note_Detail, Promotion, \
-    Warranty, Brand, PromotionDetail, District, Ward, WarrantyDetail, TimeUnitEnum
+    Warranty, Brand, PromotionDetail, District, Ward, WarrantyDetail, TimeUnitEnum, DiscountType
 import hashlib
 from flask_login import current_user
-from sqlalchemy import func, and_, or_, desc, Integer
+from sqlalchemy import func, and_, or_, desc, Integer, literal_column
 from sqlalchemy.sql import extract
-import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def allowed_file(filename):
@@ -274,8 +279,8 @@ def get_product_detail_info_admin(product_id):
                                PromotionDetail.discount_value.label('discount_value'),
                                PromotionDetail.discount_type.label('discount_type'),
                                Promotion.description.label('promotion_description')) \
-        .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
-        .join(Promotion, Promotion.id == PromotionDetail.promotion_id) \
+        .outerjoin(PromotionDetail, PromotionDetail.product_id == Product.id) \
+        .outerjoin(Promotion, Promotion.id == PromotionDetail.promotion_id) \
         .join(Category, Category.id == Product.category_id) \
         .filter(Product.id == product_id).first()
 
@@ -444,7 +449,7 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
                                   product_id=int(c['id']),
                                   quantity=c['quantity'],
                                   unit_price=product.price,
-                                  discount=product.price - c['price'],
+                                  discount=(product.price - c['price']) * c['quantity'],
                                   discount_info=c['promotion']
                                   )
 
@@ -1232,17 +1237,22 @@ def get_promotion_detail(promotion_id):
 
 
 def get_product_with_promotion(promotion_id):
-    product = db.session.query(Product.id,
-                               Product.name,
-                               Product.price,
-                               Product.import_price,
-                               Product.description,
-                               PromotionDetail.discount_value.label('discount_value'),
-                               PromotionDetail.discount_type.label('discount_type')) \
+    products_with_promotion = db.session.query(Product.id,
+                                               Product.name,
+                                               Product.price,
+                                               Product.import_price,
+                                               Product.description,
+                                               PromotionDetail.discount_value.label('discount_value'),
+                                               PromotionDetail.discount_type.label('discount_type')) \
         .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
-        .filter(PromotionDetail.promotion_id == promotion_id)
+        .filter(PromotionDetail.promotion_id.contains(promotion_id)).all()
 
-    return product.all()
+    subquery = db.session.query(PromotionDetail.product_id) \
+        .filter(PromotionDetail.promotion_id == promotion_id).subquery()
+
+    products_not_applied = Product.query.filter(Product.id.notin_(subquery)).all()
+
+    return products_with_promotion, products_not_applied
 
 
 def update_product(product_id, **kwargs):
@@ -1492,9 +1502,18 @@ def delete_warranty(warranty_id):
     db.session.commit()
 
 
-def load_product_applied_yet(warranty_id):
+def load_product_applied_warranty_yet(warranty_id):
     subquery = db.session.query(WarrantyDetail.product_id) \
         .filter(WarrantyDetail.warranty_id == warranty_id).subquery()
+
+    products = Product.query.filter(Product.id.notin_(subquery)).all()
+
+    return products
+
+
+def load_product_applied_promotion_yet(promotion_id):
+    subquery = db.session.query(WarrantyDetail.product_id) \
+        .filter(PromotionDetail.promotion_id == promotion_id).subquery()
 
     products = Product.query.filter(Product.id.notin_(subquery)).all()
 
@@ -1535,3 +1554,169 @@ def update_warranty_detail(warranty_id, product_id, period, time_unit):
         raise Exception("Giá trị time_unit không hợp lệ.")
 
     db.session.commit()
+
+
+# ------------- BUSINESS STATS ---------------
+
+def get_revenue_data():
+    receipts_data = db.session.query(
+        Receipt.id,
+        Receipt.created_date,
+        func.sum(ReceiptDetail.quantity * ReceiptDetail.unit_price - coalesce(ReceiptDetail.discount, 0)) \
+            .label("total_amount")) \
+        .outerjoin(ReceiptDetail) \
+        .group_by(Receipt.id).all()
+
+    data = pd.DataFrame(receipts_data, columns=['id', 'created_date', 'total_amount'])
+    data['created_date'] = pd.to_datetime(data['created_date'])
+
+    return data
+
+
+def calculate_revenue_statistics():
+    data = get_revenue_data()  # receipt data list
+    data['year'] = data['created_date'].dt.year
+    data['month'] = data['created_date'].dt.month
+    data['quarter'] = data['created_date'].dt.quarter
+
+    # Total revenue by year
+    revenue_yearly = data.groupby('year')['total_amount'].sum().reset_index()
+
+    # Total revenue by month
+    revenue_monthly = data.groupby(['year', 'month'])['total_amount'].sum().reset_index()
+
+    # Total revenue by quarter
+    revenue_quarterly = data.groupby(['year', 'quarter'])['total_amount'].sum().reset_index()
+
+    # Average revenue
+    avg_revenue_monthly = data.groupby(['year', 'month'])['total_amount'].sum().groupby('year').mean().reset_index()
+    avg_revenue_monthly.columns = ['year', 'avg_revenue_monthly']
+
+    avg_revenue_quarterly = data.groupby(['year', 'quarter'])['total_amount'].sum().groupby('year').mean().reset_index()
+    avg_revenue_quarterly.columns = ['year', 'avg_revenue_quarterly']
+
+    return {
+        'revenue_yearly': revenue_yearly.astype('int32'),
+        'revenue_monthly': revenue_monthly.astype('int32'),
+        'revenue_quarterly': revenue_quarterly.astype('int32'),
+        'avg_revenue_monthly': avg_revenue_monthly.astype('int32'),
+        'avg_revenue_quarterly': avg_revenue_quarterly.astype('int32'),
+    }
+
+
+def calculate_discount_statistics():
+    discounts_data = db.session.query(Receipt.id,
+                                      Receipt.created_date,
+                                      func.sum(coalesce(ReceiptDetail.discount, 0).label("total_discount"))) \
+        .join(ReceiptDetail).group_by(Receipt.id).all()
+
+    discounts_data = pd.DataFrame(discounts_data, columns=['id', 'created_date', 'total_discount'])
+    discounts_data['created_date'] = pd.to_datetime((discounts_data['created_date']))
+
+    discounts_data['year'] = discounts_data['created_date'].dt.year
+    discount_yearly = discounts_data.groupby('year')['total_discount'].sum().reset_index()
+
+    return {
+        'discount_data': discounts_data,
+        'discount_yearly': discount_yearly
+    }
+
+
+def format_amount(value, tick_number):
+    return f'{int(value):,}'
+
+
+def visualize_revenue_statistics(statistics):
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(statistics['revenue_yearly']['year'], statistics['revenue_yearly']['total_amount'].astype('int32'),
+                   color='r', alpha=0.7)
+    plt.title('Total Revenue by Year')
+    plt.xlabel('Year')
+    plt.ylabel('Total Revenue')
+    plt.grid(axis='y')
+    plt.xticks(statistics['revenue_yearly']['year'])
+
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(format_amount))
+
+    for bar in bars:
+        y_value = bar.get_height()  # Lấy chiều cao của cột
+        plt.text(bar.get_x() + bar.get_width() / 2, y_value, f'{int(y_value):,}đ', ha='center', va='bottom')
+
+    image_path = os.path.join('static', 'images', 'statistics', 'revenue_chart.png')
+    plt.savefig(image_path)
+    plt.close()
+
+    return image_path
+
+
+def get_total_receive_and_delivery():
+    received_amount = db.session.query(
+        Goods_Received_Note_Detail.product_id,
+        Product.name.label("product_name"),
+        func.sum(coalesce(Goods_Received_Note_Detail.quantity, 0)).label('total_quantity_ordered'),
+        func.sum(coalesce(Goods_Received_Note_Detail.received_quantity, 0)).label('total_quantity_received'),
+        literal_column("0").label("total_quantity_sold"),
+        literal_column("0").label("total_quantity_delivered")
+    ).join(Goods_Received_Note, Goods_Received_Note_Detail.goods_received_note_code == Goods_Received_Note.code) \
+        .outerjoin(Product, Product.id == Goods_Received_Note_Detail.product_id) \
+        .group_by(Goods_Received_Note_Detail.product_id, Product.name)
+
+    delivery_amount = db.session.query(
+        Goods_Delivery_Note_Detail.product_id,
+        Product.name.label("product_name"),
+        literal_column("0").label("total_quantity_ordered"),
+        literal_column("0").label("total_quantity_received"),
+        func.sum(coalesce(Goods_Delivery_Note_Detail.quantity, 0)).label('total_quantity_sold'),
+        func.sum(coalesce(Goods_Delivery_Note_Detail.delivered_quantity, 0)).label('total_quantity_delivered')
+    ).join(Goods_Delivery_Note, Goods_Delivery_Note_Detail.goods_delivery_note_code == Goods_Delivery_Note.code) \
+        .outerjoin(Product, Product.id == Goods_Delivery_Note_Detail.product_id) \
+        .group_by(Goods_Delivery_Note_Detail.product_id, Product.name)
+
+    total_amount = received_amount.union_all(delivery_amount).subquery()
+
+    results = db.session.query(total_amount.c.goods_received_note_detail_product_id,
+                               total_amount.c.product_name,
+                               func.sum(total_amount.c.total_quantity_ordered).label("total_quantity_ordered"),
+                               func.sum(total_amount.c.total_quantity_received).label("total_quantity_received"),
+                               func.sum(total_amount.c.total_quantity_sold).label("total_quantity_sold"),
+                               func.sum(total_amount.c.total_quantity_delivered).label("total_quantity_delivered")
+                               ).group_by(total_amount.c.goods_received_note_detail_product_id,
+                                          total_amount.c.product_name).all()
+
+    return results
+
+
+def update_promotion(promotion_id=None, description=None, end_date=None):
+    promotion = Promotion.query.filter(Promotion.id == promotion_id).first()
+
+    if promotion:
+        if description:
+            promotion.description = description
+
+        if end_date:
+            promotion.end_date = end_date
+
+        db.session.commit()
+        return {'success': True, 'msg': 'Thay đổi thông tin chương trình khuyến mãi thành công'}
+
+    else:
+        db.session.rollback()
+        return {'success': False, 'msg': 'Không tìm thấy mã chương trình khuyến mãi'}
+
+
+def apply_promotion_for_all(promotion_id, discount_type, discount_value):
+    products = Product.query.all()
+    try:
+        for product in products:
+            promotion_detail = PromotionDetail(
+                product_id=product.id,
+                promotion_id=promotion_id,
+                discount_type=DiscountType[discount_type],
+                discount_value=discount_value
+            )
+            db.session.add(promotion_detail)
+        db.session.commit()
+        return {'success': True}
+
+    except Exception as e:
+        return {'success': False, 'msg': f'Lỗi xảy ra {str(e)}'}

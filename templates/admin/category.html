@@ -8,9 +8,10 @@
     <h1 class="text-center text-dark mt-4 mb-5"> Chi tiết danh mục </h1>
     <hr>
     <div class="mb-5">
-        <form id="categoryForm" action="{{ url_for('category.change_id', category_id = category_id ) }}" method="POST">
+        <form id="categoryForm" action="{{ url_for('category.change_id', category_id = category_id ) }}"
+              method="POST">
             <div class="form-group">
-                <label><b>Mã danh mục:</b> </label>
+                <label class="ml-2"><b>Mã danh mục:</b> </label>
                 <span class="form-inline">
                     <input type="button"
                            class="form-control ml-2 text-center w-50 mr-3"
@@ -27,11 +28,11 @@
                     </button>
 
                     <button class="btn btn-warning ml-2"
-                       type="submit"
-                       id="save-btn">
-                        <i class="fa-solid fa-floppy-disk"
-                           style="font-size: 22px;"></i>
-                           Lưu thay đổi
+                            type="submit"
+                            id="save-btn">
+                            <i class="fa-solid fa-floppy-disk"
+                               style="font-size: 22px;"></i>
+                               Lưu thay đổi
                     </button>
                 </span>
                 <p class="ml-3 text-success alert_success">
@@ -44,7 +45,7 @@
                 </p>
             </div>
             <div class="form-group">
-                <label><b>Số sản phẩm ứng với danh mục : </b></label>
+                <label class="ml-2"><b>Số sản phẩm ứng với danh mục : </b></label>
                 <input type="text"
                        readonly
                        class="form-control ml-2 text-center w-50"
@@ -102,10 +103,10 @@
                 </div>
         {% endif %}
     </div>
-    <a class="btn btn-secondary mb-5 p-3"
+    <a class="btn btn-secondary mb-5 p-2"
        style="font-size: 22px;"
        href="{{ url_for('category.index') }}">
-        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <i class="fa-solid fa-right-from-bracket"></i>
         Quay lại
     </a>
 

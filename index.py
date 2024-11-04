@@ -781,6 +781,103 @@ def disconnect():
     print(f"{name} has left the room {room}")
 
 
+# DATA BUSINESS ANALYST
+
+@app.route('/revenue-data')
+def revenue_data():
+    statistics = utils.calculate_revenue_statistics()
+    revenue_yearly = statistics['revenue_yearly']
+    years_labels = revenue_yearly.apply(lambda row: f"Năm {row['year']}", axis=1)
+
+    revenue_monthly = statistics['revenue_monthly']
+    revenue_monthly = revenue_monthly[revenue_monthly['year'] == datetime.now().year]
+    months_labels = revenue_monthly.apply(lambda row: f"Tháng {row['month']}", axis=1)
+
+    revenue_quarterly = statistics['revenue_quarterly']
+    revenue_quarterly = revenue_quarterly[revenue_quarterly['year'] == datetime.now().year]
+    quarters_labels = revenue_quarterly.apply(lambda row: f'Quý {row['quarter']}', axis=1)
+
+    avg_revenue_monthly = statistics['avg_revenue_monthly']
+    avg_revenue_monthly = avg_revenue_monthly[avg_revenue_monthly['year'] == datetime.now().year]
+    avg_revenue_months_labels = avg_revenue_monthly.apply(lambda row: f'Năm {row['year']}', axis=1)
+
+    avg_revenue_quarterly = statistics['avg_revenue_quarterly']
+    avg_revenue_quarterly = avg_revenue_quarterly[avg_revenue_quarterly['year'] == datetime.now().year]
+    avg_revenue_quarters_labels = avg_revenue_quarterly.apply(lambda row: f'Năm {row['year']}', axis=1)
+
+    data = {
+        'years': years_labels.tolist(),
+        'revenue_yearly': revenue_yearly['total_amount'].tolist(),
+
+        'months':  months_labels.tolist(),
+        'revenue_monthly': revenue_monthly['total_amount'].tolist(),
+
+        'quarters': quarters_labels.tolist(),
+        'revenue_quarterly': revenue_quarterly['total_amount'].tolist(),
+
+        'avg_months': avg_revenue_months_labels.tolist(),
+        'avg_revenue_monthly': avg_revenue_monthly['avg_revenue_monthly'].tolist(),
+
+        'avg_quarters': avg_revenue_quarters_labels.tolist(),
+        'avg_revenue_quarterly': avg_revenue_quarterly['avg_revenue_quarterly'].tolist(),
+    }
+
+    return jsonify(data)
+
+
+@app.route('/revenue-data-by-year', methods=['POST'])
+def revenue_data_by_year():
+    data = request.get_json()
+    year = data.get('year')
+    time_unit = data.get('time_unit')
+
+    statistics = utils.calculate_revenue_statistics()
+
+    if time_unit == 'month':
+        revenue_monthly = statistics['revenue_monthly']
+        revenue_monthly = revenue_monthly[revenue_monthly['year'] == int(year)]
+
+        months_labels = revenue_monthly.apply(lambda row: f"Tháng {row['month']}", axis=1)
+
+        return jsonify({
+            'months': months_labels.tolist(),
+            'revenue_monthly': revenue_monthly['total_amount'].tolist()
+        })
+
+    if time_unit == 'quarter':
+        revenue_quarterly = statistics['revenue_quarterly']
+        revenue_quarterly = revenue_quarterly[revenue_quarterly['year'] == int(year)]
+
+        quarters_labels = revenue_quarterly.apply(lambda row: f'Quý {row['quarter']}', axis=1)
+
+        return jsonify({
+            'quarters': quarters_labels.tolist(),
+            'revenue_quarterly': revenue_quarterly['total_amount'].tolist()
+        })
+
+    if time_unit == 'avg_month':
+        avg_revenue_monthly = statistics['avg_revenue_monthly']
+        avg_revenue_monthly = avg_revenue_monthly[avg_revenue_monthly['year'] == int(year)]
+
+        avg_months_labels = avg_revenue_monthly.apply(lambda row: f'Năm {row['year']}', axis=1)
+
+        return jsonify({
+            'avg_months': avg_months_labels.tolist(),
+            'avg_revenue_monthly': avg_revenue_monthly['avg_revenue_monthly'].tolist()
+        })
+
+    if time_unit == 'avg_quarter':
+        avg_revenue_quarterly = statistics['avg_revenue_quarterly']
+        avg_revenue_quarterly = avg_revenue_quarterly[avg_revenue_quarterly['year'] == int(year)]
+
+        avg_quarters_labels = avg_revenue_quarterly.apply(lambda row: f'Năm {row['year']}', axis=1)
+
+        return jsonify({
+            'avg_quarters': avg_quarters_labels.tolist(),
+            'avg_revenue_quarterly': avg_revenue_quarterly['avg_revenue_quarterly'].tolist()
+        })
+
+
 if __name__ == "__main__":
     from Flask_App.admin import *
 

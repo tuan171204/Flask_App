@@ -285,7 +285,7 @@ class Warranty(db.Model):
 class WarrantyDetail(db.Model):
     __tablename__ = 'warranty_detail'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
     warranty_id = Column(Integer, ForeignKey(Warranty.id), nullable=False)
     warranty_period = Column(Integer, nullable=False)
@@ -307,7 +307,7 @@ class ApplyObject(PyEnum):
 class Promotion(db.Model):
     __tablename__ = 'promotion'
 
-    id = Column(String(255), primary_key=True, autoincrement=True)
+    id = Column(String(255), primary_key=True)
     description = Column(String(255), nullable=True)
     start_date = Column(DateTime, nullable=False, default=datetime.now())
     end_date = Column(DateTime, nullable=True)
@@ -321,7 +321,7 @@ class PromotionDetail(db.Model):
     __tablename__ = 'promotion_detail'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    promotion_id = Column(Integer, ForeignKey(Promotion.id), nullable=False)
+    promotion_id = Column(String(255), ForeignKey(Promotion.id), nullable=False)
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
     discount_type = Column(Enum(DiscountType), nullable=False)
     discount_value = Column(Float, nullable=True)

@@ -205,41 +205,4 @@ function getWard() {
     }
 }
 
-//support = () => {
-//    const name = document.getElementById("name").value
-//    document.querySelector(".chat-room-container").style.display = 'block'
-//    fetch('/api/start_chat', {
-//        method: "POST",
-//        body: JSON.stringify({
-//            "name": name,
-//            "join": true
-//        }),
-//        headers: {
-//            "Content-Type": "application/json"
-//        }
-//    }).then(response => response.json())
-//        .then(data => {
-//            if (data.success) {
-//                console.log(data.messages)
-//                data.messages.forEach(messages => {
-//                    createMessages(data.name, messages)
-//                })
-//            } else {
-//                alert(`Đã có lỗi ${data.error}`)
-//            }
-//        })
-//        .catch(error => {
-//            console.error("Error: ", error)
-//        })
-//}
-
-//support = () =>{
-//    document.querySelector(".chat-room-container").style.display = 'block'
-//}
-//
-//closeChat = () => {
-//    document.querySelector("div.chat-room-container").style.display = 'none'
-//}
-
-
 

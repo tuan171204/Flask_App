@@ -712,6 +712,13 @@
                           Tìm kiếm
                       </button>
                 </form>
+                <button style="width: 41.5%; font-size: 18px;"
+                        data-toggle="modal"
+                        data-target="#createPromotion"
+                        class="btn btn-danger mt-2 form-control font-weight-bold">
+                     <i class="fa-solid fa-plus"></i>
+                 Thêm chương trình khuyến mãi mới
+                </button>
                 <hr>
                 <table class="table table-hover table-bordered text-center">
                     <thead class="thead-dark">
@@ -773,37 +780,162 @@
                 </table>
                 <br>
                 <br>
-            <script>
-                var countdownElements = document.querySelectorAll('[id^="countdown-timer-"]');
 
-                countdownElements.forEach(function(element) {
-                    var countDownDate = new Date(element.getAttribute('data-end-date')).getTime();
 
-                    var x = setInterval(function() {
-                        var now = new Date().getTime();
-                        var distance = countDownDate - now;
+<!--CREATE PROMOTION MODAL -->
+        <form action="{{ url_for('product.create_promotion') }}"
+              method="POST">
+            <div class="modal fade" id="createPromotion">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
 
-                        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                  <!-- Modal Header -->
+                  <div class="modal-header bg-danger text-light">
+                    <h4 class="modal-title">Thêm chương trình khuyến mãi</h4>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                  </div>
 
-                        element.innerHTML = days + " ngày " + hours + " giờ " + minutes + " phút " + seconds + " giây ";
+                  <!-- Modal body -->
+                  <div class="modal-body">
+                    <div class="form-group">
+                        <label>Mô tả chương trình khuyến mãi:</label>
+                        <input type="text"
+                               class="form-control"
+                               name="description" >
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox"
+                               class="custom-checkbox"
+                               name="apply_all">
+                        Áp dụng cho tất cả sản phẩm
+                    </div>
+                    <div class="form-group">
+                        <label>Loại khuyến mãi: </label>
+                        <select name="discount_type"
+                                class="custom-select">
+                            <option value="" selected>-- Loại khuyến mãi --</option>
+                            <option value="PERCENTAGE">Giảm theo %</option>
+                            <option value="GET_FREE">Mua 1 tặng 1</option>
+                            <option value="PRICE">Giảm theo số tiền cố định</option>
+                        </select>
+                    </div>
+                    <div class="form-group discount-value">
+                        <label>Giá trị khuyến mãi: </label>
+                        <div class="d-flex">
+                             <input type="text"
+                                    class="form-control mr-2"
+                                    name="discount_value">
+                            <input type="text"
+                                   name="discount_value_unit"
+                                   readonly
+                                   class="text-center form-control"
+                                   style="width: 5%;">
+                        </div>
+                    </div>
+                      <hr>
+                    <div class="form-group">
+                        <label class="mb-4">Thời gian khuyến mãi: </label>
+                        <div class="form-group d-flex justify-content-between">
+                            <div class="form-inline w-100">
+                                <label> Bắt đầu: </label>
+                                <input type="date"
+                                       class="form-control w-75"
+                                       name="promotion_start_date">
+                            </div>
+                            <div class="form-inline w-100">
+                                <label> Kết thúc: </label>
+                                <input type="date"
+                                       class="form-control w-75"
+                                       name="promotion_end_date">
+                            </div>
+                        </div>
+                    </div>
 
-                        if (distance < 0) {
-                            clearInterval(x);
-                            element.style.display = 'none'
-                            value = element.getAttribute(data-promotion-id)
-                            insert = document.getElementById(`promo_${value}`)
-                            insert.outerHTML = `element.innerHTML = <span class="badge badge-danger"
-                                                          style="font-size: 18px; font-weight:light;">
-                                                         Đã hết hạn
-                                                    </span>`;
-                        }
-                    }, 1000);
-                });
 
-            </script>
+                  </div>
+
+                  <!-- Modal footer -->
+                  <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary format-btn"
+                            data-dismiss="modal">
+                    <i class="fa-solid fa-xmark"></i>
+                        Đóng
+                    </button>
+                      <button type="submit"
+                              class="btn btn-danger format-btn">
+                          <i class="fa-solid fa-folder-plus"></i>
+                          Thêm
+                      </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+        </form>
+<script>
+    var countdownElements = document.querySelectorAll('[id^="countdown-timer-"]')
+
+    countdownElements.forEach(function(element) {
+        var countDownDate = new Date(element.getAttribute('data-end-date')).getTime()
+
+        var x = setInterval(function() {
+            var now = new Date().getTime()
+            var distance = countDownDate - now
+
+            var days = Math.floor(distance / (1000 * 60 * 60 * 24))
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000)
+
+            element.innerHTML = days + " ngày " + hours + " giờ " + minutes + " phút " + seconds + " giây "
+
+            if (distance < 0) {
+                clearInterval(x);
+                element.style.display = 'none'
+                value = element.getAttribute(data-promotion-id)
+                insert = document.getElementById(`promo_${value}`)
+                insert.outerHTML = `element.innerHTML = <span class="badge badge-danger"
+                                                              style="font-size: 18px; font-weight:light;">
+                                                             Đã hết hạn
+                                                        </span>`
+            }
+        }, 1000)
+    })
+
+
+    const checkbox = document.querySelector("input[name='apply_all']")
+    const discountValueBlock = document.querySelector('.discount-value')
+    const discountType = document.querySelector("select[name='discount_type']")
+
+    discountTypeData = {
+        'PERCENTAGE' : '%',
+        'GET_FREE' : '',
+        'PRICE' : 'đ',
+    }
+
+    toggleDiscountValue = () => {
+        if ( checkbox.checked ){
+           discountValueBlock.style.display = 'block'
+        } else {
+           discountValueBlock.style.display = 'none'
+        }
+    }
+
+    checkbox.addEventListener('change', toggleDiscountValue)
+
+    discountType.addEventListener('change', function(){
+        if ( discountType.value !== 'GET_FREE' ){
+            document.querySelector("input[name='discount_value_unit']").value = discountTypeData[discountType.value]
+        } else {
+            document.querySelector("input[name='discount_value_unit']").value = ""
+        }
+    })
+
+    toggleDiscountValue()
+
+</script>
+
             {% else %}
                 <h1 class="text-center text-dark mb-5"
                     style="margin-top: 100px;"> Điều chỉnh chương trình khuyến mãi </h1>
@@ -811,21 +943,13 @@
 
                 <div class="row">
                     <div class="col col-6">
-                        <form action="#"
+                        <form action="{{ url_for('product.promotion_detail_update') }}"
+                              method="POST"
                               id="promotionUpdateForm">
                             <div class="form-group">
-                                <span class="d-flex flex-row justify-content-between">
-                                    <label style="font-size: 22px;">
+                                <label style="font-size: 22px;">
                                     <b>Mã chương trình: </b>
                                 </label>
-                                <button class="btn btn-warning form-control w-50 font-weight-bold mb-2"
-                                    type="button"
-                                    id="updatePromotionButton">
-                                    <i class="fa-solid fa-floppy-disk"></i>
-                                    Lưu thay đổi
-                                </button>
-                                </span>
-
                                 <input type="text"
                                        name="promotion_id"
                                        class="form-control text-center"
@@ -842,69 +966,80 @@
                                        value="{{ promotion[0].description }}"
                                        data-promotion-description="{{ promotion[0].description }}" >
                             </div>
-                            <div class="form-group form-inline mt-5">
+                            <div class="form-group d-flex justify-content-between mt-5">
                                 <label style="font-size: 22px;">
                                     <b>Ngày bắt đầu:</b>
                                 </label>
                                 <input type="text"
                                        name="promotion_start_date"
                                        readonly
-                                       class="form-control text-center w-50"
-                                       style="margin-left: 14px;"
+                                       class="form-control text-center"
+                                       style="margin-left: 14px; width: 72%;"
                                        value="{{ promotion[0].start_date.strftime(' %d-%m-%Y') }}"
                                        data-promotion-start-date="{{ promotion[0].start_date }}" >
                             </div>
-                            <div class="form-group form-inline mt-5">
+                            <div class="form-group d-flex justify-content-between mt-5">
                                 <label style="font-size: 22px;">
                                     <b>Ngày kết thúc:</b>
                                 </label>
                                 <input type="text"
                                        class="form-control text-center ml-2 mr-2 w-25"
-                                       value="{{ promotion[0].end_date.strftime('%d-%m-%Y') }}"
+                                       {% if promotion[0].end_date %}
+                                       value=" {{ promotion[0].end_date.strftime('%d-%m-%Y') }}"
+                                       {% endif %}
                                        name="original_promotion_end_date"
-                                       data-promotion-end-date="{{ promotion[0].end_date.strftime('%Y-%m-%d') }}" >
+                                       data-promotion-end-date="{% if  promotion[0].end_date %}
+                                                                     {{ promotion[0].end_date.strftime('%d-%m-%Y') }}
+                                                                {% else %}
+                                                                     Không có
+                                                                {% endif %}" >
 
                                 <label style="font-size: 22px;">
                                     <b>Điều chỉnh:</b>
                                 </label>
                                 <input type="date"
-                                       readonly
                                        class="form-control w-25 ml-1"
                                        name="promotion_end_date">
                             </div>
+                            <button type="submit"
+                                    class="btn btn-warning form-control w-100 font-weight-bold mb-2"
+                                    id="updatePromotionButton">
+                                 <i class="fa-solid fa-floppy-disk"></i>
+                                Lưu thay đổi
+                            </button>
                         </form>
                     </div>
 
 <!--BUSSINESS REPORT-->
-                    <div class="col col-6 text-center align-text-bottom border border-dark mb-3"
+                    <div class="col col-6 text-center border border-dark pt-5"
                           style="font-size: 24px; margin: 0px; padding: 0px;">
                            <div class="container-fluid"
                                 style="margin: 0px; padding: 0px;">
                                 <div id="demo" class="carousel slide" data-ride="carousel">
-                                  <ul class="carousel-indicators">
-                                    <li data-target="#demo" data-slide-to="0" class="active"></li>
-                                    <li data-target="#demo" data-slide-to="1"></li>
-                                    <li data-target="#demo" data-slide-to="2"></li>
-                                  </ul>
 
                                   <div class="carousel-inner no-gutters">
-                                    <div class="carousel-item active">
-                                            Haha
+                                    <div class="carousel-item active"
+                                         id="promotion-stats-1">
+                                            <canvas id="promotion-chart-1">
+
+                                            </canvas>
                                     </div>
-                                    <div class="carousel-item">
-                                           Hoho
-                                    </div>
-                                    <div class="carousel-item">
-                                            Hihi
+                                    <div class="carousel-item"
+                                         id="promotion-stats-2">
+                                         <canvas id="promotion-chart-2">
+
+                                         </canvas>
                                     </div>
                                   </div>
 
-                                  <a class="carousel-control-prev btn-dark" href="#demo" data-slide="prev">
-                                    <span class="carousel-control-prev-icon"></span>
-                                  </a>
-                                  <a class="carousel-control-next btn-dark" href="#demo" data-slide="next" id="slider-click-btn">
-                                    <span class="carousel-control-next-icon"></span>
-                                  </a>
+                                  <div class="carousel-controller">
+                                      <button class="carousel-btn btn-left" data-target="#demo" data-slide="prev">
+                                          <i class="fa-solid fa-arrow-left"></i>
+                                      </button>
+                                      <button class="carousel-btn btn-right" data-target="#demo" data-slide="next" id="slider-click-btn">
+                                          <i class="fa-solid fa-arrow-right"></i>
+                                      </button>
+                                  </div>
                                 </div>
                            </div>
                     </div>
@@ -913,27 +1048,36 @@
             <hr>
             {% if promotion[0].apply_for.value == 1 %}
                 <h2 class="text-center mt-4 mb-4"> Các sản phẩm áp dụng </h2>
+                    <button class="btn btn-warning format-btn font-weight-bold text-dark mb-2"
+                            data-toggle="modal"
+                            data-target="#applyPromotionModal">
+                        <i class="fa-solid fa-square-plus"></i>
+                        Thêm sản phẩm áp dụng
+                    </button>
                     <table class="table table-hover table-bordered text-center mb-5">
                         <thead class="thead-dark">
-                            <th scope="col">STT</th>
-                            <th scope="col">Mã sản phẩm</th>
-                            <th scope="col">Tên sản phẩm</th>
-                            <th scope="col">Giá nhập</th>
-                            <th scope="col">Giá bán</th>
-                            <th scope="col">Khuyến mãi</th>
+                            <tr>
+                                <th scope="col">STT</th>
+                                <th scope="col">Mã sản phẩm</th>
+                                <th scope="col">Tên sản phẩm</th>
+                                <th scope="col">Giá nhập</th>
+                                <th scope="col">Giá bán</th>
+                                <th scope="col">Khuyến mãi</th>
+                            </tr>
                         </thead>
 
                         <tbody>
+                        {% if product_promotion %}
                             {% for product in product_promotion %}
                             <tr>
-                                <td scope="row">{{ loop.index }}</td>
+                                <th scope="row">{{ loop.index }}</th>
                                 <td>{{ product.id }}</td>
                                 <td>{{ product.name }}</td>
                                 <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
                                 <td>{{ "{:,.0f}".format(product.price) }}đ</td>
                                 {% if product.discount_type.value == 1 or product.discount_type.value == 4 %}
                                     <td class="font-weight-bold">
-                                        {{ "{:,.0f}".format(product.price * ( 100 - product.discount_value ) / 100) }}<br>
+                                        {{ "{:,.0f}".format(product.price * ( 100 - product.discount_value ) / 100) }}đ<br>
 
                                         <p class="text-danger font-weight-bold">
                                             ( - {{ "{:,.0f}".format(product.discount_value) }} {% if product.discount_type.value == 4 %} đ {% else %} % {% endif %})
@@ -950,58 +1094,277 @@
                             </tr>
                             {% endfor %}
                         </tbody>
+
+                        {% else %}
+                        <tbody>
+                            <tr>
+                                <td colspan="6">
+                                     <div class="alert alert-secondary">
+                                        <b>
+                                            Không có sản phẩm nào dược áp dụng
+                                        </b>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        {% endif %}
                     </table>
                 <br><br>
             {% else %}
             {% endif %}
+            <a href="{{ url_for('product.product_promotion') }}"
+               class="btn btn-dark form-control w-25"
+               style="font-size: 22px;" >
+               <i class="fa-solid fa-right-from-bracket format-btn"></i>
+                Quay lại
+            </a>
+            <a href="#"
+               class="btn btn-danger form-control w-25"
+               style="font-size: 22px;" >
+               <i class="fa-solid fa-trash format-btn"></i>
+                Xóa chương trình khuyến mãi
+            </a>
+            <br><br><br>
+
+
+
+<!--APPLY PRODUCT PROMOTION MODAL-->
+        <div class="modal fade ml-5" id="applyPromotionModal">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+
+              <div class="modal-header bg-danger text-light">
+                <h4 class="modal-title">Áp dụng khuyến mãi cho sản phẩm</h4>
+                <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+              </div>
+
+              <div class="modal-body">
+                  <h3 class="text-center mb-3">Danh sách sản phẩm chưa áp dụng</h3>
+                  <input type="text"
+                         class="form-control w-50 mb-2 border-dark"
+                         id="productInput"
+                         onkeyup="filterProduct()"
+                         placeholder="Tìm tên sản phẩm...">
+                  <table class="table table-hover table-bordered text-center apply-warranty-table">
+                      <thead class="thead-dark">
+                           <tr>
+                               <th scope="col">Mã sản phẩm</th>
+                               <th scope="col">Tên sản phẩm</th>
+                               <th scope="col">Giá trị giảm</th>
+                               <th scope="col" style="width: 8%;">Đơn vị</th>
+                               <th scope="col"></th>
+                           </tr>
+                      </thead>
+                      <tbody>
+                            {% for product in product_applied_yet %}
+                            <tr>
+                                <th scope="row">
+                                    {{ product.id }}
+                                </th>
+                                <td>{{ product.name }}</td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="discount_value_{{product.id}}">
+                                </td>
+                                <td style="width: 5%">
+                                    <input type="text"
+                                           readonly
+                                           name="discount_type_{{product.id}}"
+                                           class="form-control w-100 text-center">
+                                </td>
+                                <td>
+                                    <input type="checkbox"
+                                           class="form-control"
+                                           name="checked_{{ product.id }}"
+                                           data-product-id="{{ product.id }}" >
+                                </td>
+                            </tr>
+                            {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-dismiss="modal">
+                    <i class="fa-solid fa-xmark"></i>
+                    Đóng
+                </button>
+                  <button type="button"
+                          class="btn btn-warning"
+                          onclick="applyPromotion()">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Lưu áp dụng
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+<!--END-->
+
+
         {% endif %}
     {% endif %}
 {% endif %}
 <script>
-    document.querySelector('.flash-messages').style.marginTop = "100px"
+
     const updateButton = document.querySelector('#updatePromotionButton')
-    updateButton.style.display = 'none';
-    const inputs = document.querySelectorAll('#promotionUpdateForm div input');
+    updateButton.style.display = 'none'
+    const inputs_promotion = document.querySelectorAll("#promotionUpdateForm div input")
 
     function checkForChanges() {
         let isChanged = false;
 
-        inputs.forEach(function(input) {
+        inputs_promotion.forEach(function(input) {
             const currentValue = input.value;
-            const originalValue = input.getAttribute('data-' + input.name.replace('_', '-'));
+            var originalValue = input.getAttribute('data-' + input.name.replace('_', '-'))
 
-            if (input.type === 'date' || input.type === 'datetime-local') {
-            // Chỉ có end_date là input riêng thoi
-                const inputDate = new Date(document.querySelector('input[name="promotion_end_date"]').value);
+            if (input.type === 'date' || originalValue !== null) {
+                originalValue = document.querySelector("input[name='original_promotion_end_date']").value
+                
+                const currentDate = new Date(currentValue);
                 const originalDate = new Date(originalValue);
 
-                console.log("input + " + inputDate, originalDate)
-
-            if (originalValue !== null && inputDate.getTime() !== originalDate.getTime()) {
-                updateButton.style.display = 'block';
-            } else {
-                updateButton.style.display = 'none';
-            }
-        }
-
-            if (originalValue !== null && currentValue !== originalValue) {
+                console.log(currentDate)
+                console.log(originalDate)
+    
+                if (currentDate.getTime() !== originalDate.getTime()) {
+                    isChanged = true;
+                }
+            } 
+            else if (originalValue !== null && currentValue !== originalValue) {
                 isChanged = true;
             }
-        });
+        })
 
         if (isChanged) {
-            updateButton.style.display = 'block';
+            updateButton.style.display = 'block'
         } else {
-            updateButton.style.display = 'none';
+            updateButton.style.display = 'none'
         }
     }
 
 
-    inputs.forEach(input => {
-        input.addEventListener('keyup', checkForChanges);
-        });
+    inputs_promotion.forEach(input => {
+        if (input.type === 'date') {
+            input.addEventListener('change', checkForChanges);
+        } else {
+            input.addEventListener('keyup', checkForChanges);
+        }
+    })
 
 
+
+
+    discountTypeApply = {
+        'DiscountType.PERCENTAGE' : '%',
+        'DiscountType.GET_FREE': 'Mua 1 tặng 1',
+        'DiscountType.FIXED_AMOUNT' : '',
+        'DiscountType.PRICE' : 'đ',
+    }
+
+    {% for product in product_applied_yet %}
+        discountTypeInput = document.querySelector("input[name='discount_type_{{product.id}}']")
+        discountTypeInput.value = discountTypeApply['DiscountType.PERCENTAGE']
+    {% endfor %}
+
+
+    function autoClick(){
+    const button = document.querySelector("#slider-click-btn")
+        button.click();
+    }
+
+    setInterval(autoClick, 3500)
+
+    flash_msg = document.querySelector('.flash-messages').style.marginTop = "100px"
+    
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var promotion_Charts = {}
+        const ctxChart1 = document.getElementById(`promotion-chart-1`).getContext('2d');
+        promotion_Charts[0] = new Chart(ctxChart1, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2'],
+                datasets: [{
+                    label: 'Tổng doanh thu',
+                    data: ["1", "2"],
+                    backgroundColor: 'red',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + 'đ'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || ''
+                                if (label) {
+                                    label += ': '
+                                }
+                                label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                return label
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+
+
+        const ctxChart2 = document.getElementById(`promotion-chart-2`).getContext('2d');
+        promotion_Charts[0] = new Chart(ctxChart2, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2'],
+                datasets: [{
+                    label: 'Tổng doanh thu',
+                    data: ["1", "2"],
+                    backgroundColor: 'blue',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + 'đ'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || ''
+                                if (label) {
+                                    label += ': '
+                                }
+                                label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                return label
+                            }
+                        }
+                    }
+                }
+            }
+        })
 </script>
 
 

@@ -20,7 +20,7 @@
                    <i class="fa-solid fa-magnifying-glass"></i>
                   Tìm kiếm
               </button>
-            </form>
+        </form>
             <button style="width: 41.5%; font-size: 18px;"
                     data-toggle="modal"
                     data-target="#createWarranty"
@@ -120,7 +120,6 @@
                       Thêm
                   </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -197,16 +196,17 @@
         </form>
         <br>
         <hr>
-        {% if void %}
-            <h2 class="text-center text-dark mt-4 mb-4"> Hiện chưa có sản phẩm nào áp dụng </h2>
-        {% else %}
         <h2 class="text-center text-dark mt-4 mb-4"> Các sản phẩm áp dụng </h2>
-        <a class="btn btn-warning format-btn font-weight-bold text-dark"
-           data-toggle="modal"
-           data-target="#applyWarrantyModal">
+        <button class="btn btn-warning format-btn font-weight-bold text-dark"
+                data-toggle="modal"
+                data-target="#applyWarrantyModal">
             <i class="fa-solid fa-square-plus"></i>
             Thêm sản phẩm áp dụng
-        </a>
+        </button>
+        {% if void %}
+            <h2 class="text-center text-dark mt-4 mb-4"> Hiện chưa có sản phẩm nào áp dụng </h2>
+
+        {% else %}
 
         <hr>
 
@@ -279,6 +279,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
         <a href="{{ url_for('warranty.index') }}"
            style="font-size: 24px;"
            class="btn btn-dark mt-2 mb-5">
@@ -293,6 +294,8 @@
                 <i class="fa-solid fa-floppy-disk"></i>
                 Lưu thay đổi
         </button>
+
+
 
 <!--APPLY WARRANTY FOR PRODUCT MODAL-->
         <div class="modal fade ml-5" id="applyWarrantyModal">
@@ -638,7 +641,6 @@
 
 </script>
 
-        {% endif %}
 
 {% endif %}
 

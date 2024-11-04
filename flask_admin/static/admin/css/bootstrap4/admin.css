@@ -170,7 +170,7 @@ body.modal-open {
 
 #categoryForm label,
 #categoryForm input {
-    font-size: 2px;
+    font-size: 24px;
 }
 
 #createModal button {
@@ -323,6 +323,11 @@ form select {
     font-size: 20px;
 }
 
+
+#createPromotion label{
+    font-size: 22px;
+}
+
 .warranty-table td,
 .warranty-table td span {
     font-size: 24px;
@@ -405,4 +410,25 @@ form select {
 
 .send-msg-btn {
     width: 40px !important;
+}
+
+.carousel-btn {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    width: 50px;
+    background-color: #fff;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    color: black;
+    background-color: black;
+    cursor: pointer;s
+}
+
+.carousel-controller{
+    display: flex;
+    justify-content: space-between;
 }
