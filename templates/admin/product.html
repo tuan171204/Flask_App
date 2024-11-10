@@ -712,7 +712,7 @@
                           Tìm kiếm
                       </button>
                 </form>
-                <button style="width: 41.5%; font-size: 18px;"
+                <button style="width: 40%; font-size: 18px;"
                         data-toggle="modal"
                         data-target="#createPromotion"
                         class="btn btn-danger mt-2 form-control font-weight-bold">
@@ -1002,7 +1002,7 @@
                                        name="promotion_end_date">
                             </div>
                             <button type="submit"
-                                    class="btn btn-warning form-control w-100 font-weight-bold mb-2"
+                                    class="btn btn-warning form-control w-100 font-weight-bold"
                                     id="updatePromotionButton">
                                  <i class="fa-solid fa-floppy-disk"></i>
                                 Lưu thay đổi
@@ -1011,12 +1011,12 @@
                     </div>
 
 <!--BUSSINESS REPORT-->
-                    <div class="col col-6 text-center border border-dark pt-5"
-                          style="font-size: 24px; margin: 0px; padding: 0px;">
-                           <div class="container-fluid"
-                                style="margin: 0px; padding: 0px;">
-                                <div id="demo" class="carousel slide" data-ride="carousel">
-
+                    <div class="col col-6 text-center border pt-5 promotion_report">
+                           <div class="container-fluid">
+                                <h3>Báo cáo doanh thu hiệu quả khuyến mãi</h3>
+                                <div id="demo"
+                                     class="carousel slide"
+                                     data-ride="carousel">
                                   <div class="carousel-inner no-gutters">
                                     <div class="carousel-item active"
                                          id="promotion-stats-1">
@@ -1112,17 +1112,17 @@
                 <br><br>
             {% else %}
             {% endif %}
+
+            <a href="{{ url_for('product.delete_promotion', promotion_id = promotion[0].id) }}"
+               class="btn btn-danger form-control w-25 format-btn mb-2">
+               <i class="fa-solid fa-trash format-btn"></i>
+                Xóa khuyến mãi
+            </a>
+            <br>
             <a href="{{ url_for('product.product_promotion') }}"
-               class="btn btn-dark form-control w-25"
-               style="font-size: 22px;" >
+               class="btn btn-dark form-control w-25 format-btn">
                <i class="fa-solid fa-right-from-bracket format-btn"></i>
                 Quay lại
-            </a>
-            <a href="#"
-               class="btn btn-danger form-control w-25"
-               style="font-size: 22px;" >
-               <i class="fa-solid fa-trash format-btn"></i>
-                Xóa chương trình khuyến mãi
             </a>
             <br><br><br>
 
@@ -1145,7 +1145,7 @@
                          id="productInput"
                          onkeyup="filterProduct()"
                          placeholder="Tìm tên sản phẩm...">
-                  <table class="table table-hover table-bordered text-center apply-warranty-table">
+                  <table class="table table-hover table-bordered text-center apply-promotion-table">
                       <thead class="thead-dark">
                            <tr>
                                <th scope="col">Mã sản phẩm</th>
@@ -1167,11 +1167,25 @@
                                            class="form-control"
                                            name="discount_value_{{product.id}}">
                                 </td>
-                                <td style="width: 5%">
-                                    <input type="text"
-                                           readonly
-                                           name="discount_type_{{product.id}}"
-                                           class="form-control w-100 text-center">
+                                <td style="width: 20%">
+                                    {% if not discount_type %}
+                                        {% set discount_type_data = [{'discount_name' : '%', 'value' : 'PERCENTAGE'},
+                                                                     {'discount_name' : 'Mua 1 tặng 1', 'value' : 'GET_FREE'},
+                                                                     {'discount_name' : 'đ', 'value' : 'PRICE'}]
+                                        %}
+                                        <select name="discount_type_{{product.id}}"
+                                                class="custom-select w-100 text-center">
+                                        {% for discount in discount_type_data %}
+                                            <option value="{{discount.value}}">{{discount.discount_name}}</option>
+                                        {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input type="text"
+                                               readonly
+                                               name="discount_type_{{product.id}}"
+                                               data-product-id="{{product.id}}"
+                                               class="form-control text-center">
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <input type="checkbox"
@@ -1215,6 +1229,7 @@
     const updateButton = document.querySelector('#updatePromotionButton')
     updateButton.style.display = 'none'
     const inputs_promotion = document.querySelectorAll("#promotionUpdateForm div input")
+
 
     function checkForChanges() {
         let isChanged = false;
@@ -1267,10 +1282,106 @@
         'DiscountType.PRICE' : 'đ',
     }
 
+    discountTypeEnum = {
+        'DiscountType.PERCENTAGE' : 'PERCENTAGE',
+        'DiscountType.GET_FREE': 'GET_FREE',
+        'DiscountType.FIXED_AMOUNT' : 'FIXED_AMOUNT',
+        'DiscountType.PRICE' : 'PRICE',
+    }
+
     {% for product in product_applied_yet %}
-        discountTypeInput = document.querySelector("input[name='discount_type_{{product.id}}']")
-        discountTypeInput.value = discountTypeApply['DiscountType.PERCENTAGE']
+        {% if discount_type %}
+            discountTypeInput = document.querySelector("input[name='discount_type_{{product.id}}']")
+            discountTypeInput.setAttribute("data-discount-type", discountTypeEnum['{{discount_type}}']);
+            discountTypeInput.value = discountTypeApply['{{discount_type}}']
+        {% endif %}
     {% endfor %}
+
+
+
+
+    function filterProduct() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("productInput");
+        filter = input.value.toUpperCase();
+        table = document.querySelector('.apply-promotion-table')
+        tr = table.getElementsByTagName("tr");
+  
+        for (i = 0; i < tr.length; i++) {
+          td = tr[i].getElementsByTagName("td")[0];
+          if (td) {
+            txtValue = td.textContent || td.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+              tr[i].style.display = "";
+            } else {
+              tr[i].style.display = "none";
+            }
+          }
+        }
+      }
+
+
+
+     applyPromotion = () => {
+        const selectedProducts = [];
+    
+        document.querySelectorAll("input[type='checkbox'][name^='checked_']").forEach(checkbox => {
+            if (checkbox.checked) {
+                var productId = checkbox.getAttribute('data-product-id')
+    
+                var discountValueInput = document.querySelector(`input[name='discount_value_${productId}']`)
+                var discountTypeValue = document.querySelector(`input[name='discount_type_${productId}']`)
+
+                if (discountTypeValue === null){
+                    discountTypeValue = document.querySelector(`select[name='discount_type_${productId}']`)
+
+                    selectedProducts.push({
+                        promotion_id: '{{promotion_id}}',
+                        product_id: productId,
+                        discount_value: discountValueInput.value,
+                        discount_type: discountTypeValue.value
+                    })
+                } else {
+                    selectedProducts.push({
+                        promotion_id: '{{promotion_id}}',
+                        product_id: productId,
+                        discount_value: discountValueInput.value,
+                        discount_type: discountTypeValue.getAttribute('data-discount-type')
+                    })
+                }
+            }
+        })
+
+        if (selectedProducts.length === 0) {
+            alert("Vui lòng chọn ít nhất một sản phẩm để áp dụng khuyến mãi.")
+            return;
+        }
+
+
+        if (confirm("Xác nhận lưu áp dụng khuyến mãi với các sản phẩm ? ")){
+            fetch('/api/apply-promotion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                     promotion_id: '{{promotion_id}}',
+                     products: selectedProducts 
+                    })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.msg);
+                    location.reload();
+                } else {
+                    alert("Có lỗi xảy ra khi áp dụng khuyến mãi: ", data.msg);
+                    console.error(data.msg)
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
 
 
     function autoClick(){
@@ -1280,91 +1391,107 @@
 
     setInterval(autoClick, 3500)
 
+
+
+
+
     flash_msg = document.querySelector('.flash-messages').style.marginTop = "100px"
     
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    var promotion_Charts = {}
-        const ctxChart1 = document.getElementById(`promotion-chart-1`).getContext('2d');
-        promotion_Charts[0] = new Chart(ctxChart1, {
-            type: 'bar',
-            data: {
-                labels: ['1', '2'],
-                datasets: [{
-                    label: 'Tổng doanh thu',
-                    data: ["1", "2"],
-                    backgroundColor: 'red',
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('vi-VN') + 'đ'
+    {% if revenue_before_promotion != 0 and revenue_during_promotion != 0 %}
+        var promotion_Charts = {}
+            const ctxChart1 = document.getElementById(`promotion-chart-1`).getContext('2d');
+            promotion_Charts[0] = new Chart(ctxChart1, {
+                type: 'bar',
+                data: {
+                    labels: ["Trước khuyến mãi", "Trong thời gian khuyến mãi"],
+                    datasets: [{
+                        label: "Tổng doanh thu",
+                        data: [{{ revenue_before_promotion}}, {{revenue_during_promotion}}],
+                        backgroundColor: ['green', 'red']
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('vi-VN') + 'đ'
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || ''
-                                if (label) {
-                                    label += ': '
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || ''
+                                    if (label) {
+                                        label += ': '
+                                    }
+                                    label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                    return label
                                 }
-                                label += context.raw.toLocaleString('vi-VN') + 'đ';
-                                return label
                             }
                         }
                     }
                 }
-            }
-        })
+            })
 
 
 
-        const ctxChart2 = document.getElementById(`promotion-chart-2`).getContext('2d');
-        promotion_Charts[0] = new Chart(ctxChart2, {
-            type: 'bar',
-            data: {
-                labels: ['1', '2'],
-                datasets: [{
-                    label: 'Tổng doanh thu',
-                    data: ["1", "2"],
-                    backgroundColor: 'blue',
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('vi-VN') + 'đ'
+            const ctxChart2 = document.getElementById(`promotion-chart-2`).getContext('2d');
+            promotion_Charts[0] = new Chart(ctxChart2, {
+                type: 'bar',
+                data: {
+                    labels: ['1', '2'],
+                    datasets: [{
+                        label: 'Tổng doanh thu',
+                        data: ["1", "2"],
+                        backgroundColor: 'blue',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('vi-VN') + 'đ'
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || ''
-                                if (label) {
-                                    label += ': '
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || ''
+                                    if (label) {
+                                        label += ': '
+                                    }
+                                    label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                    return label
                                 }
-                                label += context.raw.toLocaleString('vi-VN') + 'đ';
-                                return label
                             }
                         }
                     }
                 }
-            }
-        })
+            })
+    {% else %}
+    const ctxChart1 = document.getElementById(`promotion-stats-1`).innerHTML = `<div class='annouce_bg'>
+                                                                                    <h2>Chưa có lượt mua</h2>
+                                                                                </div>
+                                                                                `
+    const ctxChart2 = document.getElementById(`promotion-stats-2`).innerHTML = `<div class='annouce_bg'>
+                                                                                    <h2>Chưa có lượt mua</h2>
+                                                                                </div>
+                                                                                `
+
+    {% endif %}
 </script>
 
 

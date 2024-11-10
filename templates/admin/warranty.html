@@ -51,11 +51,11 @@
                                 <i class="fa-solid fa-pencil"></i>
                                 Chỉnh sửa
                             </a>
-                            <a onclick="deleteWarranty({{ warranty.id }})"
-                               class="btn btn-danger text-light" >
+                            <button onclick="deleteWarranty({{ warranty.id }})"
+                                    class="btn btn-danger text-light" >
                                 <i class="fa-solid fa-trash"></i>
                                 Xóa
-                            </a>
+                            </button>
                         </td>
                     </tr>
 
@@ -364,8 +364,7 @@
                     <i class="fa-solid fa-xmark"></i>
                     Đóng
                 </button>
-                  <button type="button"
-                          class="btn btn-warning"
+                  <button class="btn btn-warning"
                           onclick="applyWarranty()">
                     <i class="fa-solid fa-floppy-disk"></i>
                     Lưu áp dụng
@@ -451,10 +450,12 @@
 
 
     applyWarranty = () => {
-        if (confirm ("Xác nhận áp dụng đối với các sản phẩm ? ")) {
+
             const productsData = [];
             const warrantyId = document.querySelector("input[name='inputWarrantyId']").value
             let isValid = true;
+
+            showLoading()
 
             document.querySelectorAll("input[name^='checked_']").forEach(input => {
                 if (input.checked) {
@@ -481,9 +482,11 @@
 
             if (productsData.length === 0) {
                 alert("Bạn chưa chọn sản phẩm nào !")
+                hideLoading()
                 return;
             }
 
+        if (confirm ("Xác nhận áp dụng đối với các sản phẩm ? ")) {
             fetch('/api/apply_warranty', {
                 method: 'PUT',
                 headers: {
@@ -497,22 +500,24 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert("Chương trình bảo hành đã được áp dụng thành công cho các sản phẩm!")
                     location.reload()
                 } else {
                     alert("Có lỗi xảy ra khi áp dụng chương trình bảo hành.")
                 }
             })
             .catch(error => {
+                hideLoading()
                 console.error("Error:", error);
                 alert("Có lỗi xảy ra khi áp dụng chương trình bảo hành.")
             })
+        } else {
+             hideLoading()
         }
     }
 
     deleteApplyWarranty = (warrantyId, productId) => {
         if (confirm("Bỏ áp dụng chương trình bảo hành với sản phẩm này?")) {
-
+            showLoading()
             fetch(`/api/delete_apply_warranty/`, {
                 method: 'DELETE',
                 headers: {
@@ -526,18 +531,19 @@
             })
             .then(response => response.json())
             .then(data => {
+                hideLoading()
                 if (data.success){
                     const row = document.querySelector(`#warranty-row-${productId}`)
                     if (row){
                         row.remove()
                     }
-                    alert("Đã bỏ áp dụng sản phẩm!");
-                    location.reload()
                 }
-                    else {
-                    alert("Đã có lỗi xảy ra khi bỏ áp dụng chương trình !");
+                else {
+                 hideLoading()
+                 alert("Đã có lỗi xảy ra khi bỏ áp dụng chương trình !");
                 }
             }).catch(error => {
+                hideLoading()
                 console.error("Error:", error);
                 alert("Có lỗi xảy ra khi bỏ áp dụng chương trình.");
             })

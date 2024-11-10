@@ -17,13 +17,15 @@ from flask import request
 from datetime import datetime
 
 
-class ManageModelView(ModelView):
-    def check_permission(self, permission_name):
-        if not current_user.is_authenticated:
-            return False
+def check_permission(permission_name):
+    if not current_user.is_authenticated:
+        return False
 
-        user_permission = utils.get_user_permission(current_user.id)
-        return getattr(user_permission.User_Role, permission_name, False)
+    user_permission = utils.get_user_permission(current_user.id)
+    return getattr(user_permission.User_Role, permission_name, False)
+
+
+class ManageModelView(ModelView):
 
     def is_accessible(self):
         return current_user.is_authenticated
@@ -151,20 +153,29 @@ class UserView(ManageModelView):
         email = request.form.get('email')
         phone_number = request.form.get('phone_number')
         address = request.form.get('address')
+        staff = request.form.get('staff', False)
 
-        utils.add_user(name=name,
-                       username=username,
-                       password=password,
-                       email=email,
-                       phone_number=phone_number,
-                       address=address)
+        if staff:
+            utils.add_staff(name=name,
+                            username=username,
+                            password=password,
+                            email=email,
+                            phone_number=phone_number,
+                            address=address)
+        else:
+            utils.add_user(name=name,
+                           username=username,
+                           password=password,
+                           email=email,
+                           phone_number=phone_number,
+                           address=address)
 
         flash("Thêm người dùng thành công", "success")
 
         return redirect('/admin/user_admin/')
 
     def is_accessible(self):
-        return self.check_permission('view_user')
+        return check_permission('view_user')
 
 
 class ProductView(ManageModelView):
@@ -373,15 +384,29 @@ class ProductView(ManageModelView):
 
         product_promotion, product_applied_yet = utils.get_product_with_promotion(promotion_id)
 
-        promotion_discount_type = PromotionDetail.query.filter(PromotionDetail.promotion_id==promotion_id).first()
-        discount_type = promotion_discount_type.discount_type
+        promotion_discount_type = PromotionDetail.query.filter(PromotionDetail.promotion_id == promotion_id).first()
+
+        revenue_during_promotion = utils.calculate_promotion_revenue(promotion_id)
+
+        revenue_before_promotion = utils.calculate_revenue_before_promotion(promotion_id)
+
+        if promotion_discount_type:
+            discount_type = promotion_discount_type.discount_type
+            discount_type_list = False
+        else:
+            discount_type = False
+            discount_type_list = DiscountType
 
         return self.render('admin/product.html',
                            promotion_detail=True,
                            promotion=promotion,
                            product_promotion=product_promotion,
                            product_applied_yet=product_applied_yet,
-                           discount_type=discount_type)
+                           discount_type=discount_type,
+                           discount_type_list=discount_type_list,
+                           promotion_id=promotion_id,
+                           revenue_during_promotion=revenue_during_promotion,
+                           revenue_before_promotion=revenue_before_promotion)
 
     @expose('create-promotion', methods=['POST'])
     def create_promotion(self):
@@ -449,8 +474,21 @@ class ProductView(ManageModelView):
 
         return redirect(url_for('product.promotion_detail', promotion_id=promotion_id))
 
+    @expose('delete-promotion/<promotion_id>')
+    def delete_promotion(self, promotion_id):
+
+        result = utils.delete_promotion(promotion_id)
+
+        if result['success']:
+            flash(result['message'], 'success')
+
+        else:
+            flash(result['message'], 'danger')
+
+        return redirect(url_for('product.product_promotion'))
+
     def is_accessible(self):
-        return self.check_permission('view_product')
+        return check_permission('view_product')
 
 
 class CategoryView(ManageModelView):
@@ -545,7 +583,7 @@ class CategoryView(ManageModelView):
         return redirect('/admin/category/')
 
     def is_accessible(self):
-        return self.check_permission('view_product')
+        return check_permission('view_product')
 
 
 class DeliveryNoteView(ManageModelView):
@@ -711,7 +749,7 @@ class DeliveryNoteView(ManageModelView):
         return redirect('/admin/goods_delivery')
 
     def is_accessible(self):
-        return self.check_permission('delivery_product')
+        return check_permission('delivery_product')
 
 
 class LogoutView(BaseView):
@@ -822,7 +860,7 @@ class StatsView(ManageModelView):
                            quarters=quarters)
 
     def is_accessible(self):
-        return self.check_permission('view_stats')
+        return check_permission('view_stats')
 
 
 class OrderProductView(ManageModelView):
@@ -888,7 +926,7 @@ class OrderProductView(ManageModelView):
         return self.render('admin/product_order.html')
 
     def is_accessible(self):
-        return self.check_permission('order_product')
+        return check_permission('order_product')
 
 
 class ReceiveNoteView(ManageModelView):
@@ -928,7 +966,7 @@ class ReceiveNoteView(ManageModelView):
                            )
 
     def is_accessible(self):
-        return self.check_permission('receive_product')
+        return check_permission('receive_product')
 
     @expose('/create-receive-form/<goods_received_code>')
     def create_receive_form(self, goods_received_code):
@@ -1102,7 +1140,7 @@ class ReceiptView(ManageModelView):
     def view_delivery_note(self, receipt_id):
         receipt = utils.get_receipt_by_id(receipt_id)
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail(receipt_id)
 
         total_in_words = num2words(total_price, lang='vi').capitalize() + " đồng "
 
@@ -1175,7 +1213,7 @@ class ReceiptView(ManageModelView):
 
         delivery_address = request.form.get('delivery_address')
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail(receipt_id)
 
         products_data = []
 
@@ -1216,7 +1254,7 @@ class ReceiptView(ManageModelView):
         return redirect('/admin/receipt')
 
     def is_accessible(self):
-        return self.check_permission('view_receipt')
+        return check_permission('view_receipt')
 
 
 class UserRoleView(ManageModelView):
@@ -1331,7 +1369,7 @@ class WarrantyView(ManageModelView):
         return redirect(url_for('warranty.index'))
 
     def is_accessible(self):
-        return self.check_permission('view_product')
+        return check_permission('view_product')
 
 
 class StorageView(BaseView):

@@ -191,18 +191,22 @@
 
 
         window.addEventListener('load', function() {
-            document.getElementById('loading-overlay').style.display = 'none';
-          });
+            document.getElementById('loading-overlay').style.display = 'none'
+          })
 
           function showLoading() {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            document.getElementById('loading-overlay').style.display = 'flex'
+          }
+
+          function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none'
           }
 
           document.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function(event) {
-              showLoading();
-            });
-          });
+              showLoading()
+            })
+          })
     </script>
     
 

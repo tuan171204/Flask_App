@@ -260,9 +260,19 @@ def get_product_detail_info(product_id):
                                PromotionDetail.discount_value.label('discount_value'),
                                PromotionDetail.discount_type.label('discount_type'),
                                Promotion.description.label('promotion_description')) \
-        .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
-        .join(Promotion, Promotion.id == PromotionDetail.promotion_id) \
-        .filter(Product.id == product_id).first()
+        .outerjoin(PromotionDetail, PromotionDetail.product_id == Product.id) \
+        .outerjoin(Promotion, Promotion.id == PromotionDetail.promotion_id) \
+        .filter(Product.id == product_id) \
+        .filter(Promotion.end_date > datetime.now()).first()
+
+    if product is None:
+        product = db.session.query(
+            Product.id,
+            Product.name,
+            Product.image,
+            Product.price,
+            Product.description
+        ).filter(Product.id == product_id).first()
 
     return product
 
@@ -307,6 +317,36 @@ def add_user(name, username, password, **kwargs):
     db.session.flush()
 
     user_role = User_Role(id=user_id)
+
+    privileged = Privileged(user_id=user_id,
+                            user_role=user_id)
+
+    db.session.add(user_role)
+    db.session.flush()
+    db.session.add(privileged)
+    db.session.commit()
+
+
+def add_staff(name, username, password, **kwargs):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+    user = User.query.order_by(desc(User.id)).first()
+    user_id = user.id + 1
+
+    user = User(id=user_id,
+                name=name.strip(),
+                username=username.strip(),
+                password=password,
+                email=kwargs.get('email'),
+                avatar=kwargs.get('avatar'))
+
+    db.session.add(user)
+    db.session.flush()
+
+    user_role = User_Role(id=user_id,
+                          view_customer=True,
+                          receive_product=True,
+                          login_admin=True,
+                          view_receipt=True)
 
     privileged = Privileged(user_id=user_id,
                             user_role=user_id)
@@ -387,31 +427,40 @@ def changes_user_info(user_id, **kwargs):
 def count_cart(cart):
     total_quantity, total_amount, base_total_amount = 0, 0, 0
 
-    if cart:
-        for c in cart.values():
-            id = int(c['id'])
-            product = get_product_detail_info(id)
+    try:
+        if cart:
+            for c in cart.values():
+                id = int(c['id'])
+                product = get_product_detail_info(id)
+                print(f"Price: {c['price']}, Base Price: {product.price}")
+                if product.discount_type.value == 1:
+                    total_quantity += c['quantity']
+                    total_amount += c['quantity'] * c['price']
+                    base_total_amount += c['quantity'] * product.price
 
-            if product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 == 0:
-                total_quantity += c['quantity']
-                total_amount += (c['quantity'] * c['price']) / 2
-                base_total_amount += c['quantity'] * c['price']
+                elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 == 0:
+                    total_quantity += c['quantity']
+                    total_amount += (c['quantity'] * c['price']) / 2
+                    base_total_amount += c['quantity'] * c['price']
 
-            elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 != 0:
-                total_quantity += c['quantity']
-                total_amount += (math.floor(c['quantity'] / 2) + 1) * c['price']
-                base_total_amount += c['quantity'] * c['price']
+                elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 != 0:
+                    total_quantity += c['quantity']
+                    total_amount += (math.floor(c['quantity'] / 2) + 1) * c['price']
+                    base_total_amount += c['quantity'] * c['price']
 
-            else:
-                total_quantity += c['quantity']
-                total_amount += c['quantity'] * c['price']
-                base_total_amount += c['quantity'] * c['price']
+                else:
+                    total_quantity += c['quantity']
+                    total_amount += c['quantity'] * c['price']
+                    base_total_amount += c['quantity'] * c['price']
 
-    return {
-        'total_quantity': total_quantity,
-        'total_amount': total_amount,
-        'base_total_amount': base_total_amount
-    }
+        return {
+            'total_quantity': total_quantity,
+            'total_amount': total_amount,
+            'base_total_amount': base_total_amount
+        }
+
+    except Exception as e:
+        return {'error': f'Lỗi server {str(e)}'}
 
 
 def load_payment():
@@ -682,9 +731,10 @@ def load_receipt_detail(receipt_id, product_id=None, product_name=None):
         Product.name.label('product_name'),
         Product.image.label('product_image')
     ).join(Product, Product.id == ReceiptDetail.product_id) \
-        .outerjoin(WarrantyDetail, WarrantyDetail.product_id == ReceiptDetail.product_id)
+        .outerjoin(WarrantyDetail, WarrantyDetail.product_id == ReceiptDetail.product_id) \
+        .filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
 
-    receipt_details = receipt_details.filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
+    receipt_details = receipt_details.distinct()
 
     base_total_price = sum(detail.quantity * detail.unit_price for detail in receipt_details)
 
@@ -832,14 +882,24 @@ def generate_code(prefix):
 
 
 def generate_delivery():
-    return generate_code("DP04")
+    while True:
+        code = generate_code("DP04")
+        if Goods_Delivery_Note.query.filter(Goods_Delivery_Note.code == code).first() is None:
+            break
+
+    return code
 
 
 def generate_receive():
-    return generate_code("RP04")
+    while True:
+        code = generate_code("RP04")
+        if Goods_Received_Note.query.filter(Goods_Received_Note.code == code).first() is None:
+            break
+
+    return code
 
 
-def create_receive_note(code, products_data, **kwargs, ):
+def create_receive_note(code, products_data, **kwargs):
     receive_note = Goods_Received_Note(
         code=code,
         order_date=kwargs.get('order_date'),
@@ -1245,7 +1305,7 @@ def get_product_with_promotion(promotion_id):
                                                PromotionDetail.discount_value.label('discount_value'),
                                                PromotionDetail.discount_type.label('discount_type')) \
         .join(PromotionDetail, PromotionDetail.product_id == Product.id) \
-        .filter(PromotionDetail.promotion_id.contains(promotion_id)).all()
+        .filter(PromotionDetail.promotion_id.__eq__(promotion_id)).all()
 
     subquery = db.session.query(PromotionDetail.product_id) \
         .filter(PromotionDetail.promotion_id == promotion_id).subquery()
@@ -1445,25 +1505,29 @@ def calculate_warranty_valid(receipt_id):
 
     created_date = receipt.created_date
 
-    receipt_details = db.session.query(ReceiptDetail, WarrantyDetail.warranty_period, WarrantyDetail.time_unit) \
+    receipt_details = db.session.query(ReceiptDetail,
+                                       WarrantyDetail.warranty_period,
+                                       WarrantyDetail.time_unit) \
         .join(WarrantyDetail, ReceiptDetail.product_id == WarrantyDetail.product_id) \
         .filter(ReceiptDetail.receipt_id == receipt.id).all()
 
-    for detail, warranty_period, time_unit in receipt_details:
-        if time_unit == TimeUnitEnum.YEAR:
-            warranty_end_date = created_date + relativedelta(years=warranty_period)
-        elif time_unit == TimeUnitEnum.MONTH:
-            warranty_end_date = created_date + relativedelta(months=warranty_period)
-        elif time_unit == TimeUnitEnum.WEEK:
-            warranty_end_date = created_date + timedelta(weeks=warranty_period)
-        else:
-            continue
+    if receipt_details:
+        for detail, warranty_period, time_unit in receipt_details:
+            if time_unit == TimeUnitEnum.YEAR:
+                warranty_end_date = created_date + relativedelta(years=warranty_period)
+            elif time_unit == TimeUnitEnum.MONTH:
+                warranty_end_date = created_date + relativedelta(months=warranty_period)
+            elif time_unit == TimeUnitEnum.WEEK:
+                warranty_end_date = created_date + timedelta(weeks=warranty_period)
+            else:
+                continue
 
-        if datetime.now() <= warranty_end_date:
-            detail.on_warranty = True
+            if datetime.now() <= warranty_end_date:
+                detail.on_warranty = True
+            else:
+                detail.on_warranty = False
         else:
-            detail.on_warranty = False
-
+            detail = ReceiptDetail
     try:
         db.session.commit()
     except Exception as e:
@@ -1500,6 +1564,25 @@ def delete_warranty(warranty_id):
     db.session.delete(warranty)
 
     db.session.commit()
+
+
+def delete_promotion(promotion_id):
+    try:
+        promotion = Promotion.query.get(promotion_id)
+
+        promotion_details = PromotionDetail.query.filter(PromotionDetail.promotion_id == promotion_id).all()
+
+        for detail in promotion_details:
+            db.session.delete(detail)
+
+        db.session.delete(promotion)
+
+        db.session.commit()
+
+        return {"success": True, "message": "Đã xóa chương trình khuyến mãi !"}
+
+    except Exception as e:
+        return {"success": False, "message": f'Lỗi: {str(e)}'}
 
 
 def load_product_applied_warranty_yet(warranty_id):
@@ -1639,7 +1722,7 @@ def visualize_revenue_statistics(statistics):
     plt.gca().yaxis.set_major_formatter(FuncFormatter(format_amount))
 
     for bar in bars:
-        y_value = bar.get_height()  # Lấy chiều cao của cột
+        y_value = bar.get_height()
         plt.text(bar.get_x() + bar.get_width() / 2, y_value, f'{int(y_value):,}đ', ha='center', va='bottom')
 
     image_path = os.path.join('static', 'images', 'statistics', 'revenue_chart.png')
@@ -1720,3 +1803,75 @@ def apply_promotion_for_all(promotion_id, discount_type, discount_value):
 
     except Exception as e:
         return {'success': False, 'msg': f'Lỗi xảy ra {str(e)}'}
+
+
+def apply_promotion_to_product(promotion_id, product_id, discount_value, discount_type):
+    try:
+        new_promotion_detail = PromotionDetail(product_id=product_id,
+                                               promotion_id=promotion_id,
+                                               discount_value=discount_value,
+                                               discount_type=DiscountType[discount_type])
+
+        db.session.add(new_promotion_detail)
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error utils: {e}")
+        return False
+
+
+def calculate_revenue_before_promotion(promotion_id):
+    promotion = Promotion.query.filter(Promotion.id == promotion_id).first()
+
+    if not promotion:
+        return {"error": "Không tìm thấy chương trình khuyến mãi"}
+
+    product_on_promotion = db.session.query(PromotionDetail.product_id) \
+        .filter(PromotionDetail.promotion_id == promotion_id).subquery()
+
+    promotion_duration = (promotion.end_date - promotion.start_date).days
+
+    start_date_before = (promotion.start_date - timedelta(days=promotion_duration))  # trừ ngày trả về ngày bắt đầu tính
+
+    total_revenue_before_promotion = db.session.query(
+        func.sum((ReceiptDetail.unit_price * ReceiptDetail.quantity)).label(
+            'total_revenue')) \
+                                         .join(Receipt, Receipt.id == ReceiptDetail.receipt_id) \
+                                         .filter(ReceiptDetail.product_id.in_(product_on_promotion),
+                                                 Receipt.created_date >= start_date_before,
+                                                 Receipt.created_date < promotion.start_date).scalar() or 0
+
+    return total_revenue_before_promotion
+
+
+def calculate_promotion_revenue(promotion_id):
+    promotion = Promotion.query.filter(Promotion.id == promotion_id).first()
+
+    if not promotion:
+        return {"error": "Không tìm thấy chương trình khuyến mãi"}
+
+    product_on_promotion = db.session.query(PromotionDetail.product_id) \
+        .filter(PromotionDetail.promotion_id == promotion_id).subquery()
+
+    total_revenue = db.session.query(
+        func.sum((ReceiptDetail.unit_price * ReceiptDetail.quantity) - coalesce(ReceiptDetail.discount, 0)).label(
+            'total_revenue')) \
+                        .join(Receipt, Receipt.id == ReceiptDetail.receipt_id) \
+                        .filter(ReceiptDetail.product_id.in_(product_on_promotion),
+                                Receipt.created_date >= Promotion.start_date,
+                                Receipt.created_date <= Promotion.end_date).scalar() or 0
+
+    return total_revenue
+
+
+def calculate_receipt_before_promotion(promotion_id):
+    promotion = Promotion.query.filter(Promotion.id == promotion_id).first()
+
+
+def load_all_brands():
+    return Brand.query.all()
+
+
+def load_product_brand(brand_id):
+    return Product.query.order_by(Product.category_id).filter(Product.brand_id == brand_id).all()

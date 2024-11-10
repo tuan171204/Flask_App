@@ -7,11 +7,19 @@
 <br>
 <hr>
 
-<input type="text"
-       class="form-control w-50 mb-2 border-dark"
-       id="productInput"
-       onkeyup="filterProduct()"
-       placeholder="Tìm tên sản phẩm...">
+<div class="d-flex">
+    <input type="text"
+           class="form-control w-25 mb-2 border-dark mr-2"
+           id="productIdInput"
+           onkeyup="filterProduct('productIdInput', 0)"
+           placeholder="Tìm mã sản phẩm...">
+    <input type="text"
+           class="form-control w-25 mb-2 border-dark"
+           id="productInput"
+           onkeyup="filterProduct('productInput', 1)"
+           placeholder="Tìm tên sản phẩm...">
+</div>
+
 
 
 <table class="table table-hover table-bordered text-center"
@@ -67,15 +75,15 @@
 
 
 <script>
-    function filterProduct() {
+    function filterProduct(inputId, index) {
       var input, filter, table, tr, td, i, txtValue;
-      input = document.getElementById("productInput");
+      input = document.getElementById(`${inputId}`);
       filter = input.value.toUpperCase();
       table = document.querySelector('#storage-table')
       tr = table.getElementsByTagName("tr");
 
       for (i = 0; i < tr.length; i++) {
-        td = tr[i].getElementsByTagName("td")[0];
+        td = tr[i].getElementsByTagName("td")[index];
         if (td) {
           txtValue = td.textContent || td.innerText;
           if (txtValue.toUpperCase().indexOf(filter) > -1) {

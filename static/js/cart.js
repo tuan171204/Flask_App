@@ -1,16 +1,22 @@
- window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     document.getElementById('loading-overlay').style.display = 'none';
-  });
+});
 
-  function showLoading() {
+function showLoading() {
     document.getElementById('loading-overlay').style.display = 'flex';
-  }
+}
 
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', function(event) {
-      showLoading();
-    });
-  });
+function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
+document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', function (event) {
+        if (!link.classList.contains('disable-loading')) {
+            showLoading();
+        }
+    })
+})
 
 
 
@@ -18,9 +24,8 @@
 function addToCart(id, name, price, image, promotion) {
     event.preventDefault()
     // promise
-
     fetch('/api/add-cart', {
-        method: 'post',
+        method: 'POST',
         body: JSON.stringify({
             'id': id,
             'name': name,
@@ -31,20 +36,20 @@ function addToCart(id, name, price, image, promotion) {
         headers: {
             'Content-Type': 'application/json'
         }
-    }).then(function (res) {
-        console.info(res)
-        return res.json()
-
-    }).then(function (data) {
-        console.info(data)
-        let counter = document.getElementsByClassName('cart-counter')
-        for (let i = 0; i < counter.length; i++)
-            counter[i].innerText = data.total_quantity
-    }).catch(function (err) {
-        console.error(err)
     })
+        .then(response => response.json())
+        .then(data => {
+            let counter = document.getElementsByClassName('cart-counter')
+            for (let i = 0; i < counter.length; i++) {
+                counter[i].innerText = data.total_quantity
+            }
+            console.log(data)
 
-    alert("Thêm sản phẩm vào giỏ hàng thành công ! ")
+            alert("Thêm sản phẩm vào giỏ hàng thành công ! ")
+        })
+        .catch(function (err) {
+            console.error("Lỗi :", err)
+        })
 }
 
 
@@ -178,6 +183,32 @@ function add_comment(productId) {
 }
 
 
+filterSearching = () => {
+    const input = document.querySelector(".search-input")
+    const filter = input.value.toUpperCase();
+    const div = document.querySelector(".dropdown-content")
+    const a = div.querySelectorAll(".dropdown-content-detail a");
+    const displayElement = div.querySelectorAll(".dropdown-content-detail");
+    for (let i = 0; i < a.length; i++) {
+        txtValue = a[i].textContent || a[i].innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            displayElement[i].style.display = "";
+        } else {
+            displayElement[i].style.display = "none";
+        }
+    }
+}
+
+window.addEventListener("load", function () {
+    const middleElement = document.querySelector("#something")
+    if (middleElement) {
+        middleElement.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        })
+    }
+})
+
 function getWard() {
     const district_input = document.querySelector('select[name="district"]')
     const selectedOption = district_input.options[district_input.selectedIndex];
@@ -204,5 +235,76 @@ function getWard() {
             .catch(error => console.error('Error:', error));
     }
 }
+
+showSuggest = () => {
+    document.querySelector(".dropdown-content").classList.toggle("show");
+}
+
+
+loadBrandProduct = async (brand_id) => {
+    try {
+        showLoading()
+        const response = await fetch(`/brand-product-data?brand_id=${brand_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        const data = await response.json()
+
+        document.querySelector(".product-selling-place").innerHTML = ''
+
+        if (data.success) {
+            if (data.products.length >= 1) {
+                data.products.forEach((p) => {
+                    const productHTML = `
+                            <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
+                                <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
+                                    <a href="/product/${p.id}" style="height:250px;">
+                                        <img class="card-img-top"
+                                             src="/static/${p.image}"
+                                             alt="Product"
+                                             style="height:fit-content;">
+                                    </a>
+                                   <div class="card-body" style="bottom: 10px; position: relative;">
+                                    <h4 class="card-title text-center">${p.name}</h4>
+                                    <h5 class="text-danger font-weight-bold text-center product-price-card">${p.price.toLocaleString('vi-VN')}đ</h5>
+                                  </div>
+                                  <div class="overlay">
+                                            <div class="overlay-content">
+                                                <a href="/product/${p.id}"
+                                                   class="btn mt-1 form-control text-left">
+                                                Xem chi tiết
+                                                </a>
+                                            </div>
+                                        </div>
+                                </div>
+                            </div>
+                    `
+
+                    document.querySelector(".product-selling-place").innerHTML += productHTML
+                })
+            } else {
+                document.querySelector(".product-selling-place").innerHTML = `<h2 class="text-center alert alert-secondary col-12">Chưa có sản phẩm nào</h2>`
+            }
+
+            document.querySelector(".pagination-place ul").style.display = 'none'
+
+            hideLoading()
+        } else {
+            console.error("Có lỗi xảy ra: ", data.error)
+            hideLoading()
+        }
+    } catch (error) {
+        console.error("Lỗi kết nối API: ", error)
+        hideLoading()
+    }
+}
+
+
+
+
+
 
 

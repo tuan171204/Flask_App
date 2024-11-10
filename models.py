@@ -140,7 +140,7 @@ class ReceiptDetail(db.Model):
     unit_price = Column(Float, default=0)
     discount = Column(Float, default=0, nullable=True)
     discount_info = Column(String(255), nullable=True)
-    on_warranty = Column(Boolean, default=True)
+    on_warranty = Column(Boolean, default=False)
 
 
 class Comment(db.Model):

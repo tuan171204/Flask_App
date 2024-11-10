@@ -1,3 +1,12 @@
+@font-face {
+    font-family: 'FontAwesome';
+    src: url('/static/css/fontawesome/webfonts') format('woff2'),
+         url('/static/fonts/fa-solid-900.woff') format('woff'),
+         url('/static/fonts/fa-solid-900.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -10,6 +19,24 @@ html {
 
 h1.subject {
     text-align: center;
+}
+
+#main-navbar{
+    position: sticky !important;
+    background-color:#FFF !important;
+    z-index: 10001 !important;
+}
+
+.brand-bar {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 10px 0px 10px;
+    border-bottom: 1px solid black;
+    box-shadow: 0px 3px 5px #aaaaaa;
+}
+
+.brand-bar button{
+      flex: 1;
 }
 
 body {
@@ -64,9 +91,10 @@ table td {
     z-index: 1;
 }
 
-.best-seller {
+.suggest-container {
     padding: 30px;
     border-radius: 20px;
+    background-color:white;
 }
 
 .row-1 {
@@ -83,14 +111,23 @@ table td {
     padding: 4px;
 }
 
+
 .carousel img {
     width: 550px;
     height: 300px;
 }
 
+.carousel-inner{
+    border-radius: 10px;
+}
+
+.search-icon{
+    font-size: 26px;
+}
+
 .form-group button,
 .form-group a,
-#navbardrop,
+#nav-bar-drop,
 .dropdown-menu a,
 .dropdown-menu button:hover,
 .nav-item a,
@@ -102,18 +139,29 @@ table td {
     border-radius: 20px;
 }
 
+#nav-bar-drop{
+    border: none;
+ }
+
+#something{
+    background-color: white;
+}
 
 .form-group button:hover,
 .form-group a:hover,
-#navbardrop:hover,
+#nav-bar-drop:hover,
 .dropdown-menu a:hover,
 .dropdown-menu button:hover,
 .nav-item a:hover,
 .dropdown-item:hover,
-.page-item a:hover {
+.page-item a:hover,
+ .brand-bar button:hover {
     color: white;
     background-color: black;
+}
 
+.custom-dropdown{
+    z-index: 1 !important;
 }
 
 .form-group label {
@@ -130,6 +178,61 @@ table td {
 #dropdown-user:hover {
     color: white;
     background-color: black;
+}
+
+.search-input{
+    position: relative;
+}
+
+.dropdown-content{
+    border: none;
+    width: 30%;
+    position: absolute;
+    display: none;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    max-height: 424px;
+    z-index:10;
+    box-shadow: 5px 3px 5px 0px #black;
+}
+
+.searching-product-price{
+    display: block;
+}
+
+.product-detail-btn{
+    display: flex;
+    flex-direction: column;
+    background-color: whitesmoke !important;
+}
+
+.product-detail-btn:hover{
+    color: black !important;
+    background-color: grey !important;
+}
+
+.dropdown-content div a {
+    border-radius: 0px;
+    display: flex;
+    text-decoration: none;
+    padding: 12px 16px;
+    text-align: left;
+    width: 100%;
+}
+
+.dropdown-content div img {
+    height: fit-content;
+    width: 100px;
+}
+
+.dropdown-content-detail{
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    background-color: whitesmoke;
+}
+
+.show{
+    display: block;
 }
 
 .carousel-caption h1,
@@ -269,7 +372,7 @@ i {
 
 .promotion-info {
     animation: bounce 0.5s infinite alternate;
-    width: 200px;
+    min-width: 200px;
     font-size: 16px;
 }
 
@@ -299,10 +402,6 @@ table td span {
 .payment-info {
     width: 900px;
 
-}
-
-#main-navbar {
-    z-index: -100;
 }
 
 .containers {
@@ -570,3 +669,25 @@ table td span {
     gap: 10px;
 }
 
+.promotion_report{
+    font-size: 24px;
+    margin: 0px;
+    padding: 0px;
+}
+
+.promotion_report div{
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+}
+
+.card-body{
+    padding: 0px;
+    margin: 0;
+}
+
+.product-price-card{
+    position: absolute;
+    bottom: -10px;
+    left: 28%;
+}

@@ -287,7 +287,7 @@
             <button  formaction="{{ url_for('goods_delivery.confirm_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
                      formmethod="post"
                      class="btn btn-warning"
-                     type="submit"
+                     type="button"
                      data-toggle="modal"
                      data-target="#confirmModal"
                      onclick="lastCheck()">
@@ -296,10 +296,10 @@
             </button>
             {% elif delivery_note.confirmed == True %}
             {% endif %}
-            <a      href="{{ url_for('goods_delivery.index') }}"
-                    class="btn btn-dark text-light" >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <b>Quay lại</b>
+            <a href="{{ url_for('goods_delivery.index') }}"
+               class="btn btn-dark text-light">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <b>Quay lại</b>
             </a>
         {% elif receipt.exported==False %}
             <button type="submit"
@@ -307,13 +307,11 @@
                     <i class="fa-solid fa-folder-plus"></i>
                     <b>Tạo phiếu xuất kho</b>
             </button>
-            <button  formaction="{{ url_for('receipt.create_confirm_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
-                     formmethod="post"
-                     class="btn btn-warning"
-                     type="submit"
-                     data-toggle="modal"
-                     data-target="#confirmModal"
-                     onclick="lastCheck()">
+            <button class="btn btn-warning"
+                    type="submit"
+                    data-toggle="modal"
+                    data-target="#confirmModal"
+                    onclick="lastCheck()">
                     <i class="fa-solid fa-file-circle-check"></i>
                     <b>Tạo & xác nhận phiếu xuất kho</b>
             </button>
@@ -325,8 +323,10 @@
         {% endif %}
 
 
-         {% if delivery_note.confirmed==False %}
-         <div class="alert alert-warning alert-dismissible fade show mt-2" id="full-alert" role="alert">
+         {% if delivery_note.confirmed == False %}
+         <div class="alert alert-warning alert-dismissible fade show mt-2"
+              id="full-alert"
+              role="alert">
               Số lượng các sản phẩm đã đủ<strong>, xác nhận tạo phiếu xuất kho ?</strong>
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
@@ -342,7 +342,11 @@
 <br>
 <!-- Modal -->
 <form action="" method="POST">
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="confirmModal"
+         tabindex="-1"
+         aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -356,7 +360,7 @@
           </div>
 
 
-        Bạn có chắc chắn muốn xác nhận phiếu nhập kho với mã:
+        Bạn có chắc chắn muốn xác nhận phiếu xuất kho với mã:
           {% if receipt.exported==True %}<strong>{{ delivery_note.code }}</strong>  ?
           {% elif receipt.exported==False %} <strong>{{ delivery_code }}</strong>  ?
           {% endif %}
@@ -374,8 +378,6 @@
 </div>
 </form>
 
-
-<script src="https://kit.fontawesome.com/577b2b59fe.js" crossorigin="anonymous"></script>
 <script>
 
     lastCheck = () =>{

@@ -1,4 +1,6 @@
 from flask import render_template, request, redirect, session, jsonify, url_for
+from sympy.codegen.fnodes import product_
+
 from Flask_App import app, login, utils, db, socketio
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
@@ -32,12 +34,10 @@ def home():
 
     counter = utils.count_product(cate_id=cate_id, kw=kw)
 
+    brands = utils.load_all_brands()
+
     prev_page = url_for('home', page=int(page) - 1) if int(page) > 1 else None
     next_page = url_for('home', page=int(page) + 1)
-
-    # recommend_id = None
-    # if current_user.is_authenticated:
-    #     recommend_id = recommend_products_by_user_receipt(current_user.id)
 
     return render_template('index.html',
                            scroll='something',
@@ -46,7 +46,8 @@ def home():
                            prev_page=prev_page,
                            next_page=next_page,
                            cate_name=cate_name,
-                           all_products=all_products
+                           all_products=all_products,
+                           brands=brands
                            )
 
 
@@ -58,17 +59,16 @@ def product_detail(product_id):
 
     comments = utils.get_comments(product_id=product_id,
                                   page=int(request.args.get('page', 1)))
-
-    suggest_id = recommendSimilarProducts(product_id, NUMBER=5)
-
-    suggest_id = sorted(suggest_id)
+    #
+    # suggest_id = recommendSimilarProducts(product_id, NUMBER=8)
+    #
+    # suggest_id = sorted(suggest_id)
 
     return render_template('product_detail.html',
                            comments=comments,
                            product=product,
                            pages=math.ceil(utils.count_comment(product_id) / app.config['COMMENT_SIZE']),
                            products=products,
-                           suggest_id=suggest_id,
                            discountType=DiscountType
                            )
 
@@ -156,8 +156,8 @@ def add_comment():
 
     try:
         c = utils.add_comment(content=content, product_id=product_id)
-    except:
-        return {'status': 404, 'err_msg': 'Chương trình đang bị lỗi !!!'}
+    except Exception as e:
+        return {'status': 404, 'err_msg': f'Lỗi {e}'}
 
     return {'status': 201, 'comment': {
         'id': c.id,
@@ -271,34 +271,38 @@ def confirm_receipt(receipt_id):
     return redirect(f'/user-receipt/{current_user.id}')
 
 
-@app.route('/api/add-cart', methods=['post'])
+@app.route('/api/add-cart', methods=['POST'])
 def add_to_cart():
-    data = request.get_json()
-    id = str(data.get('id'))
-    name = data.get('name')
-    price = data.get('price')
-    image = data.get('image')
-    promotion = data.get('promotion')
+    try:
+        data = request.get_json()
+        id = str(data.get('id'))
+        name = data.get('name')
+        price = float(data.get('price'))
+        image = data.get('image')
+        promotion = data.get('promotion')
 
-    cart = session.get('cart')
-    if not cart:
-        cart = {}
+        cart = session.get('cart')
+        if not cart:
+            cart = {}
 
-    if id in cart:
-        cart[id]['quantity'] = cart[id]['quantity'] + 1
-    else:
-        cart[id] = {
-            'id': id,
-            'name': name,
-            'price': price,
-            'quantity': 1,
-            'image': image,
-            'promotion': promotion
-        }
+        if id in cart:
+            cart[id]['quantity'] = cart[id]['quantity'] + 1
+        else:
+            cart[id] = {
+                'id': id,
+                'name': name,
+                'price': price,
+                'quantity': 1,
+                'image': image,
+                'promotion': promotion
+            }
 
-    session['cart'] = cart
+        session['cart'] = cart
 
-    return jsonify(utils.count_cart(cart))
+        return jsonify(utils.count_cart(cart))
+
+    except Exception as e:
+        print(f"Lỗi server index: {str(e)}")
 
 
 @app.route("/api/update-cart", methods=['put'])
@@ -809,7 +813,7 @@ def revenue_data():
         'years': years_labels.tolist(),
         'revenue_yearly': revenue_yearly['total_amount'].tolist(),
 
-        'months':  months_labels.tolist(),
+        'months': months_labels.tolist(),
         'revenue_monthly': revenue_monthly['total_amount'].tolist(),
 
         'quarters': quarters_labels.tolist(),
@@ -876,6 +880,52 @@ def revenue_data_by_year():
             'avg_quarters': avg_quarters_labels.tolist(),
             'avg_revenue_quarterly': avg_revenue_quarterly['avg_revenue_quarterly'].tolist()
         })
+
+
+@app.route('/api/apply-promotion', methods=['POST'])
+def apply_promotion():
+    data = request.get_json()
+    promotion_id = data.get('promotion_id')
+    products = data.get('products', [])
+
+    try:
+        for product in products:
+            product_id = product['product_id']
+            discount_value = product['discount_value']
+            discount_type = product['discount_type']
+
+            success = utils.apply_promotion_to_product(promotion_id=str(promotion_id),
+                                                       product_id=product_id,
+                                                       discount_value=discount_value,
+                                                       discount_type=discount_type)
+            if not success:
+                raise Exception("Có lỗi khi thêm khuyến mãi vào sản phẩm")
+
+        db.session.commit()
+        return jsonify({"success": True, "msg": "Áp dụng khuyến mãi thành công"}), 200
+
+    except Exception as e:
+        print(f'Error index: {e}')
+        return jsonify({"success": False, "msg": f"{str(e)}"}), 500
+
+
+@app.route('/brand-product-data', methods=["GET"])
+def brand_product_data():
+    brand_id = request.args.get('brand_id')
+
+    if brand_id is None:
+        return jsonify({"success": False, "message": "Không tìm thấy mã khuyến mãi"}), 400
+
+    products = utils.load_product_brand(brand_id)
+
+    products_data = [{
+        "id": product.id,
+        "name": product.name,
+        "price": product.price,
+        "image": product.image
+    } for product in products]
+
+    return jsonify({"success": True, "products": products_data})
 
 
 if __name__ == "__main__":

@@ -323,6 +323,10 @@ form select {
     font-size: 20px;
 }
 
+.format-font-size{
+    font-size: 20px;
+}
+
 
 #createPromotion label{
     font-size: 22px;
@@ -431,4 +435,11 @@ form select {
 .carousel-controller{
     display: flex;
     justify-content: space-between;
+}
+
+.annouce_bg{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: whitesmoke;
 }

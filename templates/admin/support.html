@@ -9,19 +9,17 @@
     <table class="table table-hover text-center">
         <thead class="thead-dark">
             <tr>
-                <th>Mã Phòng</th>
-                <th>Số Lượng Thành Viên</th>
+                <th>STT</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             {% for room in rooms %}
-            <tr>
-                <td>{{ room.room_code }}</td>
-                <td>{{ room.members }}</td>
+            <tr class="border-bottom ">
+                <td class="font-weight-bold format-font-size">Khách hàng {{ loop.index }}</td>
                 <td>
                     <a href="{{ url_for('support.support_user', room_code = room.room_code) }}"
-                       class="btn btn-warning">
+                       class="btn btn-warning format-btn">
                         Hỗ trợ
                         <i class="fa-solid fa-comment"></i>
                     </a>
