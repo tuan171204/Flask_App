@@ -58,7 +58,8 @@
                          style="padding: 20px; background-color:white">
                         {% for p in products %}
                         <div class="col-md-3 col-s-12 mb-4" style="padding: 5px;">
-                            <div class="card hover-overlay h-100 container-overlay " style="padding: 10px;border-radius: 15px;">
+                            <div class="card hover-overlay h-100 container-overlay "
+                                 style="padding: 10px;border-radius: 15px;">
                                 <a href="{{url_for('product_detail', product_id = p.id) }}" style="height:250px;">
                                     <img class="card-img-top"
                                          src="{{url_for('static', filename=p.image) }}"

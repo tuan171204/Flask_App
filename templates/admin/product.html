@@ -98,7 +98,8 @@
                          <i class="fa-solid fa-floppy-disk"></i>
                          Lưu thay đổi
                     </button>
-                    <a href="{{ url_for('product.index') }}"
+
+                    <a href="{% if back_url %} {{ back_url }} {% else %} {{ url_for('product.index') }} {% endif %}"
                        class="btn btn-primary form-control"
                        style="font-size:20px;" >
                        <i class="fa-solid fa-right-from-bracket"></i>
@@ -166,8 +167,8 @@
             }
 
             inputs.forEach(input => {
-                input.addEventListener('keyup', checkForChanges);
-            });
+                input.addEventListener('keyup', checkForChanges)
+            })
 
             function checkForChangeSelect(){
                 const selectElement = document.querySelector('select[name="category_id"]');
@@ -328,7 +329,7 @@
                   <th scope="col">Tên sản phẩm</th>
                   <th scope="col">Giá nhập</th>
                   <th scope="col">Giá bán</th>
-                    <th scope="col">Nhà cung cấp</th>
+                  <th scope="col">Nhà cung cấp</th>
                   <th scope="col">Trạng thái</th>
                   <th scope="col"></th>
 
@@ -1013,20 +1014,19 @@
 <!--BUSSINESS REPORT-->
                     <div class="col col-6 text-center border pt-5 promotion_report">
                            <div class="container-fluid">
-                                <h3>Báo cáo doanh thu hiệu quả khuyến mãi</h3>
                                 <div id="demo"
                                      class="carousel slide"
                                      data-ride="carousel">
                                   <div class="carousel-inner no-gutters">
-                                    <div class="carousel-item active"
-                                         id="promotion-stats-1">
-                                            <canvas id="promotion-chart-1">
+                                    <div class="carousel-item stats active" id="promotion-stats-1">
+                                            <h3 class="mb-3">Tổng doanh thu</h3>
+                                            <canvas id="promotion-chart-1" class="mt-5">
 
                                             </canvas>
                                     </div>
-                                    <div class="carousel-item"
-                                         id="promotion-stats-2">
-                                         <canvas id="promotion-chart-2">
+                                    <div class="carousel-item" id="promotion-stats-2">
+                                        <h3>Số lượng khách hàng</h3>
+                                         <canvas id="promotion-chart-2" class="mt-5">
 
                                          </canvas>
                                     </div>
@@ -1447,20 +1447,21 @@
             promotion_Charts[0] = new Chart(ctxChart2, {
                 type: 'bar',
                 data: {
-                    labels: ['1', '2'],
+                    labels: ['Trước khuyến mãi', 'Sau khuyến mãi'],
                     datasets: [{
-                        label: 'Tổng doanh thu',
-                        data: ["1", "2"],
-                        backgroundColor: 'blue',
+                        label: 'Số lượng khách hàng',
+                        data: [{{customer_count_before_promotion}}, {{customer_count_during_promotion}}],
+                        backgroundColor: ['red', 'blue']
                     }]
                 },
                 options: {
                     scales: {
                         y: {
                             beginAtZero: true,
+                            display: false,
                             ticks: {
                                 callback: function(value) {
-                                    return value.toLocaleString('vi-VN') + 'đ'
+                                    return value.toLocaleString('vi-VN') + ' khách hàng'
                                 }
                             }
                         }
@@ -1473,7 +1474,7 @@
                                     if (label) {
                                         label += ': '
                                     }
-                                    label += context.raw.toLocaleString('vi-VN') + 'đ';
+                                    label += context.raw.toLocaleString('vi-VN') + ' khách hàng';
                                     return label
                                 }
                             }

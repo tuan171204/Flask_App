@@ -25,9 +25,11 @@
 
 
     {% if receipt.exported==True %}
-    <form action="{{ url_for('goods_delivery.update_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}" method="POST">
+    <form action="{{ url_for('goods_delivery.update_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
+          method="POST">
     {% elif receipt.exported==False %}
-     <form action="{{ url_for('receipt.create_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}" method="POST">
+     <form action="{{ url_for('receipt.create_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
+           method="POST">
     {% endif %}
         <div class="form-group form-inline row">
             <div class="form-inline col-5">
@@ -130,17 +132,13 @@
                   </td>
                     <td>
                         {% if receipt.exported==True %}
-                            {% if r.delivered_quantity %}
                              <input type="number"
                                    class="form-control"
                                    name="quantity_{{ r.product_id }}"
-                                   value="{{ r.delivered_quantity }}">
-                            {% elif receipt.exported==False %}
-                            <input type="number"
-                                   class="form-control"
-                                   name="quantity_{{ r.product_id }}"
-                                   placeholder="Nhập số lượng thực xuất" required>
-                            {% endif %}
+                                   {% if r.delivered_quantity %}
+                                   value="{{ r.delivered_quantity }}"
+                                   {% endif %}
+                                   placeholder="Nhập số lượng thực xuất" >
                         {% else %}
                             <input type="number"
                                    class="form-control"
@@ -285,7 +283,7 @@
                     <b>Cập nhật phiếu xuất kho</b>
             </button>
             <button  formaction="{{ url_for('goods_delivery.confirm_delivery_note', receipt_id = receipt.id, delivery_code=delivery_code) }}"
-                     formmethod="post"
+                     formmethod="POST"
                      class="btn btn-warning"
                      type="button"
                      data-toggle="modal"
@@ -308,17 +306,17 @@
                     <b>Tạo phiếu xuất kho</b>
             </button>
             <button class="btn btn-warning"
-                    type="submit"
+                    type="button"
                     data-toggle="modal"
                     data-target="#confirmModal"
                     onclick="lastCheck()">
                     <i class="fa-solid fa-file-circle-check"></i>
                     <b>Tạo & xác nhận phiếu xuất kho</b>
             </button>
-             <a      href="{{ url_for('receipt.index') }}"
-                    class="btn btn-dark text-light" >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <b>Quay lại</b>
+             <a href="{{ url_for('receipt.index') }}"
+                class="btn btn-dark text-light" >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <b>Quay lại</b>
             </a>
         {% endif %}
 
@@ -335,49 +333,47 @@
          {% else %}
          {% endif %}
 
-    </form>
+
 </div>
 
 <br>
 <br>
 <!-- Modal -->
-<form action="" method="POST">
-    <div class="modal fade"
-         id="confirmModal"
-         tabindex="-1"
-         aria-labelledby="exampleModalLabel"
-         aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Xác nhận phiếu xuất kho</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-          <div class="alert alert-danger" role="alert" id="alert">
+        <div class="modal fade"
+             id="confirmModal"
+             tabindex="-1"
+             aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Xác nhận phiếu xuất kho</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                  <div class="alert alert-danger" role="alert" id="alert">
+                  </div>
+
+
+                Bạn có chắc chắn muốn xác nhận phiếu xuất kho với mã:
+                  {% if receipt.exported==True %}<strong>{{ delivery_note.code }}</strong>  ?
+                  {% elif receipt.exported==False %} <strong>{{ delivery_code }}</strong>  ?
+                  {% endif %}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Hủy</button>
+                <button type="submit"
+                        formaction="{{  url_for('receipt.create_confirm_delivery_note', delivery_code=delivery_code, receipt_id=receipt.id) }}"
+                        class="btn btn-warning">
+                    Xác nhận
+                </button>
+              </div>
+            </div>
           </div>
-
-
-        Bạn có chắc chắn muốn xác nhận phiếu xuất kho với mã:
-          {% if receipt.exported==True %}<strong>{{ delivery_note.code }}</strong>  ?
-          {% elif receipt.exported==False %} <strong>{{ delivery_code }}</strong>  ?
-          {% endif %}
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger" data-dismiss="modal">Hủy</button>
-        <button type="submit"
-                class="btn btn-warning"
-                formaction="">
-            Xác nhận
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-</form>
-
+        </div>
+    </form>
 <script>
 
     lastCheck = () =>{

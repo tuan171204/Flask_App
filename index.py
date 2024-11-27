@@ -1,11 +1,9 @@
-from flask import render_template, request, redirect, session, jsonify, url_for
+from flask import render_template, request, redirect, session, jsonify, url_for, flash
 from sympy.codegen.fnodes import product_
-
 from Flask_App import app, login, utils, db, socketio
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
 from Flask_App.models import Receipt_Report, DiscountType, Receipt, ReceiptDetail, Ward
-from Suggest import recommendSimilarProducts, recommend_products_by_user_receipt
 from flask_socketio import join_room, leave_room, send
 import random
 from string import ascii_uppercase
@@ -159,15 +157,18 @@ def add_comment():
     except Exception as e:
         return {'status': 404, 'err_msg': f'Lỗi {e}'}
 
-    return {'status': 201, 'comment': {
-        'id': c.id,
-        'content': c.content,
-        'created_date': c.created_date,
-        'user': {
-            'username': current_user.username,
-            'avatar': current_user.avatar
+    return {
+        'status': 201,
+        'comment': {
+            'id': c.id,
+            'content': c.content,
+            'created_date': c.created_date,
+            'user': {
+                'username': current_user.username,
+                'avatar': current_user.avatar
+            }
         }
-    }}
+    }, 201
 
 
 @app.context_processor
@@ -183,16 +184,16 @@ def user_load(user_id):
     return utils.get_user_by_id(user_id=user_id)
 
 
-@app.route('/products')
-def product_list():
-    cate_id = request.args.get("category_id")
-
-    kw = request.args.get("keyword")
-
-    products = utils.load_products(cate_id=cate_id, kw=kw)
-
-    return render_template('products.html',
-                           products=products)
+# @app.route('/products')
+# def product_list():
+#     cate_id = request.args.get("category_id")
+#
+#     kw = request.args.get("keyword")
+#
+#     products = utils.load_products(cate_id=cate_id, kw=kw)
+#
+#     return render_template('index.html',
+#                            products=products)
 
 
 @app.route('/cart')
@@ -239,7 +240,7 @@ def user_receipt(user_id):
     }
 
     if need_confirm:
-        flash('Bạn có một đơn hàng cần xác nhận!', 'warning')
+        flash('Bạn có đơn hàng cần xác nhận!', 'warning')
 
     return render_template('user_receipt.html',
                            user_receipt=user_receipt,
@@ -248,15 +249,17 @@ def user_receipt(user_id):
                            status_colors=status_colors)
 
 
-@app.route('/confirm-receipt/<int:receipt_id>')
+@app.route('/confirm-receipt/<int:receipt_id>', methods=['POST'])
 def confirm_receipt(receipt_id):
     try:
+        rating = request.form.get('rating')
 
         confirmReceipt = Receipt.query.filter(Receipt.id.__eq__(receipt_id)).first()
 
         if confirmReceipt:
 
             confirmReceipt.status_id = 2
+            confirmReceipt.rating_service = rating
 
             db.session.commit()
 
@@ -342,7 +345,7 @@ def pay():
         utils.add_receipt(session.get('cart'), payment_id, delivery_address, customer_name)
         del session['cart']
     except Exception as e:
-        print(e)
+        print(f'Lỗi index {e}')
         return jsonify({'code': 400})
 
     return jsonify({'code': 200})
@@ -351,16 +354,13 @@ def pay():
 @app.route('/api/delete-detail/<int:receipt_id>/<int:product_id>/<int:quantity>', methods=['DELETE'])
 def delete_receipt_detail(receipt_id, product_id, quantity):
     try:
-        # Tìm chi tiết hóa đơn cần xóa
         receipt_detail = ReceiptDetail.query.filter_by(receipt_id=receipt_id, product_id=product_id,
                                                        quantity=quantity).first()
 
         if receipt_detail:
-            # Xóa chi tiết hóa đơn khỏi cơ sở dữ liệu
             db.session.delete(receipt_detail)
             db.session.commit()
 
-            # Trả về thông báo thành công
             return jsonify({"success": True}), 200
         else:
             return jsonify({"success": False, "message": "Không tìm thấy chi tiết hóa đơn"}), 404
@@ -425,7 +425,7 @@ def update_receipt_details(receipt_id):
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-# EXAMPLE FOR RSUBMIT & REQUEST FORM IN PYTHON
+# EXAMPLE FOR SUBMIT & REQUEST FORM IN PYTHON
 @app.route('/update-user-privileged', methods=['POST'])
 def update_user_privileged():
     user_id = request.form.get('user_id')
@@ -461,10 +461,6 @@ def update_user_privileged():
     return redirect('/admin/user_privileged/')
 
 
-class Reicept_Report:
-    pass
-
-
 @app.route('/post-report/<int:receipt_id>', methods=['POST'])
 def post_report(receipt_id):
     report_type = request.form.get('report_type')
@@ -493,7 +489,7 @@ def post_report(receipt_id):
 def user_receipt_detail(receipt_id):
     receipt = utils.get_receipt_by_id_2(receipt_id)
 
-    receipt_detail, total_price, base_total_price = utils.load_receipt_detail(receipt_id)
+    receipt_detail, total_price, base_total_price = utils.load_receipt_detail_admin(receipt_id)
 
     status_colors = {
         1: 'btn-warning',
@@ -537,8 +533,7 @@ def saves_change_account(user_id):
                                 )
         return jsonify({'code': 200}),
 
-
-    except:
+    except Exception as e:
         return jsonify({'code': 404})
 
 
@@ -926,6 +921,72 @@ def brand_product_data():
     } for product in products]
 
     return jsonify({"success": True, "products": products_data})
+
+
+@app.route("/api/delete-product-provider", methods=["PUT"])
+def delete_product_provider():
+    try:
+        data = request.get_json()
+        product_id = data.get('product_id')
+        provider_id = data.get('provider_id')
+
+        utils.delete_product_provider(product_id)
+
+        return jsonify({"success": True, "message": 'Tạm ngưng sản phẩm cung cấp thành công'})
+
+    except Exception as e:
+        print("Lỗi server: ", str(e))
+        return jsonify({"success": False, "message": f'Lỗi server: {str(e)}'})
+
+
+@app.route("/api/active-product-provider", methods=["PUT"])
+def active_product_provider():
+    try:
+        data = request.get_json()
+        product_id = data.get('product_id')
+        provider_id = data.get('provider_id')
+
+        utils.active_product_provider(product_id, provider_id)
+
+        return jsonify({"success": True, "message": 'Tiếp tục bán sản phẩm cung cấp thành công'})
+
+    except Exception as e:
+        print("Lỗi server: ", str(e))
+        return jsonify({"success": False, "message": f'Lỗi server: {str(e)}'})
+
+
+@app.route("/api/deactive_provider", methods=['PUT'])
+def deactive_provider():
+    try:
+        data = request.get_json()
+        provider_id = data.get('provider_id')
+
+        result = utils.deactive_provider(provider_id)
+
+        if result:
+            return jsonify({"success": True, "message": result['message']})
+
+        else:
+            return jsonify({"success": False, "message": result['message']})
+
+    except Exception as e:
+        print(f"Lỗi server: {e}")
+
+        return jsonify({"success": False, "message": f"Lỗi server: {e}"})
+
+
+@app.route("/api/check-duplicate-provider-name", methods=["POST"])
+def check_duplicate_provider_name():
+    data = request.get_json()
+    new_provider_name = data.get('provider_name')
+
+    provider = Provider.query.filter(Provider.name == new_provider_name).first()
+
+    if provider:
+        return {"duplicate": True}
+
+    else:
+        return {"duplicate": False}
 
 
 if __name__ == "__main__":

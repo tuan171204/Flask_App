@@ -15,12 +15,12 @@
 <!--        MENU            -->
         <div class="col-md-4 p-4">
             <div class="form-group">
-              <button class="border-0 btn"
+              <button class="border-0 btn mb-2"
                       onclick="load_account_setting('private_form')"  >
                   <i class="fa-solid fa-key mr-3"></i>
                   Thông tin cá nhân
               </button>
-              <button class="border-0 btn"
+              <button class="border-0 btn mb-2"
                       onclick="load_account_setting('account_form')">
                   <i class="fa-solid fa-gear mr-3"></i>
                   Tài khoản
@@ -31,10 +31,16 @@
 <!--        ACCOUNT SETTING       -->
         <div class="col-md-8 p-5" style="row-gap:1.2rem;">
             <span class="row mb-5">
-                <span class="col-md-4">
+                <span class="user-avatar-setting">
                      <img src="{{ current_user.avatar}}"
                           alt="user_avatar"
-                          style="width:120px;">
+                          style="width:120px;"
+                          class="avatar">
+                    <span class="edit-icon">
+                        <button data-toggle="modal" data-target="#choose-avatar-modal">
+                             <i class="fa-solid fa-pencil"></i>
+                        </button>
+                    </span>
                 </span>
 
                 <span class="col-md-8">
@@ -89,7 +95,7 @@
                         <label>Số điện thoại: </label>
                         <input type="text"
                            class="form-control"
-                           value=""
+                           value="{% if current_user.phone_number %} {{current_user.phone_number}} {% endif %}"
                            name="phone_number"
                            placeholder="Bổ sung số điện thoại ...">
                     </div>
@@ -99,7 +105,7 @@
                          <label>Địa chỉ nhận hàng mặc định:  </label>
                          <input type="text"
                            class="form-control"
-                           value=""
+                           value="{% if current_user.address %} {{current_user.address}} {% endif %}"
                            name="user_address"
                            placeholder="Bổ sung địa chỉ ...">
                      </div>
@@ -166,6 +172,39 @@
         </div>
     </div>
     <br><br><br>
+
+
+<!--    CHOOSE AVATAR MODAL -->
+    <div class="modal fade" id="choose-avatar-modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog  modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chọn avatar</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body choose-avatar-body">
+            <div class="row choose-avatar-container">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button"
+                    class="btn btn-warning">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Lưu
+            </button>
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-dismiss="modal">
+                    Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
 <script>
     function save_change(){
         const nameRegex = /^[a-zA-Z\s]+$/;
@@ -227,6 +266,17 @@
         document.querySelector(`#${form_name}`).style.display = 'block'
 
     }
+
+    var avatarHTML = ''
+    for ( var i=1; i < 19; i++){
+        avatarHTML += `
+            <img class="avatar-choosing col-2"
+                     src="https://avatar.iran.liara.run/public/${i}"
+                     alt="Ảnh">
+        `
+    }
+
+    document.querySelector('.choose-avatar-container').innerHTML = avatarHTML
 
 
 </script>

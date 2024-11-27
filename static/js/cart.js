@@ -89,11 +89,11 @@ function pay() {
             headers: {
                 'Content-Type': 'application/json'
             }
-        }).then(res => res.json()).then(data => {
-            if (data.code === 200) {
-                // Xử lý dữ liệu từ phản hồi, ví dụ:
-                console.log(data.distributions, data.providers);
-                location.reload(); // Nếu bạn vẫn muốn tải lại trang
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code == 200) {
+                location.reload();
             } else {
                 console.error('Error:', data);
             }

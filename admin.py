@@ -1,3 +1,4 @@
+import json
 import math
 import os
 from num2words import num2words
@@ -7,7 +8,7 @@ from Flask_App import app, db, UPLOAD_FOLDER
 from Flask_App.chat_rooms import rooms
 from flask_admin import Admin
 from Flask_App.models import Category, Product, User_Role, Goods_Received_Note, User, Receipt, ReceiptDetail, \
-    Goods_Delivery_Note, Warranty, TimeUnitEnum, DiscountType, Promotion, PromotionDetail
+    Goods_Delivery_Note, Warranty, TimeUnitEnum, DiscountType, Promotion, PromotionDetail, Provider
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user, login_user
 from flask_admin import BaseView, expose, AdminIndexView
@@ -315,17 +316,30 @@ class ProductView(ManageModelView):
         return redirect('/admin/product')
 
     @expose('product-update/<int:product_id>')
-    def product_update(self, product_id):
+    @expose('product-update/<int:product_id>/<url>/<int:provider_id>')
+    def product_update(self, product_id, url=None, provider_id=None):
         product = utils.get_product_detail_info_admin(product_id)
 
         category = utils.load_categories_client()
 
         product_warranty = utils.load_product_warranty(product_id)
 
+        try:
+            if url == 'provider':
+                back_url = url_for('provider.provider_detail',
+                                   provider_id=provider_id)
+
+            else:
+                back_url = None
+
+        except Exception as e:
+            print("Lỗi: ", str(e))
+
         return self.render("admin/product.html",
                            product=product,
                            category=category,
-                           product_warranty=product_warranty)
+                           product_warranty=product_warranty,
+                           back_url=back_url)
 
     @expose('update-product/<int:product_id>', methods=['POST'])
     def update_product(self, product_id):
@@ -386,9 +400,10 @@ class ProductView(ManageModelView):
 
         promotion_discount_type = PromotionDetail.query.filter(PromotionDetail.promotion_id == promotion_id).first()
 
-        revenue_during_promotion = utils.calculate_promotion_revenue(promotion_id)
+        revenue_during_promotion, customer_count_before_promotion = utils.calculate_promotion_revenue(promotion_id)
 
-        revenue_before_promotion = utils.calculate_revenue_before_promotion(promotion_id)
+        revenue_before_promotion, customer_count_during_promotion = utils.calculate_revenue_before_promotion(
+            promotion_id)
 
         if promotion_discount_type:
             discount_type = promotion_discount_type.discount_type
@@ -406,7 +421,9 @@ class ProductView(ManageModelView):
                            discount_type_list=discount_type_list,
                            promotion_id=promotion_id,
                            revenue_during_promotion=revenue_during_promotion,
-                           revenue_before_promotion=revenue_before_promotion)
+                           revenue_before_promotion=revenue_before_promotion,
+                           customer_count_during_promotion=customer_count_during_promotion,
+                           customer_count_before_promotion=customer_count_before_promotion)
 
     @expose('create-promotion', methods=['POST'])
     def create_promotion(self):
@@ -683,7 +700,7 @@ class DeliveryNoteView(ManageModelView):
 
         delivery_address = request.form.get('delivery_address')
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail_admin(receipt_id)
 
         products_data = []
 
@@ -720,7 +737,7 @@ class DeliveryNoteView(ManageModelView):
 
         delivery_address = request.form.get('delivery_address')
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail_admin(receipt_id)
 
         products_data = []
 
@@ -776,6 +793,8 @@ class MyAdminIndex(AdminIndexView):
 
         total_customer = utils.count_customer()
 
+        rating_service = float(utils.calculate_rating_service())
+
         sale_month_stats = utils.product_months_stats(datetime.now().year)
 
         sale_month_stats_last_year = utils.product_months_stats(datetime.now().year - 1)
@@ -792,7 +811,8 @@ class MyAdminIndex(AdminIndexView):
                            sale_month_stats=sale_month_stats,
                            sale_month_stats_ly=sale_month_stats_last_year,
                            customer_month_stats=customer_month_stats,
-                           profit_month_stats=profit_month_stats)
+                           profit_month_stats=profit_month_stats,
+                           rating_service=float(rating_service))
 
     @expose('/forgot-password')
     def forgot_password(self):
@@ -1077,6 +1097,22 @@ class ReceiptView(ManageModelView):
 
         receipt_details, total_price, base_total_price = utils.load_receipt_detail(receipt_id)
 
+        parsed_details = []
+        for r in receipt_details:
+            parsed_detail = {
+                "receipt_id": r[0],
+                "product_id": r[1],
+                "quantity": r[2],
+                "unit_price": r[3],
+                "discount": r[4],
+                "discount_info": r[5],
+                "on_warranty": r[6],
+                "warranty_details": json.loads(r[7]),
+                "product_name": r[8],
+                "product_image": r[9],
+            }
+            parsed_details.append(parsed_detail)
+
         receipt_status = utils.load_receipt_status()
 
         receipts = utils.load_receipt(receipt_id)
@@ -1089,7 +1125,7 @@ class ReceiptView(ManageModelView):
 
         return self.render('admin/receipt.html',
                            receipt_id=receipt_id,
-                           receipt_details=receipt_details,
+                           receipt_details=parsed_details,
                            receipt_status=receipt_status,
                            receipts=receipts,
                            total_price=total_price,
@@ -1108,9 +1144,9 @@ class ReceiptView(ManageModelView):
 
             product_name = request.args.get('product_name')
 
-            receipt_details, total_price, base_total_price = utils.load_receipt_detail(receipt_id,
-                                                                                       product_id=product_id,
-                                                                                       product_name=product_name)
+            receipt_details, total_price, base_total_price = utils.load_receipt_detail_admin(receipt_id,
+                                                                                             product_id=product_id,
+                                                                                             product_name=product_name)
 
             receipts = utils.load_receipt(receipt_id)
 
@@ -1140,7 +1176,7 @@ class ReceiptView(ManageModelView):
     def view_delivery_note(self, receipt_id):
         receipt = utils.get_receipt_by_id(receipt_id)
 
-        receipt_details, total_price, base_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail_admin(receipt_id)
 
         total_in_words = num2words(total_price, lang='vi').capitalize() + " đồng "
 
@@ -1171,7 +1207,7 @@ class ReceiptView(ManageModelView):
 
         delivery_address = request.form.get('delivery_address')
 
-        receipt_details, total_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail_admin(receipt_id)
 
         products_data = []
 
@@ -1213,7 +1249,7 @@ class ReceiptView(ManageModelView):
 
         delivery_address = request.form.get('delivery_address')
 
-        receipt_details, total_price, base_price = utils.load_receipt_detail(receipt_id)
+        receipt_details, total_price, base_price = utils.load_receipt_detail_admin(receipt_id)
 
         products_data = []
 
@@ -1384,6 +1420,96 @@ class StorageView(BaseView):
         return current_user.is_authenticated
 
 
+class ProviderView(ManageModelView):
+    @expose("/")
+    def index(self):
+        kw = request.args.get("kw")
+
+        phone_number = request.args.get("phone_number")
+
+        email = request.args.get("email")
+
+        providers = utils.load_provider(kw=kw,
+                                        phone_number=phone_number,
+                                        email=email)
+
+        return self.render('admin/provider.html',
+                           providers=providers)
+
+    @expose("/provider-detail/<int:provider_id>")
+    def provider_detail(self, provider_id):
+        provider_detail, products_provider = utils.get_provider_detail(provider_id)
+
+        return self.render('admin/provider.html',
+                           provider_detail=provider_detail,
+                           products_provider=products_provider)
+
+    @expose("/create-provider", methods=['POST'])
+    def create_provider(self):
+        try:
+            provider_name = request.form.get("provider_name")
+            address = request.form.get("address")
+            phone_number = request.form.get("phone_number")
+            email = request.form.get("email")
+
+            result = utils.add_provider(provider_name=provider_name,
+                                        address=address,
+                                        phone_number=phone_number,
+                                        email=email)
+
+            if result['success']:
+                flash(result['message'], "success")
+
+            else:
+                flash(result['message'], 'danger')
+
+            return redirect(url_for('provider.index'))
+
+        except Exception as e:
+            print(f'Lỗi server: {e}')
+
+            flash("Thêm nhà cung cấp không thành công", "danger")
+
+            return redirect(url_for('provider.index'))
+
+    @expose("/update-provider", methods=['POST'])
+    def update_provider(self):
+        provider_id = request.form.get('provider-id')
+
+        try:
+            provider_name = request.form.get('provider-name')
+            address = request.form.get('address')
+            phone_number = request.form.get('phone-number')
+            email = request.form.get('address')
+
+            if phone_number == 'Chưa có':
+                phone_number = None
+
+            if email == 'Chưa có':
+                email = None
+
+            changes = utils.update_provider(provider_id=provider_id,
+                                            provider_name=provider_name,
+                                            address=address,
+                                            phone_number=phone_number,
+                                            email=email)
+            if changes:
+                flash("Cập nhật thông tin nhà cung cấp thành công", "success")
+
+            else:
+                flash("Lỗi utils", "danger")
+
+            return redirect(url_for('provider.provider_detail', provider_id=provider_id))
+
+        except Exception as e:
+            print(str(e))
+            flash(f"Lỗi: {str(e)}", "danger")
+            return redirect(url_for('provider.provider_detail', provider_id=provider_id))
+
+    def is_accessible(self):
+        return check_permission('order_product')
+
+
 class SupportView(BaseView):
     @expose("/")
     def index(self):
@@ -1429,6 +1555,12 @@ admin.add_view(UserView(User, db.session,
                         menu_icon_type='fa',
                         menu_icon_value='fa-solid fa-user'))
 
+admin.add_view(SupportView(name="Hỗ trợ trực tuyến",
+                           endpoint="support",
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-headset'
+                           ))
+
 admin.add_view(ProductView(Product, db.session,
                            name='Sản phẩm',
                            endpoint='product',
@@ -1441,6 +1573,13 @@ admin.add_view(CategoryView(Category, db.session,
                             menu_icon_type='fa',
                             menu_icon_value='fa-solid fa-list'))
 
+admin.add_view(WarrantyView(Warranty, db.session,
+                            name='Bảo hành',
+                            endpoint='warranty',
+                            menu_icon_type='fa',
+                            menu_icon_value='fa-solid fa-wrench'
+                            ))
+
 admin.add_view(ReceiptView(Receipt, db.session,
                            name='Hóa đơn',
                            endpoint='receipt',
@@ -1448,12 +1587,17 @@ admin.add_view(ReceiptView(Receipt, db.session,
                            menu_icon_value='fa-solid fa-receipt'
                            ))
 
-admin.add_view(DeliveryNoteView(Goods_Delivery_Note, db.session,
-                                name='Xuất kho',
-                                endpoint='goods_delivery',
+admin.add_view(OrderProductView(Goods_Received_Note, db.session,
+                                name='Đặt hàng hóa',
+                                endpoint='order_product',
                                 menu_icon_type='fa',
-                                menu_icon_value='fa-solid fa-clipboard-list'
-                                ))
+                                menu_icon_value='fa-solid fa-truck'))
+
+admin.add_view(ProviderView(Provider, db.session,
+                            name="Nhà cung cấp",
+                            endpoint='provider',
+                            menu_icon_type='fa',
+                            menu_icon_value='fa-solid fa-basket-shopping'))
 
 admin.add_view(ReceiveNoteView(Goods_Received_Note, db.session,
                                name='Nhập kho',
@@ -1462,11 +1606,18 @@ admin.add_view(ReceiveNoteView(Goods_Received_Note, db.session,
                                menu_icon_value='fa-solid fa-clipboard-check'
                                ))
 
-admin.add_view(OrderProductView(Goods_Received_Note, db.session,
-                                name='Đặt hàng hóa',
-                                endpoint='order_product',
+admin.add_view(DeliveryNoteView(Goods_Delivery_Note, db.session,
+                                name='Xuất kho',
+                                endpoint='goods_delivery',
                                 menu_icon_type='fa',
-                                menu_icon_value='fa-solid fa-truck'))
+                                menu_icon_value='fa-solid fa-clipboard-list'
+                                ))
+
+admin.add_view(StorageView(name='Kiểm kho',
+                           endpoint='storage',
+                           menu_icon_type='fa',
+                           menu_icon_value='fa-solid fa-shop-lock'
+                           ))
 
 admin.add_view(StatsView(Receipt, db.session,
                          name='Thống kê',
@@ -1481,25 +1632,6 @@ admin.add_view(UserRoleView(User_Role, db.session,
                             menu_icon_type='fa',
                             menu_icon_value='fa-solid fa-people-roof'
                             ))
-
-admin.add_view(WarrantyView(Warranty, db.session,
-                            name='Bảo hành',
-                            endpoint='warranty',
-                            menu_icon_type='fa',
-                            menu_icon_value='fa-solid fa-wrench'
-                            ))
-
-admin.add_view(StorageView(name='Kiểm kho',
-                           endpoint='storage',
-                           menu_icon_type='fa',
-                           menu_icon_value='fa-solid fa-store'
-                           ))
-
-admin.add_view(SupportView(name="Hỗ trợ trực tuyến",
-                           endpoint="support",
-                           menu_icon_type='fa',
-                           menu_icon_value='fa-solid fa-headset'
-                           ))
 
 admin.add_view(LogoutView(name='Đăng xuất',
                           menu_icon_type='fa',

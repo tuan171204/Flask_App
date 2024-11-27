@@ -18,7 +18,7 @@ from Flask_App.models import Category, Product, User, Receipt, ReceiptDetail, Us
     Warranty, Brand, PromotionDetail, District, Ward, WarrantyDetail, TimeUnitEnum, DiscountType
 import hashlib
 from flask_login import current_user
-from sqlalchemy import func, and_, or_, desc, Integer, literal_column
+from sqlalchemy import func, and_, or_, desc, Integer, literal_column, distinct
 from sqlalchemy.sql import extract
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -103,7 +103,7 @@ def load_manage_product(kw=None, page=1, **kwargs):
                                 Category.name.label('category_name'),
                                 Provider.name.label('provider_name')) \
         .join(Category, Category.id == Product.category_id) \
-        .join(Distribution, Distribution.product_id == Product.id) \
+        .outerjoin(Distribution, Distribution.product_id == Product.id) \
         .join(Provider, Provider.id == Distribution.provider_id)
 
     if kw:
@@ -432,21 +432,24 @@ def count_cart(cart):
             for c in cart.values():
                 id = int(c['id'])
                 product = get_product_detail_info(id)
-                print(f"Price: {c['price']}, Base Price: {product.price}")
-                if product.discount_type.value == 1:
-                    total_quantity += c['quantity']
-                    total_amount += c['quantity'] * c['price']
-                    base_total_amount += c['quantity'] * product.price
 
-                elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 == 0:
-                    total_quantity += c['quantity']
-                    total_amount += (c['quantity'] * c['price']) / 2
-                    base_total_amount += c['quantity'] * c['price']
+                discount_type = getattr(product, 'discount_type', None)
 
-                elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 != 0:
-                    total_quantity += c['quantity']
-                    total_amount += (math.floor(c['quantity'] / 2) + 1) * c['price']
-                    base_total_amount += c['quantity'] * c['price']
+                if discount_type:
+                    if product.discount_type.value == 1:
+                        total_quantity += c['quantity']
+                        total_amount += c['quantity'] * c['price']
+                        base_total_amount += c['quantity'] * product.price
+
+                    elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 == 0:
+                        total_quantity += c['quantity']
+                        total_amount += (c['quantity'] * c['price']) / 2
+                        base_total_amount += c['quantity'] * c['price']
+
+                    elif product.discount_type.value == 2 and c['quantity'] > 1 and c['quantity'] % 2 != 0:
+                        total_quantity += c['quantity']
+                        total_amount += (math.floor(c['quantity'] / 2) + 1) * c['price']
+                        base_total_amount += c['quantity'] * c['price']
 
                 else:
                     total_quantity += c['quantity']
@@ -460,7 +463,7 @@ def count_cart(cart):
         }
 
     except Exception as e:
-        return {'error': f'Lỗi server {str(e)}'}
+        return {'error': f'Lỗi utils {str(e)}'}
 
 
 def load_payment():
@@ -485,22 +488,25 @@ def add_receipt(cart, payment_id, delivery_address, customer_name):
             id = int(c['id'])
             product = get_product_detail_info(id)
 
-            if product.discount_type.value == 2 and c['quantity'] > 1:
-                d = ReceiptDetail(receipt=receipt,
-                                  product_id=int(c['id']),
-                                  quantity=c['quantity'],
-                                  unit_price=c['price'],
-                                  discount=math.floor(c['quantity'] / 2) * c['price'],
-                                  discount_info=c['promotion']
-                                  )
-            elif product.discount_type.value == 1:
-                d = ReceiptDetail(receipt=receipt,
-                                  product_id=int(c['id']),
-                                  quantity=c['quantity'],
-                                  unit_price=product.price,
-                                  discount=(product.price - c['price']) * c['quantity'],
-                                  discount_info=c['promotion']
-                                  )
+            discount_type = getattr(product, 'discount_type', None)
+
+            if discount_type:
+                if product.discount_type.value == 2 and c['quantity'] > 1:
+                    d = ReceiptDetail(receipt=receipt,
+                                      product_id=int(c['id']),
+                                      quantity=c['quantity'],
+                                      unit_price=c['price'],
+                                      discount=math.floor(c['quantity'] / 2) * c['price'],
+                                      discount_info=c['promotion']
+                                      )
+                elif product.discount_type.value == 1:
+                    d = ReceiptDetail(receipt=receipt,
+                                      product_id=int(c['id']),
+                                      quantity=c['quantity'],
+                                      unit_price=product.price,
+                                      discount=(product.price - c['price']) * c['quantity'],
+                                      discount_info=c['promotion']
+                                      )
 
             else:
                 d = ReceiptDetail(receipt=receipt,
@@ -532,6 +538,14 @@ def count_complete_receipt():
 def count_customer():
     return db.session.query(func.count(User.id)) \
         .filter(User.active == True).scalar()
+
+
+def calculate_rating_service():
+    average_rating = db.session.query(
+                                func.avg(Receipt.rating_service))\
+                                .filter(Receipt.rating_service.isnot(None)).scalar()
+
+    return average_rating
 
 
 def category_stats():
@@ -632,8 +646,37 @@ def count_comment(product_id):
     return Comment.query.filter(Comment.product_id.__eq__(product_id)).count()
 
 
-def load_provider():
-    return Provider.query.all()
+def load_provider(kw=None, phone_number=None, email=None):
+    provider = Provider.query
+
+    if kw:
+        if kw.isdigit():
+            provider = provider.filter(Provider.id == int(kw))
+
+        else:
+            provider = provider.filter(Provider.name.contains(kw))
+
+    if phone_number:
+        provider = provider.filter(Provider.phone_number.contains(phone_number))
+
+    if email:
+        provider = provider.filter(Provider.email.contains(email))
+
+    return provider.all()
+
+
+def get_provider_detail(provider_id):
+    provider_info = Provider.query.get(provider_id)
+
+    products_provider = db.session.query(Product.id,
+                                         Product.name,
+                                         Product.import_price,
+                                         Product.price,
+                                         Product.active) \
+        .join(Distribution, Distribution.product_id == Product.id) \
+        .filter(Distribution.provider_id == provider_id)
+
+    return provider_info, products_provider.all()
 
 
 def get_provider_by_id(provider_id):
@@ -645,6 +688,58 @@ def get_provider_by_id(provider_id):
 def load_distribution(product_id):
     if product_id:
         return Distribution.query.filter(Distribution.product_id.__eq__(product_id)).all()
+
+
+def delete_product_provider(product_id):
+    product = Product.query.get(product_id)
+
+    product.active = False
+
+    db.session.commit()
+
+
+def active_product_provider(product_id, provider_id):
+    product = Product.query.get(product_id)
+
+    product.active = True
+
+    db.session.commit()
+
+
+def add_provider(provider_name, address, phone_number, email):
+    try:
+        new_provider = Provider(name=provider_name,
+                                address=address,
+                                phone_number=phone_number,
+                                email=email)
+
+        db.session.add(new_provider)
+
+        db.session.commit()
+
+        return {'success': True, 'message': f'Thêm nhà cung cấp thành công'}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi utils: {e}")
+
+        return {'success': False, 'message': f'Lỗi: {e}'}
+
+
+def deactive_provider(provider_id):
+    try:
+        products_provider = db.session.query(Product) \
+            .join(Distribution, Distribution.product_id == Product.id) \
+            .filter(Distribution.provider_id == provider_id).all()
+
+        for product in products_provider:
+            delete_product_provider(product.id)
+
+        return {"success": True, "message": "Đã tạm ngưng nhập hàng từ nhà cung cấp"}
+
+    except Exception as e:
+        print(f"Lỗi utils: {e}")
+        return {"success": False, "message": f"Lỗi utils: {e}"}
 
 
 def load_receipt(receipt_id=None, status_id=None, asc='True', page=1):
@@ -702,7 +797,6 @@ def get_receipt_by_id_2(receipt_id):
         Receipt.id,
         Receipt.created_date,
         Receipt.status_id,
-        Receipt.promotion_id,
         Receipt.delivery_address,
         Receipt.receiver_name,
         Receipt_Status.status_name.label("status_name"),
@@ -713,6 +807,40 @@ def get_receipt_by_id_2(receipt_id):
         .filter(Receipt.id == receipt_id).first()
 
     return receipt
+
+
+def load_receipt_detail_admin(receipt_id, product_id=None, product_name=None):
+    calculate_warranty_valid(receipt_id)
+
+    receipt_details = db.session.query(
+        ReceiptDetail.receipt_id,
+        ReceiptDetail.product_id,
+        ReceiptDetail.quantity,
+        ReceiptDetail.unit_price,
+        ReceiptDetail.discount,
+        ReceiptDetail.discount_info,
+        ReceiptDetail.on_warranty,
+        Product.name.label('product_name'),
+        Product.image.label('product_image')
+    ).join(Product, Product.id == ReceiptDetail.product_id) \
+        .filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
+
+    receipt_details = receipt_details.distinct()
+
+    base_total_price = sum(detail.quantity * detail.unit_price for detail in receipt_details)
+
+    total_price = base_total_price
+    for detail in receipt_details:
+        if detail.discount:
+            total_price -= detail.discount
+
+    if product_id:
+        receipt_details = receipt_details.filter(ReceiptDetail.product_id.__eq__(product_id))
+
+    if product_name:
+        receipt_details = receipt_details.filter(Product.name.contains(product_name))
+
+    return receipt_details.all(), total_price, base_total_price
 
 
 def load_receipt_detail(receipt_id, product_id=None, product_name=None):
@@ -726,15 +854,28 @@ def load_receipt_detail(receipt_id, product_id=None, product_name=None):
         ReceiptDetail.discount,
         ReceiptDetail.discount_info,
         ReceiptDetail.on_warranty,
-        WarrantyDetail.warranty_period.label('warranty_period'),
-        WarrantyDetail.time_unit.label('time_unit'),
+        func.json_arrayagg(
+            func.json_object(
+                'warranty_period', WarrantyDetail.warranty_period,
+                'time_unit', WarrantyDetail.time_unit
+            )
+        ).label('warranty_details'),
         Product.name.label('product_name'),
         Product.image.label('product_image')
     ).join(Product, Product.id == ReceiptDetail.product_id) \
         .outerjoin(WarrantyDetail, WarrantyDetail.product_id == ReceiptDetail.product_id) \
-        .filter(ReceiptDetail.receipt_id.__eq__(receipt_id))
-
-    receipt_details = receipt_details.distinct()
+        .filter(ReceiptDetail.receipt_id.__eq__(receipt_id)) \
+        .group_by(
+        ReceiptDetail.receipt_id,
+        ReceiptDetail.product_id,
+        ReceiptDetail.quantity,
+        ReceiptDetail.unit_price,
+        ReceiptDetail.discount,
+        ReceiptDetail.discount_info,
+        ReceiptDetail.on_warranty,
+        Product.name,
+        Product.image
+    )
 
     base_total_price = sum(detail.quantity * detail.unit_price for detail in receipt_details)
 
@@ -1049,39 +1190,57 @@ def load_delivery_note(delivery_code=None, confirmed=None, asc='False', reason=N
 
 
 def create_delivery_note(delivery_code, products_data, **kwargs):
-    if kwargs.get('receipt_id'):
-        receipt_id = kwargs.get('receipt_id')
-        receipt = Receipt.query.filter(Receipt.id == receipt_id).first()
-        receipt.exported = True
+    try:
 
-    else:
-        receipt_id = None
+        exist_note = Goods_Delivery_Note.query.get(delivery_code)
 
-    goods_delivery_note = Goods_Delivery_Note(code=delivery_code,
-                                              created_date=kwargs.get('created_date'),
-                                              reason=kwargs.get('delivery_reason'),
-                                              user_created=current_user.id,
-                                              total_price=kwargs.get('total_price'),
-                                              confirmed=kwargs.get('confirmed', False),
-                                              confirm_date=kwargs.get('confirm_date', None),
-                                              delivery_man=kwargs.get('delivery_man_id'),
-                                              delivery_address=kwargs.get('delivery_address'),
-                                              for_receipt_id=receipt_id
-                                              )
+        if not exist_note:
+            if kwargs.get('receipt_id'):
+                receipt_id = kwargs.get('receipt_id')
+                receipt = Receipt.query.filter(Receipt.id == receipt_id).first()
+                receipt.exported = True
 
-    for product in products_data:
-        goods_delivery_note_detail = Goods_Delivery_Note_Detail(
-            goods_delivery_note_code=delivery_code,
-            product_id=product['product_id'],
-            quantity=product['base_quantity'],
-            delivered_quantity=product['delivered_quantity'],
-            note=product['note']
-        )
+            else:
+                receipt_id = None
 
-        db.session.add(goods_delivery_note_detail)
+            goods_delivery_note = Goods_Delivery_Note(code=delivery_code,
+                                                      created_date=kwargs.get('created_date'),
+                                                      reason=kwargs.get('delivery_reason'),
+                                                      user_created=current_user.id,
+                                                      total_price=kwargs.get('total_price'),
+                                                      confirmed=kwargs.get('confirmed', False),
+                                                      confirm_date=kwargs.get('confirm_date', None),
+                                                      delivery_man=kwargs.get('delivery_man_id'),
+                                                      delivery_address=kwargs.get('delivery_address'),
+                                                      for_receipt_id=receipt_id
+                                                      )
 
-    db.session.add(goods_delivery_note)
-    db.session.commit()
+            for product in products_data:
+                goods_delivery_note_detail = Goods_Delivery_Note_Detail(
+                    goods_delivery_note_code=delivery_code,
+                    product_id=product['product_id'],
+                    quantity=product['base_quantity'],
+                    delivered_quantity=product['delivered_quantity'],
+                    note=product['note']
+                )
+
+                db.session.add(goods_delivery_note_detail)
+
+            db.session.add(goods_delivery_note)
+
+        else:
+            exist_note.confirmed = True
+            for product in products_data:
+                exist_note_detail = Goods_Delivery_Note_Detail.query.filter(and_(Goods_Delivery_Note_Detail.goods_delivery_note_code==delivery_code,
+                                                                                 Goods_Delivery_Note_Detail.product_id==product['product_id']))
+                exist_note_detail.quantity = product['base_quantity']
+                exist_note_detail.delivery_quantity = product['delivered_quantity']
+                exist_note_detail.note = product['note']
+
+        db.session.commit()
+
+    except Exception as e:
+        print(f'Lỗi utils: {e}')
 
 
 def update_delivery_note(delivery_code, products_data, **kwargs):
@@ -1263,9 +1422,7 @@ def get_product_by_provider(provider_id):
 
 def get_address():
     districts = District.query.order_by(
-        # Sắp xếp dựa trên số quận (nếu có)
         func.cast(func.substring(District.name, 6), Integer).asc(),
-        # Sau đó sắp xếp theo bảng chữ cái với phần sau từ "Quận"
         func.substring(District.name, 6).asc()
     ).all()
 
@@ -1842,7 +1999,15 @@ def calculate_revenue_before_promotion(promotion_id):
                                                  Receipt.created_date >= start_date_before,
                                                  Receipt.created_date < promotion.start_date).scalar() or 0
 
-    return total_revenue_before_promotion
+    customer_count_before_promotion = db.session.query(
+        func.count(distinct(Receipt.user_id)).label('customer_count')) \
+                                          .select_from(ReceiptDetail) \
+                                          .join(Receipt, Receipt.id == ReceiptDetail.receipt_id) \
+                                          .filter(ReceiptDetail.product_id.in_(product_on_promotion),
+                                                  Receipt.created_date >= start_date_before,
+                                                  Receipt.created_date < promotion.start_date).scalar() or 0
+
+    return total_revenue_before_promotion, customer_count_before_promotion
 
 
 def calculate_promotion_revenue(promotion_id):
@@ -1862,7 +2027,14 @@ def calculate_promotion_revenue(promotion_id):
                                 Receipt.created_date >= Promotion.start_date,
                                 Receipt.created_date <= Promotion.end_date).scalar() or 0
 
-    return total_revenue
+    customer_count_during_promotion = db.session.query(
+        func.count(distinct(Receipt.user_id)).label('customer_count')) \
+                                          .select_from(ReceiptDetail) \
+                                          .join(Receipt, Receipt.id == ReceiptDetail.receipt_id) \
+                                          .filter(ReceiptDetail.product_id.in_(product_on_promotion),
+                                                  Receipt.created_date >= promotion.start_date,
+                                                  Receipt.created_date < promotion.end_date).scalar() or 0
+    return total_revenue, customer_count_during_promotion
 
 
 def calculate_receipt_before_promotion(promotion_id):
@@ -1875,3 +2047,22 @@ def load_all_brands():
 
 def load_product_brand(brand_id):
     return Product.query.order_by(Product.category_id).filter(Product.brand_id == brand_id).all()
+
+
+def update_provider(provider_id, provider_name, address, phone_number, email):
+    try:
+        provider = Provider.query.get(provider_id)
+
+        provider.name = provider_name
+        provider.address = address
+        provider.phone_number = phone_number
+        provider.email = email
+
+        db.session.commit()
+
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi utils: {str(e)}")
+        return False

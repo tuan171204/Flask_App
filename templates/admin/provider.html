@@ -1,0 +1,605 @@
+{% extends 'admin/base.html' %}
+
+
+{% block body %}
+
+{% if not provider_detail %}
+    <h1 class="text-center text-dark mt-4"> Thông tin nhà cung cấp</h1>
+    <br>
+    <hr>
+
+    <form action=""
+          class="d-flex"
+          style="gap: 10px;"  >
+        <div class="form-group">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Mã hoặc tên nhà cung cấp"
+                   name="kw" >
+        </div>
+        <div class="form-group">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Số điện thoại"
+                   name="phone_number">
+
+        </div>
+        <div class="form-group">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Tìm theo email"
+                   name="email" >
+        </div>
+        <button type="submit"
+                class="btn btn-dark mb-3">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Tìm kiếm
+        </button>
+    </form>
+
+    <button type="button"
+            class="btn btn-warning form-control mb-2 format-btn w-50"
+            data-toggle="modal"
+            data-target="#addProviderModal">
+        <i class="fa-solid fa-folder-plus"></i>
+        Thêm nhà cung cấp
+    </button>
+
+    <table class="table table-bordered table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Mã nhà cung cấp</th>
+                <th scope="col">Tên nhà cung cấp</th>
+                <th scope="col">Địa chỉ</th>
+                <th scope="col">Số điện thoại</th>
+                <th scope="col">Email</th>
+                <th scope="col">Chi tiết</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for provider in providers %}
+            <tr>
+                <td>{{ provider.id }}</td>
+                <td>{{ provider.name }}</td>
+                <td>{% if provider.address %} {{ provider.address}} {% else %} Chưa có {% endif %}</td>
+                <td>{% if provider.phone_number %} {{ provider.phone_number}} {% else %} Chưa có {% endif %}</td>
+                <td>{% if provider.email %} {{ provider.email}} {% else %} Chưa có {% endif %}</td>
+                <td>
+                    <a href="{{ url_for('provider.provider_detail', provider_id = provider.id) }}"
+                       class="btn btn-dark format-btn">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Thông tin chi tiết
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<!--ADD PROVIDER MODAL-->
+    <form action="{{ url_for('provider.create_provider') }}"
+          class="add-provider-form"  
+          method="POST">
+        <div class="modal fade" id="addProviderModal">
+          <div class="modal-dialog modal-centered modal-lg">
+            <div class="modal-content">
+
+              <!-- Modal Header -->
+              <div class="modal-header bg-dark">
+                <h4 class="modal-title text-light">Thêm nhà cung cấp</h4>
+                <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+              </div>
+
+              <div class="modal-body">
+                      <div class="form-group">
+                          <label class="format-label">Tên nhà cung cấp: </label>
+                          <input type="text"
+                                 class="form-control"
+                                 name="provider_name">
+                      </div>
+                      <div class="form-group">
+                          <label class="format-label">Địa chỉ: </label>
+                          <input type="text"
+                                 class="form-control"
+                                 name="address">
+                      </div>
+                      <div class="form-group">
+                          <label class="format-label">Số điện thoại ( không bắt buộc ): </label>
+                          <input type="text"
+                                 class="form-control"
+                                 name="phone_number">
+                      </div>
+                      <div class="form-group">
+                          <label class="format-label">Email ( không bắt buộc ): </label>
+                          <input type="text"
+                                 class="form-control"
+                                 name="email">
+                      </div>
+              </div>
+
+              <!-- Modal footer -->
+              <div class="modal-footer">
+                 <button type="button"
+                         onclick="checkSubmitForm()"
+                        class="btn btn-warning format-btn">
+                    <i class="fa-solid fa-plus"></i>
+                    Thêm
+                </button>
+                <button type="button"
+                        class="btn btn-dark format-btn"
+                        data-dismiss="modal">
+                    Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </form>
+
+<script>
+    function checkSubmitForm() {
+        showLoading()
+        const form = document.querySelector('.add-provider-form')
+        const new_provider_name= form.querySelector('input[name="provider_name"]').value.trim()
+        const addressInput = form.querySelector('input[name="address"]')
+        const address = addressInput.value.trim()
+    
+        if (/^\d+$/.test(address)) {
+            alert("Địa chỉ không được chỉ chứa số! Vui lòng nhập giá trị hợp lệ.")
+            addressInput.focus()
+            hideLoading()
+            return
+        }
+
+        fetch('/api/check-duplicate-provider-name', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }, 
+            body: JSON.stringify({
+                "provider_name": new_provider_name
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.duplicate){
+                alert("Tên nhà cung cấp đã tồn tại")
+                hideLoading()
+                return
+            } else {
+                form.submit()
+            }
+        })
+        .catch(error =>{
+            hideLoading()
+            console.error("Lỗi FE: ", error)
+        })
+    }
+</script>
+
+{% else %}
+    <h1 class="text-center text-dark mt-4"> {{ provider_detail.name }}</h1>
+    <br>
+    <hr>
+
+    <form action="{{ url_for('provider.update_provider') }}"
+          id="provider-info"
+          method="POST"  >
+        <div class="form-group">
+            <label class="format-label">Mã nhà cung cấp:</label>
+            <input type="text"
+                   name="provider-id"
+                   data-provider-id="{{ provider_detail.id }}"
+                   readonly
+                   class="text-center form-control w-50"
+                   value="{{ provider_detail.id }}" >
+        </div>
+        <div class="form-group">
+            <label class="format-label">Tên nhà cung cấp:</label>
+            <input type="text"
+                   class="text-center form-control w-50"
+                   value="{{ provider_detail.name }}"
+                   name="provider-name"
+                   data-provider-name="{{ provider_detail.name }}">
+        </div>
+        <div class="form-group">
+            <label class="format-label">Địa chỉ:</label>
+            <input type="text"
+                   class="text-center form-control"
+                   value="{{ provider_detail.address }}"
+                   name="address"
+                   data-address="{{ provider_detail.address }}" >
+        </div>
+        <div class="form-group">
+            <label class="format-label">Số điện thoại:</label>
+            <input type="text"
+                   class="text-center form-control w-50"
+                   name="phone-number"
+                   {% if provider_detail.phone_number %}
+                      value="{{ provider_detail.phone_number }}"
+                  {% else %}
+                      value="Chưa có"
+                  {% endif %}
+
+                   {% if provider_detail.phone_number %}
+                      data-phone-number="{{ provider_detail.phone_number }}"
+                  {% else %}
+                      data-phone-number="Chưa có"
+                  {% endif %}>
+        </div>
+        <div class="form-group">
+            <label class="format-label">Email liên hệ:</label>
+            <input type="text"
+                   class="text-center form-control w-50"
+                   name="email"
+                   {% if provider_detail.email %}
+                      value="{{ provider_detail.email }}"
+                  {% else %}
+                      value="Chưa có"
+                  {% endif %}
+
+                   {% if provider_detail.email %}
+                      data-email="{{ provider_detail.email }}"
+                  {% else %}
+                      data-email="Chưa có"
+                  {% endif %}>
+        </div>
+
+        <button type="button"
+                class="btn btn-warning format-btn form-control w-50"
+                id="save-change-btn"
+                data-toggle="modal"
+                data-target="#alertModal">
+                <i class="fa-solid fa-floppy-disk"></i>
+                Lưu thay đổi
+        </button>
+
+<!--ALERT MODAL-->
+        <div class="modal fade" id="alertModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-dark text-light">
+                <h5 class="modal-title" id="exampleModalLabel">Lưu thay đổi</h5>
+                <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                  <strong class="text-center format-btn">
+                     Xác nhận lưu thay đổi thông tin ?
+                  </strong>
+              </div>
+              <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-dark"
+                        data-dismiss="modal">
+                    <i class="fa-solid fa-xmark"></i>
+                    Hủy
+                </button>
+                <button type="button"
+                        onclick="checkSubmitUpdate()"
+                        class="btn btn-warning">
+                    <i class="fa-solid fa-check"></i>
+                    Xác nhận
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </form>
+
+<br><hr><br>
+        <h2 class="text-center mb-4">Các sản phẩm cung cấp</h2>
+    {% if products_provider %}
+
+        <input type="text"
+               class="form-control w-50 mb-2 border-dark"
+               id="productInput"
+               onkeyup="filterProduct()"
+               placeholder="Tìm tên sản phẩm...">
+        <table class="table table-hover table-bordered text-center product-provider-table">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col">STT</th>
+                <th scope="col">Mã sản phẩm</th>
+                <th scope="col">Tên sản phẩm</th>
+                <th scope="col">Giá nhập</th>
+                <th scope="col">Giá bán</th>
+                <th scope="col">Tình trạng</th>
+                <th scope="col">Chức năng</th>
+            </tr>
+            </thead>
+            <tbody>
+
+                {% for product in products_provider %}
+                <tr id="product-provider-{{product.id}}">
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name}}</td>
+                    <td>{{ "{:,.0f}".format(product.import_price) }}đ</td>
+                    <td>{{ "{:,.0f}".format(product.price) }}đ</td>
+                    <td class="product-provider-status">
+                        {% if product.active %}
+                        <button class="btn btn-success status-btn text-center">
+                            Đang bán
+                        </button>
+                        {% else %}
+                        <button class="btn btn-secondary status-btn text-center">
+                            Tạm ngưng
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td class="function-table-data">
+                        <a href="{{ url_for('product.product_update', product_id=product.id, url='provider', provider_id=provider_detail.id ) }}"
+                           class="btn btn-dark mb-2">
+                            <i class="fa-solid fa-laptop"></i>
+                            Thông tin & chỉnh sửa
+                        </a>
+                        <div class="function-table-data function-btn">
+                            {% if product.active %}
+                                <button type="button"
+                                        onclick="delete_Product_Provider({{ product.id }}, {{ provider_detail.id }})"
+                                        class="btn btn-danger text-lights">
+                                     <i class="fa-solid fa-ban"></i>
+                                    Tạm ngưng bán
+                                </button>
+                            {% else %}
+                                <button type="button"
+                                        onclick="active_Product_Provider({{ product.id }}, {{ provider_detail.id }})"
+                                        class="btn btn-success text-light">
+                                     <i class="fa-solid fa-check"></i>
+                                    Tiếp tục bán
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    {% else %}
+        <h4 class="alert alert-secondary text-center text-dark mt-4 mb-4"> Hiện chưa có sản phẩm nào </h4>
+    {% endif %}
+
+<a href="{{ url_for('provider.index') }}"
+   class="btn btn-secondary format-btn">
+    <i class="fa-solid fa-right-from-bracket"></i>
+    Quay lại
+</a>
+<button onclick="deactive_Provider({{ provider_detail.id }})"
+        class="btn btn-danger format-btn">
+    <i class="fa-solid fa-trash"></i>
+    Ngưng nhập hàng từ nhà cung cấp
+</button>
+
+{% endif %}
+
+
+
+
+<br><br><br>
+
+<script>
+
+    checkSubmitUpdate = () => {
+        showLoading()
+        const form = document.querySelector('#provider-info')
+        const new_provider_name= form.querySelector('input[name="provider-name"]').value.trim()
+
+        fetch('/api/check-duplicate-provider-name', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "provider_name": new_provider_name
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.duplicate){
+                alert("Tên nhà cung cấp đã tồn tại")
+                hideLoading()
+                return
+            } else {
+                form.submit()
+            }
+        })
+        .catch(error =>{
+            hideLoading()
+            console.error("Lỗi FE: ", error)
+        })
+    }
+
+    changeBtn =  document.querySelector('#save-change-btn')
+    infoForm = document.querySelector('#provider-info')
+
+
+    console.log
+
+    toggleChangeButton = () => {
+        isChange = false
+
+        infoForm = document.querySelector('#provider-info')
+
+        infoForm.querySelectorAll("input").forEach(input =>{
+            displayValue = input.value
+            originValue = input.getAttribute('data-' + input.name)
+
+            if ( originValue != displayValue){
+                isChange = true
+            }
+        })
+
+        if ( isChange == true ){
+            changeBtn.style.display = 'block'
+        } else {
+            changeBtn.style.display = 'none'
+        }
+    }
+
+    toggleChangeButton()
+
+    infoForm.querySelectorAll("input").forEach(input => {
+        input.addEventListener('keyup', toggleChangeButton)
+    })
+
+
+
+     function filterProduct() {
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("productInput");
+      filter = input.value.toUpperCase();
+      table = document.querySelector('.product-provider-table')
+      tr = table.getElementsByTagName("tr");
+
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[1];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+    delete_Product_Provider = (product_id, provider_id) =>{
+        showLoading()
+        if ( confirm("Tạm ngưng bán sản phẩm thuộc nhà cung cấp ? ")){
+            fetch("/api/delete-product-provider",{
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "product_id": product_id,
+                    "provider_id": provider_id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    alert(data.message)
+
+                    row = document.querySelector(`#product-provider-${product_id}`)
+
+                    row.querySelector('.product-provider-status').innerHTML = `
+                        <button class="btn btn-secondary status-btn text-center">
+                            Tạm ngưng
+                        </button>
+                        `
+
+                    row.querySelector(`.function-table-data .function-btn`).innerHTML = `
+                        <button type="button"
+                                onclick="active_Product_Provider(${product_id}, ${provider_id})"
+                                class="btn btn-success text-light">
+                             <i class="fa-solid fa-check"></i>
+                            Tiếp tục bán
+                        </button>
+                    `
+
+                    hideLoading()
+                } else {
+                    alert("Lỗi phản hồi: ", data.message)
+                    hideLoading()
+                }
+            })
+            .catch(error => {
+                console.error(error)
+                alert("Lỗi FE: ", error)
+                hideLoading()
+            })
+        } else {
+            hideLoading()
+        }
+    }
+
+    active_Product_Provider = (product_id, provider_id) =>{
+        showLoading()
+        if ( confirm("Tiếp tục bán sản phẩm thuộc nhà cung cấp ? ")){
+            fetch("/api/active-product-provider",{
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "product_id": product_id,
+                    "provider_id": provider_id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    alert(data.message)
+
+                    row = document.querySelector(`#product-provider-${product_id}`)
+
+                    row.querySelector('.product-provider-status').innerHTML = `
+                        <button class="btn btn-success status-btn text-center">
+                            Đang bán
+                        </button>
+                        `
+
+                    row.querySelector(`.function-table-data .function-btn`).innerHTML = `
+                        <button type="button"
+                                onclick="delete_Product_Provider(${product_id}, ${provider_id})"
+                                class="btn btn-danger text-light">
+                             <i class="fa-solid fa-ban"></i>
+                            Tạm ngưng bán
+                        </button>
+                    `
+
+                    hideLoading()
+                } else {
+                    alert("Lỗi phản hồi: ", data.message)
+                    hideLoading()
+                }
+            })
+            .catch(error => {
+                console.error(error)
+                alert("Lỗi FE: ", error)
+                hideLoading()
+            })
+        } else {
+            hideLoading()
+        }
+    }
+
+
+
+    deactive_Provider = (provider_id) => {
+        if (confirm("Xác nhận ngưng nhập hàng từ nhà cung cấp này ? ")){
+            showLoading()
+            fetch('/api/deactive_provider', {
+                method: "PUT", 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    "provider_id": provider_id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    hideLoading()
+                    alert(data.message)
+                    location.reload()
+                } else {
+                    hideLoading()
+                    alert(data.message)
+                }
+            })
+            .catch(error => {
+                console.error("Lỗi FE: ", error)
+                hideLoading()
+            })
+        }
+    }
+
+</script>
+
+
+{% endblock %}

@@ -109,7 +109,7 @@
 
 
 {% block page_body %}
-    <div class="container-fluid row"
+    <div class="container-fluid row {% if current_user.is_authenticated %}  {% else %} main-body {% endif %}"
          style="background-color: #FFF">
         <div class="col-lg-2 col-md-4 col-sm-4"
              id="menu-links-container">

@@ -73,6 +73,8 @@
                             </tr>
                           </thead>
                           <tbody>
+
+                          {% set time_unit_value = {'MONTH': 'Tháng', 'YEAR': 'Năm', 'WEEK': 'Tuần'} %}
                           {% for r in receipt_details %}
                             <tr class="text-center">
                               <th scope="row">{{loop.index}}</th>
@@ -87,22 +89,25 @@
                                   {% endif %}
                               </td>
                               <td>
-                                  {% if r.on_warranty %}
-                                    <button class="btn btn-success">
-                                        Còn hiệu lực
-                                    </button>
-                                    <p class="text-danger font-weight-bold">( {{ r.warranty_period }} {{ r.time_unit.value }} )</p>
-                                  {% else %}
-                                    {% if r.warranty_period %}
-                                    <button class="btn btn-danger">
-                                        Đã quá hạn
-                                    </button>
-                                    <p class="text-danger font-weight-bold">( {{ r.warranty_period }} {{ r.time_unit.value }} )</p>
-                                    {% else %}
-                                    <p class="text-danger font-weight-bold">Không có bảo hành</p>
-                                    {% endif %}
-                                  {% endif %}
+                                  {% for warranty in r.warranty_details %}
+                                      {% if r.on_warranty %}
+                                        <button class="btn btn-success">
+                                            Còn hiệu lực
+                                        </button>
+                                        <p class="text-danger font-weight-bold">( {{ warranty.warranty_period }} {{ time_unit_value[warranty.time_unit] }} )</p>
+                                      {% else %}
+                                        {% if warranty.warranty_period %}
+                                            <button class="btn btn-danger">
+                                                Đã quá hạn
+                                            </button>
+                                            <p class="text-danger font-weight-bold">( {{ warranty.warranty_period }} {{ time_unit_value[warranty.time_unit] }} )</p>
+                                        {% else %}
+                                            <p class="text-danger font-weight-bold">Không có bảo hành</p>
+                                        {% endif %}
+                                      {% endif %}
+                                  {% endfor %}
                               </td>
+
                             </tr>
                            {% endfor %}
                           </tbody>

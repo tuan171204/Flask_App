@@ -76,12 +76,18 @@
                           <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
                             <i class="fa fa-question"></i>
                           </button>
-                          <div class="dropdown-menu ">
+                          <div class="dropdown-menu">
                               {% if r.status_id == 1 or r.status_id == 5 %}
-                                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#confirmModal_{{r.id}}">
+                                  <button type="button"
+                                          class="btn btn-light"
+                                          data-toggle="modal"
+                                          data-target="#confirmModal_{{r.id}}">
                                     Xác nhận đơn hàng
                                   </button>
-                                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#reportModal_{{r.id}}">
+                                  <button type="button"
+                                          class="btn btn-light"
+                                          data-toggle="modal"
+                                          data-target="#reportModal_{{r.id}}">
                                     Cần hỗ trợ về đơn hàng này ?
                                   </button>
                               {% else %}
@@ -110,7 +116,7 @@
 {% if r.status_id == 1 or r.status_id == 5 %}
 <!-- Confirm Modal -->
 <div class="modal fade" id="confirmModal_{{r.id}}" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel_{{r.id}}" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog  modal-dialog-centered">
     <div class="modal-content">
 
       <!-- Modal Header -->
@@ -120,7 +126,8 @@
       </div>
 
       <!-- Modal body -->
-        <form>
+        <form action="{{ url_for('confirm_receipt', receipt_id= r.id ) }}"
+              method="POST">
               <div class="modal-body">
                   <div class="form-group">
                       <label>Đánh giá: </label>
@@ -142,7 +149,8 @@
               <!-- Modal footer -->
               <div class="modal-footer">
                   <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
-                  <a href="{{ url_for('confirm_receipt', receipt_id= r.id ) }}" type="button" class="btn btn-warning">Xác nhận</a>
+                  <button type="submit"
+                          class="btn btn-warning">Xác nhận</button>
               </div>
         </form>
 
@@ -160,7 +168,7 @@
 
 <!-- Report Modal -->
 <div class="modal fade" id="reportModal_{{r.id}}" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel_{{r.id}}" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
 
       <!-- Modal Header -->

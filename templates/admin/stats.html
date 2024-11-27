@@ -296,6 +296,7 @@
 
 
     load_revenue_by_Year = (select_name, canvas_id, time_unit) => {
+        showLoading()
         const year = document.querySelector(`select[name='${select_name}']`).value
         fetch('/revenue-data-by-year', {
             method: 'POST',
@@ -356,13 +357,19 @@
                     }
                 }
             })
+
+            hideLoading()
         })
-        .catch(error => console.error('Error fetching revenue data:', error));
+        .catch(error => {
+            hideLoading()
+            console.error('Error fetching revenue data:', error)
+        });
     }
 
 
 
     load_avg_revenue_by_Year = (select_name, canvas_id, time_unit) => {
+        showLoading()
         const year = document.querySelector(`select[name='${select_name}']`).value
         fetch('/revenue-data-by-year', {
             method: 'POST',
@@ -422,8 +429,12 @@
                     }
                 }
             })
+            hideLoading()
         })
-        .catch(error => console.error('Error fetching revenue data:', error));
+        .catch(error => {
+            hideLoading()
+            console.error('Error fetching revenue data:', error)
+        });
     }
 </script>
 

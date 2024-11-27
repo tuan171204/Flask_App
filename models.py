@@ -122,13 +122,13 @@ class Receipt(db.Model):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False, index=True)
     payment_id = Column(Integer, ForeignKey('payment.id'), nullable=False, index=True)
     status_id = Column(Integer, ForeignKey('receipt_status.id'), default=6)
-    details = relationship('ReceiptDetail', backref='receipt', lazy=True)
-    report = relationship('Receipt_Report', backref='receipt', lazy=True)
     exported = Column(Boolean, default=False)
     delivery_address = Column(String(255), nullable=False)
     receiver_name = Column(String(255), nullable=False)
-    promotion_id = Column(Integer, ForeignKey('promotion.id'), nullable=True)
+    rating_service = Column(Integer,nullable=True)
     delivery_note = relationship('Goods_Delivery_Note', backref='receipt', lazy=True)
+    details = relationship('ReceiptDetail', backref='receipt', lazy=True)
+    report = relationship('Receipt_Report', backref='receipt', lazy=True)
 
 
 class ReceiptDetail(db.Model):
@@ -160,6 +160,8 @@ class Provider(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False, index=True)
     address = Column(String(255), nullable=False)
+    phone_number = Column(String(50), nullable=True)
+    email = Column(String(255), nullable=True)
     goods_received_note = relationship('Goods_Received_Note', backref='provider', lazy=True)
     distribution = relationship('Distribution', backref='provider', lazy=True)
     # storage_provider = relationship('Storage', backref='provider', lazy=True)
@@ -234,7 +236,7 @@ class Goods_Delivery_Note_Detail(db.Model):
 class Payment(db.Model):
     __tablename__ = 'payment'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     name = Column(String(255), nullable=True)
     logo = Column(String(55), nullable=True)
     receipt_payment = relationship("Receipt", backref="payment", lazy=True)
@@ -276,7 +278,7 @@ class TimeUnitEnum(PyEnum):
 class Warranty(db.Model):
     __tablename__ = 'warranty'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     description = Column(String(255), nullable=True, autoincrement=True)
     product = relationship('Product', backref='warranty_product', lazy=True)
     warranty_detail = relationship('WarrantyDetail', backref='warranty_product', lazy=True)
@@ -285,9 +287,9 @@ class Warranty(db.Model):
 class WarrantyDetail(db.Model):
     __tablename__ = 'warranty_detail'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
-    warranty_id = Column(Integer, ForeignKey(Warranty.id), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False, index=True)
+    warranty_id = Column(Integer, ForeignKey(Warranty.id), nullable=False, index=True)
     warranty_period = Column(Integer, nullable=False)
     time_unit = Column(Enum(TimeUnitEnum), default=TimeUnitEnum.MONTH, nullable=False)
 
@@ -307,22 +309,20 @@ class ApplyObject(PyEnum):
 class Promotion(db.Model):
     __tablename__ = 'promotion'
 
-    id = Column(String(255), primary_key=True)
+    id = Column(String(255), primary_key=True, index=True)
     description = Column(String(255), nullable=True)
     start_date = Column(DateTime, nullable=False, default=datetime.now())
     end_date = Column(DateTime, nullable=True)
     apply_for = Column(Enum(ApplyObject), default=ApplyObject.Product, nullable=False)
-
-    receipts = relationship('Receipt', backref='promotion', lazy=True)
     detail = relationship('PromotionDetail', backref='promotion', lazy=True)
 
 
 class PromotionDetail(db.Model):
     __tablename__ = 'promotion_detail'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    promotion_id = Column(String(255), ForeignKey(Promotion.id), nullable=False)
-    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    promotion_id = Column(String(255), ForeignKey(Promotion.id), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False, index=True)
     discount_type = Column(Enum(DiscountType), nullable=False)
     discount_value = Column(Float, nullable=True)
 

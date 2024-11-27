@@ -22,7 +22,7 @@
         <tr id="product{{c.id}}">
             <td><img src="{{url_for('static', filename=c.image)}}" alt="{{ c.name }}" style="max-height: 150px;"></td>
             <td>{{c.name}}</td>
-            <td class="text text-danger font-weight-light">{{"{:,.0f}".format(c.price)}}đ
+            <td class="text text-danger font-weight-light">{{ "{:,.0f}".format(c.price | default(0)) }}đ
                 <br>
                 {% if c.promotion %}
                 <div class="badge badge-danger text-light">
@@ -119,7 +119,7 @@
                 {% endif %}
                 <span class="font-weight-bold text-danger"
                       id="total-amount">
-                    {{"{:,.0f}".format(stats.total_amount) }}đ
+                    {{"{:,.0f}".format(stats.total_amount | default(0))}}đ
                 </span>
             </h5>
 

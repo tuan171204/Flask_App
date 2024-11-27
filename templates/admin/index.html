@@ -11,7 +11,7 @@
         <div class="d-flex flex-row justify-content-around">
             <div class="dashboard-info border text-center pt-3 row text-light bg-danger">
                 <div class="col-9">
-                    <p style="font-size: 24px; font-weight: bold" >
+                    <p>
                         {{ "{:,.0f}".format(total_revenue) }}đ
                     </p>
                     <div>
@@ -26,7 +26,7 @@
 
             <div class="dashboard-info border text-center pt-3 row text-dark bg-warning">
                 <div class="col-9">
-                    <p style="font-size: 24px; font-weight: bold">
+                    <p>
                         {{ total_check }}
                     </p>
                     Số lượt mua
@@ -39,7 +39,7 @@
 
             <div class="dashboard-info border text-center pt-3 row text-light bg-success">
                 <div class="col-9">
-                    <p style="font-size: 24px;font-weight: bold">
+                    <p>
                         {{ complete_receipt }}
                     </p>
                     Đơn hàng hoàn thành
@@ -52,13 +52,26 @@
 
             <div class="dashboard-info border text-center pt-3 row text-light bg-info"">
                 <div class="col-9">
-                    <p style="font-size: 24px;font-weight: bold">
+                    <p>
                         {{ total_customer }}
                     </p>
                     Số thành viên
                 </div>
                 <div class="col-3">
                     <i class="fa-solid fa-users mt-4"
+                       style="font-size: 28px;"></i>
+                </div>
+            </div>
+
+            <div class="dashboard-info border text-center pt-3 row text-light bg-secondary">
+                <div class="col-9">
+                    <p>
+                        {{ "{:,.1f}".format(rating_service) }}
+                    </p>
+                    Đánh giá dịch vụ
+                </div>
+                <div class="col-3">
+                    <i class="fa-solid fa-star mt-4 text-warning"
                        style="font-size: 28px;"></i>
                 </div>
             </div>
@@ -98,8 +111,8 @@
 
     {% else %}
 
-    <div class="container w-75 border border-dark mt-5 p-4 rounded">
-        <h2 class="text-center text-dark mt-4">ĐĂNG NHẬP QUẢN TRỊ</h2>
+    <div class="container mt-5 p-4 rounded signin-section">
+        <h2 class="text-center header text-dark mt-4 mb-5">ĐĂNG NHẬP QUẢN TRỊ</h2>
 
             {% if err_msg %}
             <h2 class="text-center">{{err_msg}}</h2>
@@ -107,17 +120,26 @@
                 <form method="post"
                       action="{{url_for('signin_admin')}}"
                       id="signinForm">
-                        <div class="form-group">
-                            <label for="username" >Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="form-group mb-4">
+                            <input type="text"
+                                   class="form-control"
+                                   id="username"
+                                   name="username"
+                                   required
+                                   placeholder="Username" >
                         </div>
-                        <div class="form-group">
-                            <label for="pass" >Mật khẩu</label>
-                            <input type="password" class="form-control" id="pass" name="password" required>
+                        <div class="form-group mb-4">
+                            <input type="password"
+                                   class="form-control"
+                                   id="pass"
+                                   name="password"
+                                   placeholder="Mật khẩu"
+                                   required>
                         </div>
-                        <input type="submit"
-                               value="Đăng nhập"
+                        <button type="submit"
                                class="btn btn-dark text-light mr-2">
+                            Đăng nhập
+                        </button>
                         <a href="/admin/forgot-password"
                            class="btn btn-primary text-light"
                            style="font-size: 20px;">

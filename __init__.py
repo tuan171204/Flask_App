@@ -29,3 +29,6 @@ cloudinary.config(
 )
 
 login = LoginManager(app=app)
+
+# FOR TESTING
+from Flask_App import index

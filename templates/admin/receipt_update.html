@@ -175,7 +175,7 @@
                                 Xóa hóa đơn này
                             </button>
                         </div>
-                        {% if receipts[0].status_id == 6 %}
+                        {% if receipts[0].status_id == 6 and receipts[0].exported == False %}
                         <div class="form-group">
                             <a  href="{{ url_for('receipt.view_delivery_note', receipt_id = receipt_id) }}"
                                 type="button"
