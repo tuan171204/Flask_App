@@ -37,16 +37,13 @@ class Product(db.Model):
     import_price = Column(Float, nullable=False)
     warranty = Column(Integer, ForeignKey('warranty.id'), nullable=True)
 
-    promotion= relationship('PromotionDetail', backref='product', lazy=True)
+    promotion = relationship('PromotionDetail', backref='product', lazy=True)
     receipt_details = relationship('ReceiptDetail', backref='product', lazy=True)
     goods_received_note_detail = relationship('Goods_Received_Note_Detail', backref='product', lazy=True)
     comments = relationship('Comment', backref='product', lazy=True)
     distribution = relationship('Distribution', backref='product', lazy=True)
     goods_delivery_note_detail = relationship('Goods_Delivery_Note_Detail', backref='product', lazy=True)
     warranty_detail = relationship('WarrantyDetail', backref='product', lazy=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Brand(db.Model):
@@ -125,7 +122,8 @@ class Receipt(db.Model):
     exported = Column(Boolean, default=False)
     delivery_address = Column(String(255), nullable=False)
     receiver_name = Column(String(255), nullable=False)
-    rating_service = Column(Integer,nullable=True)
+    rating_service = Column(Integer, nullable=True)
+    momo_code = Column(String(10), nullable=True)
     delivery_note = relationship('Goods_Delivery_Note', backref='receipt', lazy=True)
     details = relationship('ReceiptDetail', backref='receipt', lazy=True)
     report = relationship('Receipt_Report', backref='receipt', lazy=True)

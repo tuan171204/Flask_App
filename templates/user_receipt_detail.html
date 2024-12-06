@@ -95,9 +95,15 @@
           </tbody>
         </table>
         <hr>
-    <div class="form-group"
+    <div class="form-group form-inline"
          style="font-size: 24px;">
-        <label>Tổng thanh toán:  <s>{{ "{:,.0f}".format(base_total_price) }}đ</s><u  class="text-danger ml-2"> {{ "{:,.0f}".format(total_price) }}đ </u></label>
+        <label>Tổng thanh toán:</label>
+        {% if base_total_price != total_price %}
+                <s>{{ "{:,.0f}".format(base_total_price) }}đ</s>
+                <u class="text-danger font-weight-bold ml-2"> {{ "{:,.0f}".format(total_price) }}đ </u>
+        {% else %}
+                <p class="text-danger font-weight-bold ml-2 mt-3">{{ "{:,.0f}".format(base_total_price) }}đ</p>
+        {% endif %}
     </div>
 
     <a class="btn btn-dark mb-5"

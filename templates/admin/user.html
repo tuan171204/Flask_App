@@ -52,8 +52,6 @@
                 <th scope="col">Email</th>
                 <th scope="col"> Hoạt động </th>
                 <th scope="col" style="width: 150px;">Ngày vào</th>
-                <th scope="col"> Số điện thoại</th>
-                <th scope="col"> Địa chỉ</th>
                 <th scope="col"></th>
               </tr>
             </thead>
@@ -102,20 +100,6 @@
                              {% endif %}
                          </td>
                          <td>{{ user.joined_date.strftime(' %d-%m-%Y ') }}</td>
-                         <td>
-                             {% if user.phone_number %}
-                                {{ user.phone_number }}
-                             {% else %}
-                                Không có
-                             {% endif %}
-                         </td>
-                         <td>
-                             {% if user.address %}
-                                {{ user.address }}
-                             {% else %}
-                                Không có
-                             {% endif %}
-                         </td>
                          <td>
                              <a href="{{ url_for('user_admin.user_detail', user_id = user.id ) }}"
                                 class="btn btn-dark">

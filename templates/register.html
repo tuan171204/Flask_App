@@ -4,7 +4,7 @@
 
 
 {% block content %}
-<h1 class="text-center text-danger mt-3">ĐĂNG KÝ NGƯỜI DÙNG</h1>
+<h1 class="text-center text-dark mt-3">ĐĂNG KÝ NGƯỜI DÙNG</h1>
 
 {% if err_msg %}
 <div class="alert alert-danger">
@@ -37,7 +37,12 @@
             <label for="avatar" >Ảnh đại diện</label>
             <input type="file" class="form-control" id="avatar" name="avatar">
         </div>
-        <input type="submit" value="Đăng ký" class="btn btn-danger">
+        <div class="form-group">
+            <button type="submit"
+               class="btn">
+            Đăng ký
+            </button>
+        </div>
     </form>
 </div>
 <br>

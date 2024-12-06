@@ -51,7 +51,10 @@
     <br>
     <br>
     {% if current_user.is_authenticated %}
-        <form class="alert d-flex flex-column w-50" style="background-color: rgba(211, 211, 211, 0.429);" method="post">
+    <div class="row">
+        <form class="alert d-flex flex-column col-lg-6 col-md-6 col-xs-10"
+              style="background-color: rgba(211, 211, 211, 0.429);"
+              method="post">
             <h4 class="font-weight-bold mb-3"><i class="fa fa-user"></i> Tổng quan đơn hàng </h4>
             <div class="form-group">
                 <h5><b>Username:</b> {{ current_user.username }}</h5>
@@ -69,31 +72,52 @@
             </div>
             <div class="form-group">
                     <h5><b>Địa chỉ giao hàng:</b> </h5>
-                    <select name="district"
-                            class="custom-select"
-                            onchange="getWard()">
-                        <option value="" selected>Quận</option>
-                        {% for d in district %}
-                        <option value="{{ d.name }}"
-                                data-district-id="{{ d.id }}">
-                            {{ d.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="delivery-address-block">
+                        <select name="district"
+                                class="custom-select"
+                                onchange="getWard()">
+                            <option value="" selected>Quận</option>
+                            {% for d in district %}
+                            <option value="{{ d.name }}"
+                                    data-district-id="{{ d.id }}">
+                                {{ d.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
 
-                    <select name="ward"
-                            class="custom-select mt-2">
-                        <option value="" selected>Phường</option>
-                        {% for w in ward %}
-                        <option value="{{ w.name }}"
-                                data-ward-id="{{ w.id }}">
-                            {{ w.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                <input class="form-control mt-2"
-                       placeholder="Địa chỉ chi tiết ( số nhà, đường ... )"
-                       id="delivery_address" required>
+                        <select name="ward"
+                                class="custom-select mt-2">
+                            <option value="" selected>Phường</option>
+                            {% for w in ward %}
+                            <option value="{{ w.name }}"
+                                    data-ward-id="{{ w.id }}">
+                                {{ w.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input class="form-control mt-2"
+                               placeholder="Địa chỉ chi tiết ( số nhà, đường ... )"
+                               id="delivery_address" required>
+                    </div>
+                    {% if current_user.address %}
+                        <button type="button"
+                                class="user-address-default btn mt-2 text-light"
+                                style="background-color: black;"
+                                onclick="useDefaultAddress()">
+                            Sử dụng địa chỉ mặc định
+                        </button>
+                        <button type="button"
+                                class="user-cancel-address-default cancel-btn btn mt-2 text-light"
+                                style="background-color: black; display: inline-block"
+                                onclick="useDefaultAddress(true)">
+                            Hủy
+                        </button>
+                         <input readonly
+                                name="user_default_address"
+                                class="form-control mt-2 user_default_address"
+                                value="{{current_user.address}}"
+                                id="default_address">
+                    {% endif %}
             </div>
 
             <div class="from-group">
@@ -125,25 +149,105 @@
 
         </div>
 
-    {% if current_user.is_authenticated  %}
+        {% if current_user.is_authenticated  %}
 
-        <button type="submit"
-                value="Thanh toán"
-                onclick="pay()"
-                class="btn text-light form-control"
-                style="border-radius: 10px;background-color:black">Thanh toán</button>
-    {% else %}
-        <a class="btn btn-danger form-control font-weight-bold" href="{{url_for('user_signin', next='cart')}}">Đăng nhập để thanh toán</a>
-    {% endif %}
-    </form>
+            <button type="submit"
+                    value="Thanh toán"
+                    onclick="pay()"
+                    class="btn text-light form-control"
+                    style="border-radius: 10px;background-color:black">Thanh toán</button>
+        {% else %}
+            <a class="btn btn-danger form-control font-weight-bold" href="{{url_for('user_signin', next='cart')}}">Đăng nhập để thanh toán</a>
+        {% endif %}
+        </form>
 
+        <div class="transfer-block col-lg-6 col-md-6 col-xs-10 h-100">
+            <p class="header text-center w-100 p-2"> Thanh toán với Momo </p>
+            <img src="{{ url_for('static', filename='images/momo_qr.jpg') }}"
+                 class="text-center"
+                 id="momo-QR">
+            <h5 class="text-center font-weight-bold mt-2">Thông tin thanh toán</h5>
+            <div class="alert alert-warning text-center font-weight-bold"> Ghi đúng nội dung <b class="momo_code"></b> để xác nhận thanh toán chuyển khoản</div>
+            <table class="table table-hover table-bordered">
+                <tr>
+                    <td><b>Tên tài khoản:</b> </td>
+                    <td>THÁI TUẤN</td>
+                </tr>
+                <tr>
+                    <td><b>Số điện thoại:</b></td>
+                    <td>0902451316</td>
+                </tr>
+                <tr>
+                    <td><b>Ví điện tử:</b></td>
+                    <td>MoMo</td>
+                </tr>
+                <tr>
+                    <td><b>Số tiền: </b></td>
+                    <td>{{"{:,.0f}".format(stats.total_amount | default(0))}}đ</td>
+                </tr>
+                <tr>
+                    <td><b>Nội dung*:</b></td>
+                    <td class="momo_table_code"></td>
+                </tr>
+            </table>
+
+            <button class="form-control bg-primary text-center text-light"
+                    onclick="momoPay()"
+                    style="font-size: 20px;">
+                Tôi đã thanh toán
+            </button>
+        </div>
+    </div>
+
+
+<!--    CART EMPTY -->
     <br><br>
-
-
-
         {% else %}
             <h1 class="text-center mt-5">Không có sản phẩm nào trong giỏ hàng</h1>
         {% endif %}
-
 </div>
+
+<script>
+    document.querySelector("#momo-QR").style.display = 'none'
+    document.querySelector(".transfer-block").style.display = 'none'
+
+
+    momoPay = () => {
+        event.preventDefault();
+        const fullNameInput = document.querySelector('input[name="fullname"]');
+        const phoneNumInput = document.querySelector('input[name="phone_number"]')
+        const payment = document.getElementById('payment')
+        const district = document.querySelector("select[name='district']").value
+        const ward = document.querySelector("select[name='ward']").value
+        const address_detail = document.getElementById('delivery_address').value
+        const delivery_address = `${address_detail}, ${ward}, ${district}, TP Hồ Chí Minh`
+        const momo_code = document.querySelector(".momo_code").innerText
+
+        if (confirm('Bạn chắc chắn muốn thanh toán không ?') == true) {
+            fetch('/api/pay', {
+                method: 'post',
+                body: JSON.stringify({
+                    'customer_name': fullNameInput.value,
+                    'payment_id': payment.value,
+                    'delivery_address': delivery_address,
+                    'momo_code': momo_code
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code == 200) {
+                        alert("Đã thực hiện thanh toán với Momo, vui lòng đợi xác nhận !")
+                        location.reload();
+                    } else {
+                        console.error('Error:', data);
+                    }
+                }).catch(err => console.error(err));
+        }
+}
+
+
+</script>
 {% endblock %}

@@ -476,12 +476,13 @@ def load_brands():
     return Brand.query.all()
 
 
-def add_receipt(cart, payment_id, delivery_address, customer_name):
+def add_receipt(cart, payment_id, delivery_address, customer_name, momo_code):
     if cart:
         receipt = Receipt(user=current_user,
                           payment_id=payment_id,
                           delivery_address=delivery_address,
-                          receiver_name=customer_name)
+                          receiver_name=customer_name,
+                          momo_code=momo_code)
         db.session.add(receipt)
 
         for c in cart.values():

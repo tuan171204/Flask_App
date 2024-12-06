@@ -728,3 +728,36 @@ table td span {
 .user-avatar-setting:hover .edit-icon {
     display: block;
 }
+
+.transfer-block{
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+img#momo-QR{
+    width: 35%;
+    height: 20%;
+    object-position: center;
+}
+
+.header{
+    font-size: 24px;
+    font-weight:bold;
+    color: #fff;
+    background-color:#D30103;
+}
+
+@media (max-width: 768px){
+    img#momo-QR {
+        position: relative;
+        top: 0%;
+        left: 0%;
+    }
+    .transfer-block{
+        display: flex;
+        justify-content: center;
+    }
+}

@@ -175,25 +175,14 @@ def add_comment():
 def common_response():
     return {
         'categories': utils.load_categories_client(),
-        'cart_stats': utils.count_cart(session.get('cart'))
+        'cart_stats': utils.count_cart(session.get('cart')),
+        'all_products': utils.load_all_products()
     }
 
 
 @login.user_loader
 def user_load(user_id):
     return utils.get_user_by_id(user_id=user_id)
-
-
-# @app.route('/products')
-# def product_list():
-#     cate_id = request.args.get("category_id")
-#
-#     kw = request.args.get("keyword")
-#
-#     products = utils.load_products(cate_id=cate_id, kw=kw)
-#
-#     return render_template('index.html',
-#                            products=products)
 
 
 @app.route('/cart')
@@ -341,8 +330,9 @@ def pay():
     payment_id = data.get('payment_id')
     delivery_address = data.get('delivery_address')
     customer_name = data.get('customer_name')
+    momo_code = data.get('momo_code', '')
     try:
-        utils.add_receipt(session.get('cart'), payment_id, delivery_address, customer_name)
+        utils.add_receipt(session.get('cart'), payment_id, delivery_address, customer_name, momo_code)
         del session['cart']
     except Exception as e:
         print(f'Lỗi index {e}')

@@ -1,3 +1,4 @@
+
 window.addEventListener('load', function () {
     document.getElementById('loading-overlay').style.display = 'none';
 });
@@ -53,6 +54,18 @@ function addToCart(id, name, price, image, promotion) {
 }
 
 
+function generateRandomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+
+}
+
+
 function pay() {
     event.preventDefault();
     const fullNameInput = document.querySelector('input[name="fullname"]');
@@ -61,43 +74,59 @@ function pay() {
     const district = document.querySelector("select[name='district']").value
     const ward = document.querySelector("select[name='ward']").value
     const address_detail = document.getElementById('delivery_address').value
-    const delivery_address = `${address_detail}, ${ward}, ${district}, TP Hồ Chí Minh`
-    console.log(delivery_address)
-
+    const user_default_address = document.querySelector('.user_default_address')
+    var delivery_address = `${address_detail}, ${ward}, ${district}, TP Hồ Chí Minh`
     if (!fullNameInput.value) {
         alert('Vui lòng nhập họ tên người nhận!');
         return;
-    } else if (!phoneNumInput.value) {
+    }
+    if (!phoneNumInput.value) {
         alert('Vui lòng nhập số điện thoại người nhận!');
         return
-    } else if (!phoneNumInput.value.match(/^0[0-9]{9}$/)) {
+    }
+    if (!phoneNumInput.value.match(/^0[0-9]{9}$/)) {
         alert('Số điện thoại không hợp lệ!');
         return;
-    } else if (!district || !ward || !address_detail) {
+    }
+    if ((!district || !ward || !address_detail) && user_default_address.style.display == 'none') {
         alert('Vui lòng nhập đầy đủ địa chỉ');
         return;
-    }
+    } else if (user_default_address.style.display == 'block'){
+        delivery_address = user_default_address.value
 
-    if (confirm('Bạn chắc chắn muốn thanh toán không ?') == true) {
+    }
+    console.log(delivery_address)
+
+    //  MOMO PAY
+    if (payment.value == 2) {
+        document.querySelector("#momo-QR").style.display = "block"
+        document.querySelector("div.transfer-block").style.display = "flex"
+        momo_code = generateRandomString(8)
+        console.log(momo_code)
+        document.querySelector(".momo_code").innerText = momo_code
+        document.querySelector(".momo_table_code").innerText = momo_code
+    }
+    else if (confirm('Bạn chắc chắn muốn thanh toán không ?') == true) {
         fetch('/api/pay', {
             method: 'post',
             body: JSON.stringify({
                 'customer_name': fullNameInput.value,
                 'payment_id': payment.value,
-                'delivery_address': delivery_address
+                'delivery_address': delivery_address,
             }),
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.code == 200) {
-                location.reload();
-            } else {
-                console.error('Error:', data);
-            }
-        }).catch(err => console.error(err));
+            .then(response => response.json())
+            .then(data => {
+                if (data.code == 200) {
+                    alert("Thực hiện thanh toán thành công !")
+                    location.reload();
+                } else {
+                    console.error('Error:', data);
+                }
+            }).catch(err => console.error(err));
     }
 }
 
@@ -213,7 +242,6 @@ function getWard() {
     const district_input = document.querySelector('select[name="district"]')
     const selectedOption = district_input.options[district_input.selectedIndex];
     const districtId = selectedOption.getAttribute('data-district-id');
-    console.log(districtId)
 
     if (districtId) {
 
@@ -302,7 +330,22 @@ loadBrandProduct = async (brand_id) => {
     }
 }
 
+user_default_address = document.querySelector("input.user_default_address")
+user_default_address.style.display = "none"
 
+useDefaultAddress = (reverse) => {
+    if (reverse != true) {
+        document.querySelector(".delivery-address-block").style.display = "none"
+        document.querySelector("button.user-address-default").style.display = "none"
+        document.querySelector("button.user-cancel-address-default").style.display = "block"
+        user_default_address.style.display = "block"
+    } else {
+        document.querySelector(".delivery-address-block").style.display = "block"
+        user_default_address.style.display = "none"
+        document.querySelector("button.user-address-default").style.display = "block"
+        document.querySelector("button.user-cancel-address-default").style.display = "none"
+    }
+}
 
 
 
